@@ -13,10 +13,16 @@ function App() {
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
+      if (event.source !== window.parent || event.origin !== "https://www.youtube.com") return;
       const msg = event.data;
       if (!msg || !msg.type) return;
 
-      if (msg.type === "NO_CAPTIONS_AVAILABLE") {
+      if (msg.type === "ANALYSIS_START") {
+        setLoading(true);
+        setData(null);
+        setError(null);
+        setNoCaptions(false);
+      } else if (msg.type === "NO_CAPTIONS_AVAILABLE") {
         setLoading(false);
         setNoCaptions(true);
         setData(null);
@@ -29,16 +35,18 @@ function App() {
       } else if (msg.type === "ANALYSIS_ERROR") {
         setLoading(false);
         setNoCaptions(false);
+        setData(null);
         setError(msg.error || "Ocorreu uma falha ao checar as alegações.");
       }
     };
 
     window.addEventListener("message", handleMessage);
+    window.parent.postMessage({ type: "PANEL_READY" }, "https://www.youtube.com");
 
     // Fecha ao pressionar ESC (WCAG AA Acessibilidade por Teclado)
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        window.parent.postMessage({ type: "CLOSE_PANEL" }, "*");
+        window.parent.postMessage({ type: "CLOSE_PANEL" }, "https://www.youtube.com");
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -50,7 +58,7 @@ function App() {
   }, []);
 
   const handleClose = () => {
-    window.parent.postMessage({ type: "CLOSE_PANEL" }, "*");
+    window.parent.postMessage({ type: "CLOSE_PANEL" }, "https://www.youtube.com");
   };
 
   return (
@@ -86,7 +94,7 @@ function App() {
 
       {/* Estado de Carregamento inicial */}
       {loading && (
-        <div style={{ textAlign: "center", padding: "40px 0", color: "var(--color-text-secondary)" }}>
+        <div role="status" style={{ textAlign: "center", padding: "40px 0", color: "var(--color-text-secondary)" }}>
           <p>Extraindo transcrição e consultando evidências...</p>
         </div>
       )}
@@ -128,7 +136,7 @@ function App() {
       )}
 
       {!data && !loading && !noCaptions && !error && (
-        <div style={{ textAlign: "center", padding: "40px 0", color: "var(--color-text-secondary)" }}>
+        <div role="status" style={{ textAlign: "center", padding: "40px 0", color: "var(--color-text-secondary)" }}>
           <p>Clique em <strong>Verificar Veracidade</strong> no player do YouTube para iniciar a checagem.</p>
         </div>
       )}

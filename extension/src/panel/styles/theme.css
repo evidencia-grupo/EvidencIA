@@ -107,3 +107,5 @@ body {
   font-size: 12px;
   font-weight: 500;
 }
+
+button:focus-visible, a:focus-visible { outline: 3px solid #FBC02D; outline-offset: 3px; }
