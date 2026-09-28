@@ -1,0 +1,24 @@
+{
+  "name": "evidencia-extension",
+  "version": "1.0.0",
+  "description": "Extensao Manifest V3 de checagem factual para o YouTube",
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch --mode development",
+    "build": "tsc && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "preact": "^10.22.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.8.2",
+    "@types/chrome": "^0.0.268",
+    "@types/node": "^20.14.0",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11",
+    "vitest": "^1.6.0"
+  }
+}
