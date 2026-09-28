@@ -1,8 +1,9 @@
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
 const storage = { get: vi.fn(), set: vi.fn(), remove: vi.fn() };
-vi.stubGlobal("chrome", { runtime: { onMessage: { addListener: vi.fn() } }, storage: { local: storage } });
+vi.stubGlobal("chrome", { runtime: { id: "extension", onMessage: { addListener: vi.fn() } }, storage: { local: storage } });
 const { getCachedResult, handleAnalyzeRequest } = await import("./service-worker");
-const data = { videoId: "video", summary: "Síntese", claims: [], sources: [], score: 80 };
+const listener = vi.mocked(chrome.runtime.onMessage.addListener).mock.calls[0][0];
+const data = { analysisMode: "demo", analyzedAt: "2026-09-28T00:00:00Z", processingTimeMs: 100, classification: "verdadeiro", videoId: "video", summary: "Síntese", claims: [], sources: [], score: 80 };
 const payload = { videoId: "video", videoTitle: "Título", channelName: "Canal", transcript: "transcrição" };
 beforeEach(() => {
   vi.useFakeTimers();
@@ -54,4 +55,24 @@ it("aborta inclusive leitura do corpo no orçamento restante", async () => {
   await vi.advanceTimersByTimeAsync(100);
   await result;
   expect(storage.set).not.toHaveBeenCalled();
+});
+
+it("mensagens autorizadas recebem sucesso, erros e cache miss", async () => {
+  const sender = { id: "extension", url: "https://www.youtube.com/watch?v=video" };
+  const response = vi.fn();
+  expect(listener({ type: "GET_CACHE", videoId: "video" }, sender, response)).toBe(true);
+  await vi.advanceTimersByTimeAsync(0);
+  expect(response).toHaveBeenCalledWith({ success: true, data: null });
+  listener({ type: "ANALYZE_VIDEO", payload }, sender, response);
+  await vi.advanceTimersByTimeAsync(0);
+  expect(response).toHaveBeenCalledWith({ success: true, data });
+  vi.mocked(fetch).mockRejectedValueOnce(new Error("Offline"));
+  listener({ type: "ANALYZE_VIDEO", payload }, sender, response);
+  await vi.advanceTimersByTimeAsync(0);
+  expect(response).toHaveBeenCalledWith({ success: false, error: "Offline" });
+  expect(listener({ type: "UNKNOWN" }, sender, response)).toBeUndefined();
+  response.mockClear();
+  listener({ type: "GET_CACHE" }, { ...sender, id: "other" }, response);
+  listener({ type: "GET_CACHE" }, { ...sender, url: "https://evil.test" }, response);
+  expect(response).not.toHaveBeenCalled();
 });

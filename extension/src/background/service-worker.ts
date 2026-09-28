@@ -1,3 +1,5 @@
+import { isAnalysis } from "./response-validation";
+import { getCaptionTracks } from "./player-captions";
 import type { AnalyzeRequest, AnalyzeResponse, LocalCacheEntry } from "../../../shared/types/api";
 
 const CACHE_TTL_MS = 86400000;
@@ -5,8 +7,9 @@ const BACKEND_URL = "http://127.0.0.1:8000/api/v1/analyze";
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (sender.id !== chrome.runtime.id || !sender.url?.startsWith("https://www.youtube.com/")) return;
-  let operation: Promise<AnalyzeResponse | null>;
-  if (message.type === "GET_CACHE") operation = getCachedResult(message.videoId);
+  let operation: Promise<unknown>;
+  if (message.type === "GET_CAPTION_TRACKS" && sender.tab?.id !== undefined) operation = getCaptionTracks(sender.tab.id, message.videoId);
+  else if (message.type === "GET_CACHE") operation = getCachedResult(message.videoId);
   else if (message.type === "ANALYZE_VIDEO") operation = handleAnalyzeRequest(message.payload, message.deadline);
   else return;
   operation.then(data => sendResponse({ success: true, data })).catch(error =>
@@ -20,7 +23,7 @@ export async function getCachedResult(videoId: string): Promise<AnalyzeResponse 
     const entry = result[videoId] as LocalCacheEntry | undefined;
     if (!entry) return null;
     const age = Date.now() - entry.timestamp;
-    if (!Number.isFinite(age) || age < 0 || age >= CACHE_TTL_MS || entry.videoId !== videoId || !entry.summary || !Array.isArray(entry.claims) || !Array.isArray(entry.sources)) {
+    if (!Number.isFinite(age) || age < 0 || age >= CACHE_TTL_MS || !isAnalysis(entry, videoId)) {
       await chrome.storage.local.remove(videoId).catch(() => undefined);
       return null;
     }
@@ -46,7 +49,7 @@ export async function handleAnalyzeRequest(payload: AnalyzeRequest, deadline = D
     });
     if (!response.ok) throw new Error(`Falha no servidor intermediário: HTTP ${response.status}`);
     const data = await response.json() as AnalyzeResponse;
-    if (data.videoId !== payload.videoId || !data.summary || !Array.isArray(data.claims) || !Array.isArray(data.sources)) throw new Error("Resposta inválida do servidor.");
+    if (!isAnalysis(data, payload.videoId)) throw new Error("Resposta inválida do servidor.");
     const entry: LocalCacheEntry = { ...data, timestamp: Date.now(), ttl: CACHE_TTL_MS };
     void chrome.storage.local.set({ [payload.videoId]: entry }).catch(() => undefined);
     return data;

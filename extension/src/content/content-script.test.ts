@@ -1,37 +1,118 @@
 // @vitest-environment jsdom
 // @vitest-environment-options {"url":"https://www.youtube.com/watch?v=video"}
-import { expect, it, vi } from "vitest";
+import { beforeEach, afterEach, expect, it, vi } from "vitest";
 vi.mock("./caption-parser", () => ({ extractCaptionsFromPage: vi.fn() }));
 import { extractCaptionsFromPage } from "./caption-parser";
-it("confirma imediatamente, usa cache sem legendas e limita o prazo na repetição", async () => {
-  vi.useFakeTimers();
-  document.body.innerHTML = '<div id="above-the-fold"></div>';
-  const sendMessage = vi.fn().mockResolvedValue({ success: true, data: { score: 85 } });
+const sendMessage = vi.fn();
+let listeners: Array<[string, EventListenerOrEventListenerObject]>;
+const realAdd = window.addEventListener.bind(window);
+const button = () => document.querySelector("#evidencia-badge-host")!.shadowRoot!.querySelector("button")!;
+const frame = () => document.querySelector<HTMLIFrameElement>("iframe")!;
+const flush = () => vi.advanceTimersByTimeAsync(0);
+function panelMessage(type: string, origin = "https://extension.test", source: MessageEventSource | null = frame().contentWindow) {
+  window.dispatchEvent(new MessageEvent("message", { data: { type }, origin, source }));
+}
+function navigate(path: string) {
+  history.replaceState({}, "", path);
+  window.dispatchEvent(new Event("yt-navigate-finish"));
+}
+beforeEach(() => {
+  vi.resetModules(); vi.useFakeTimers(); listeners = [];
+  vi.spyOn(window, "addEventListener").mockImplementation((type, listener, options) => { listeners.push([type, listener]); realAdd(type, listener, options); });
+  history.replaceState({}, "", "/watch?v=video");
+  document.body.innerHTML = '<h1 class="ytd-watch-metadata">Título</h1><div id="channel-name">Canal</div><div id="above-the-fold"></div>';
+  sendMessage.mockReset().mockResolvedValue({ success: true, data: { score: 85 } });
+  vi.mocked(extractCaptionsFromPage).mockReset().mockResolvedValue({ videoId: "video", transcript: "texto", language: "pt" });
   vi.stubGlobal("chrome", { runtime: { getURL: (path: string) => `https://extension.test/${path}`, sendMessage } });
+});
+afterEach(() => {
+  for (const [type, listener] of listeners) window.removeEventListener(type, listener);
+  vi.restoreAllMocks(); vi.useRealTimers();
+});
+it("confirma de forma síncrona e evita requisições repetidas", async () => {
   await import("./content-script");
-  await vi.advanceTimersByTimeAsync(1000);
-  const button = document.querySelector("#evidencia-badge-host")!.shadowRoot!.querySelector("button")!;
-  button.click();
-  expect(button.textContent).toContain("Analisando");
-  expect(button.disabled).toBe(true);
-  button.click();
-  await vi.advanceTimersByTimeAsync(0);
-  expect(button.textContent).toContain("85%");
+  const key = vi.fn(); document.addEventListener("keydown", key);
+  button().dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true, composed: true }));
+  expect(key).not.toHaveBeenCalled();
+  button().dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, composed: true }));
+  expect(key).toHaveBeenCalledTimes(1);
+  document.removeEventListener("keydown", key);
+  button().click();
+  expect(button().textContent).toContain("Analisando");
+  expect(button().getAttribute("aria-disabled")).toBe("true");
+  button().dispatchEvent(new MouseEvent("click"));
+  await flush();
+  expect(button().textContent).toContain("85%");
   expect(extractCaptionsFromPage).not.toHaveBeenCalled();
   expect(sendMessage).toHaveBeenCalledTimes(1);
-  sendMessage.mockResolvedValueOnce({ success: true, data: null }).mockResolvedValueOnce({ success: true, data: { score: 70 } });
-  vi.mocked(extractCaptionsFromPage).mockResolvedValue({ videoId: "video", transcript: "texto", language: "pt" });
-  const start = Date.now();
-  button.click();
-  await vi.advanceTimersByTimeAsync(0);
-  expect(button.textContent).toContain("70%");
-  expect(sendMessage.mock.calls[2][0].deadline).toBe(start + 9500);
-  sendMessage.mockReturnValue(new Promise(() => {}));
-  button.click();
-  await vi.advanceTimersByTimeAsync(9500);
-  expect(button.textContent).toContain("Tentar novamente");
-  expect(button.disabled).toBe(false);
+});
+it("entrega estado pendente quando o iframe fica pronto e valida remetente", async () => {
+  await import("./content-script");
+  const post = vi.spyOn(frame().contentWindow!, "postMessage");
+  button().click(); await flush();
+  panelMessage("PANEL_READY", "https://evil.test");
+  panelMessage("PANEL_READY", "https://extension.test", null);
+  expect(post).not.toHaveBeenCalled();
+  panelMessage("PANEL_READY");
+  expect(post).toHaveBeenCalledWith({ type: "ANALYSIS_SUCCESS", data: { score: 85 } }, "https://extension.test");
+  panelMessage("UNKNOWN");
+  panelMessage("CLOSE_PANEL");
+  expect(frame().style.display).toBe("none");
+  expect(document.querySelector("#evidencia-badge-host")!.shadowRoot!.activeElement).toBe(button());
+  button().click(); await flush();
+  expect(post).toHaveBeenCalledWith({ type: "FOCUS_PANEL" }, "https://extension.test");
+  window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab" }));
   window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
-  expect(document.querySelector<HTMLIFrameElement>("iframe")!.style.display).toBe("none");
-  vi.useRealTimers();
+  expect(frame().style.display).toBe("none");
+});
+it("propaga orçamento total no cache miss", async () => {
+  await import("./content-script"); panelMessage("PANEL_READY");
+  sendMessage.mockResolvedValueOnce({ success: true, data: null }).mockResolvedValueOnce({ success: true, data: { score: 70 } });
+  const start = Date.now(); button().click(); await flush();
+  expect(button().textContent).toContain("70%");
+  expect(sendMessage.mock.calls[1][0]).toMatchObject({ deadline: start + 9500, payload: { videoTitle: "Título", channelName: "Canal" } });
+});
+it.each([undefined, { success: false, error: "Falhou" }])("erro do worker permite nova tentativa %s", async reply => {
+  await import("./content-script");
+  sendMessage.mockResolvedValueOnce({ success: false }).mockResolvedValueOnce(reply);
+  button().click(); await flush(); expect(button().textContent).toContain("Tentar novamente");
+  expect(button().getAttribute("aria-disabled")).toBe("false");
+});
+it("ausência de legendas encerra carregamento; erro inesperado tem fallback", async () => {
+  await import("./content-script");
+  sendMessage.mockResolvedValue({ success: true, data: null });
+  vi.mocked(extractCaptionsFromPage).mockResolvedValueOnce(null);
+  button().click(); await flush(); expect(button().textContent).toContain("Sem legendas");
+  sendMessage.mockRejectedValueOnce("erro");
+  button().click(); await flush(); expect(button().textContent).toContain("Tentar novamente");
+});
+it("timeout aborta a extração e rejeita resposta tardia", async () => {
+  await import("./content-script");
+  let resolve!: (value: unknown) => void;
+  sendMessage.mockReturnValueOnce(new Promise(r => { resolve = r; }));
+  button().click(); await vi.advanceTimersByTimeAsync(9500);
+  expect(button().getAttribute("aria-disabled")).toBe("false");
+  resolve({ success: true, data: { score: 99 } }); await flush();
+  expect(button().textContent).not.toContain("99%");
+});
+it("navegação invalida análise antiga e remove o botão fora do watch", async () => {
+  await import("./content-script");
+  let resolve!: (value: unknown) => void;
+  sendMessage.mockReturnValueOnce(new Promise(r => { resolve = r; }));
+  button().click(); navigate("/watch?v=next");
+  resolve({ success: true, data: { score: 99 } }); await flush();
+  expect(button().textContent).toContain("Verificar");
+  navigate("/"); expect(document.querySelector("#evidencia-badge-host")).toBeNull();
+  navigate("/watch"); expect(document.querySelector("#evidencia-badge-host")).toBeNull();
+});
+it("aguarda metadados, recria iframe removido e suporta chegada pela home", async () => {
+  history.replaceState({}, "", "/"); document.body.innerHTML = "";
+  await import("./content-script");
+  navigate("/watch?v=video"); expect(document.querySelector("#evidencia-badge-host")).toBeNull();
+  document.body.insertAdjacentHTML("beforeend", '<div id="top-row"></div>');
+  await vi.advanceTimersByTimeAsync(250);
+  expect(button()).toBeTruthy();
+  frame().remove(); button().click(); await flush(); expect(frame().isConnected).toBe(true);
+  navigate("/"); document.body.innerHTML = '<ytd-watch-metadata></ytd-watch-metadata>';
+  navigate("/watch?v=next"); expect(button()).toBeTruthy();
 });

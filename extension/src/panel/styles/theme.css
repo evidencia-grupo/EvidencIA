@@ -10,7 +10,7 @@
   /* Cores Semânticas de Veracidade */
   --color-veracidade-apoiada: #2BA640;
   --color-veracidade-moderada: #FBC02D;
-  --color-veracidade-falsa: #E53935;
+  --color-veracidade-falsa: #FF7571;
   --color-veracidade-inconclusiva: #FF9800;
 
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -109,3 +109,7 @@ body {
 }
 
 button:focus-visible, a:focus-visible { outline: 3px solid #FBC02D; outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}

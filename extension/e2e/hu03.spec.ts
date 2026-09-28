@@ -1,0 +1,192 @@
+import { test as base, expect, chromium, type BrowserContext, type Worker } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+import { resolve } from "node:path";
+
+const test = base.extend<{ extension: { context: BrowserContext; worker: Worker } }>({
+  extension: async ({}, use) => {
+    const path = resolve("dist");
+    const context = await chromium.launchPersistentContext("", {
+      channel: "chromium", headless: true,
+      args: [`--disable-extensions-except=${path}`, `--load-extension=${path}`],
+    });
+    const worker = context.serviceWorkers()[0] ?? await context.waitForEvent("serviceworker");
+    await use({ context, worker });
+    await context.close();
+  },
+});
+
+const transcript = "Um estudo apresenta dados sobre a relação entre exercício físico e qualidade de vida, com resultados que precisam de evidências e revisão.";
+async function setup(context: BrowserContext, id = "video", captions = true) {
+  let captionCalls = 0;
+  await context.route("https://www.youtube.com/**", async route => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/api/timedtext") {
+      captionCalls++;
+      await route.fulfill({ contentType: "text/xml", body: `<transcript><text>${transcript}</text></transcript>` });
+    } else {
+      await route.fulfill({ contentType: "text/html", body: `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Vídeo de teste HU03</title></head><body>
+        <main><h1 class="ytd-watch-metadata">Ciência</h1><div id="channel-name">Canal de testes</div><div id="above-the-fold"></div><div id="movie_player"></div><video></video><a href="#footer">Próximo</a></main>
+        <script>window.ytInitialPlayerResponse = {videoDetails:{videoId:new URLSearchParams(location.search).get('v')},captions:{playerCaptionsTracklistRenderer:{captionTracks:${captions ? JSON.stringify([{ baseUrl: "https://www.youtube.com/api/timedtext?v=" + id, languageCode: "pt" }]) : "[]"}}}};
+        window.hu03 = {click:0, feedback:null, blocking:0};
+        new PerformanceObserver(list => { for (const entry of list.getEntries()) window.hu03.blocking += Math.max(0,entry.duration-50); }).observe({type:'longtask',buffered:true});
+        document.addEventListener('click', () => {
+          window.hu03.click=performance.timeOrigin+performance.now();
+          const root=document.querySelector('#evidencia-badge-host')?.shadowRoot;
+          if (!root) return;
+          const observer=new MutationObserver(()=>{
+            if(root.querySelector('button')?.textContent.includes('Analisando')) {
+              observer.disconnect();
+              requestAnimationFrame(()=>window.hu03.feedback=performance.timeOrigin+performance.now()-window.hu03.click);
+            }
+          });
+          observer.observe(root,{subtree:true,childList:true,characterData:true});
+        },true);
+        </script></body></html>` });
+    }
+  });
+  const page = await context.newPage();
+  await page.goto(`https://www.youtube.com/watch?v=${id}`);
+  const button = page.getByRole("button", { name: "Verificar Veracidade" });
+  await expect(button).toBeVisible();
+  const panel = page.frameLocator("#evidencia-side-panel");
+  await expect(panel.getByRole("button", { name: /Fechar painel/, includeHidden: true })).toBeAttached();
+  return { page, button, panel, captionCalls: () => captionCalls };
+}
+
+async function measureRender(page: import("@playwright/test").Page) {
+  const frame = page.frames().find(f => f.url().startsWith("chrome-extension://"))!;
+  await frame.evaluate(() => {
+    new MutationObserver(() => {
+      if (document.querySelector(".card")) requestAnimationFrame(() => {
+        (window as any).renderedAt ??= performance.timeOrigin + performance.now();
+      });
+    }).observe(document.body, { childList: true, subtree: true });
+  });
+  return frame;
+}
+
+test("HU03: feedback <= 1s, síntese <= 10s, cache < 100ms sem nova extração/rede", async ({ extension }, info) => {
+  const { page, button, panel, captionCalls } = await setup(extension.context);
+  const frame = await measureRender(page);
+  await button.click();
+  await expect(panel.getByText("Por que essa classificação?")).toBeVisible();
+  await expect(panel.getByText(/Demonstração: resultado simulado/)).toBeVisible();
+  const first = await page.evaluate(() => (window as any).hu03);
+  const firstRender = await frame.evaluate(() => (window as any).renderedAt);
+  expect(first.feedback).not.toBeNull();
+  expect(first.feedback).toBeGreaterThanOrEqual(0);
+  expect(first.feedback).toBeLessThanOrEqual(1000);
+  expect(firstRender - first.click).toBeLessThanOrEqual(10000);
+  expect(first.blocking).toBeLessThanOrEqual(50);
+  expect(captionCalls()).toBe(1);
+  await expect.poll(() => extension.worker.evaluate(async () => Boolean((await chrome.storage.local.get("video")).video))).toBe(true);
+  const cached = await extension.worker.evaluate(async () => (await chrome.storage.local.get("video")).video);
+  await panel.getByRole("button", { name: /Fechar painel/ }).click();
+  await frame.evaluate(() => { (window as any).renderedAt = undefined; });
+  // Falha em qualquer tentativa de análise externa: cache deve continuar funcionando.
+  await extension.worker.evaluate(() => { globalThis.fetch = async () => { throw new Error("Rede não deveria ser usada no cache hit"); }; });
+  await page.getByRole("button", { name: /Veracidade:/ }).click();
+  await expect(panel.getByText(cached.summary)).toBeVisible();
+  await expect.poll(() => frame.evaluate(() => (window as any).renderedAt)).toBeTruthy();
+  const second = await page.evaluate(() => (window as any).hu03);
+  const cacheMs = await frame.evaluate(() => (window as any).renderedAt) - second.click;
+  expect(cacheMs).toBeLessThan(100);
+  expect(captionCalls()).toBe(1);
+  await info.attach("tempos.json", { body: JSON.stringify({ feedbackMs: first.feedback, summaryMs: firstRender - first.click, cacheMs, blockingMs: first.blocking, provider: "mock", network: "localhost/fixtures" }), contentType: "application/json" });
+});
+
+test("HU03: cache expirado é substituído e iframe frio recebe o resultado", async ({ extension }) => {
+  await extension.worker.evaluate(async () => chrome.storage.local.set({ video: { videoId: "video", summary: "Resultado antigo", claims: [], sources: [], timestamp: Date.now() - 86400000 } }));
+  const { button, panel, captionCalls } = await setup(extension.context);
+  await button.click();
+  await expect(panel.getByText("Por que essa classificação?")).toBeVisible();
+  expect(captionCalls()).toBe(1);
+  await expect(panel.getByText("Resultado antigo")).toHaveCount(0);
+});
+
+test("HU03: sem legendas encerra carregamento sem interromper player", async ({ extension }) => {
+  const { page, button, panel } = await setup(extension.context, "empty", false);
+  await page.evaluate(() => { (window as any).pauses = 0; document.querySelector("video")!.pause = () => { (window as any).pauses++; }; });
+  await button.click();
+  await expect(panel.getByRole("alert")).toContainText("Legendas Indisponíveis");
+  expect(await page.evaluate(() => (window as any).pauses)).toBe(0);
+  await expect(page.getByRole("button", { name: /Sem legendas/ })).toBeEnabled();
+});
+
+test("HU03: erro HTTP permite nova tentativa; timeout nunca mostra sucesso tardio", async ({ extension }) => {
+  await extension.worker.evaluate(() => {
+    (globalThis as any).originalFetch = fetch;
+    globalThis.fetch = async () => new Response("", { status: 503 });
+  });
+  const { page, button, panel } = await setup(extension.context);
+  await button.click();
+  await expect(panel.getByRole("alert")).toContainText("HTTP 503");
+  await extension.worker.evaluate(() => {
+    globalThis.fetch = async (_url, init) => new Promise((_resolve, reject) => init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError"))));
+  });
+  await page.getByRole("button", { name: "Tentar novamente" }).click();
+  await expect(panel.getByRole("alert")).toContainText(/Tempo limite/, { timeout: 11000 });
+  await expect(page.getByRole("button", { name: "Tentar novamente" })).toBeEnabled();
+});
+
+test("HU03: teclado, foco e WCAG 2.1 AA no resultado", async ({ extension }, info) => {
+  const { page, button, panel } = await setup(extension.context);
+  await page.keyboard.press("Tab");
+  await expect(button).toBeFocused();
+  await expect(button).toHaveCSS("outline-style", "solid");
+  await page.keyboard.press("Enter");
+  const close = panel.getByRole("button", { name: /Fechar painel/ });
+  await expect(close).toBeFocused();
+  await expect(panel.getByText("Por que essa classificação?")).toBeVisible();
+  await page.keyboard.press("Tab");
+  await expect(panel.getByRole("link").first()).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(close).toBeFocused();
+  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+  await info.attach("axe-wcag21aa.json", { body: JSON.stringify(results), contentType: "application/json" });
+  expect(results.violations).toEqual([]);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#evidencia-side-panel")).toBeHidden();
+  await expect(page.getByRole("button", { name: /Veracidade:/ })).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(close).toBeFocused();
+});
+
+test("HU03: navegação SPA invalida resposta e funciona ao chegar da home", async ({ extension }) => {
+  const { page, button, panel } = await setup(extension.context);
+  await extension.worker.evaluate(() => { globalThis.fetch = async () => new Promise(() => {}); });
+  await button.click();
+  await page.evaluate(() => { history.pushState({}, "", "/"); window.dispatchEvent(new Event("yt-navigate-finish")); });
+  await expect(page.locator("#evidencia-badge-host")).toHaveCount(0);
+  await expect(page.locator("#evidencia-side-panel")).toBeHidden();
+  await page.evaluate(() => { history.pushState({}, "", "/watch?v=next"); (window as any).ytInitialPlayerResponse.videoDetails.videoId = "next"; window.dispatchEvent(new Event("yt-navigate-finish")); });
+  await expect(page.getByRole("button", { name: "Verificar Veracidade" })).toBeVisible();
+  await expect(panel.getByText("Por que essa classificação?")).toHaveCount(0);
+});
+
+
+test("HU03: WCAG nos estados de carregamento, falha e classificações", async ({ extension }, info) => {
+  const { page, button, panel } = await setup(extension.context);
+  await extension.worker.evaluate(() => { globalThis.fetch = async () => new Promise(() => {}); });
+  await button.click();
+  await expect(panel.getByRole("status")).toContainText("Extraindo");
+  const states: Array<{ state: string; violations: unknown[]; incomplete: unknown[] }> = [];
+  async function audit(state: string) {
+    const result = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+    states.push({ state, violations: result.violations, incomplete: result.incomplete });
+    expect(result.violations).toEqual([]);
+  }
+  await audit("carregamento");
+  await page.evaluate(() => document.querySelector<HTMLIFrameElement>("iframe")!.contentWindow!.postMessage({ type: "ANALYSIS_ERROR", error: "Não foi possível consultar o servidor. Tente novamente." }, document.querySelector<HTMLIFrameElement>("iframe")!.src.split("/").slice(0, 3).join("/")));
+  await expect(panel.getByRole("alert")).toBeVisible();
+  await audit("falha");
+  for (const classification of ["verdadeiro", "moderado", "falso", "inconclusivo"]) {
+    await page.evaluate(classification => {
+      const frame = document.querySelector<HTMLIFrameElement>("iframe")!;
+      frame.contentWindow!.postMessage({ type: "ANALYSIS_SUCCESS", data: { analysisMode: "demo", videoId: "video", analyzedAt: new Date().toISOString(), score: 50, classification, summary: "Resultado de demonstração para testar contraste.", processingTimeMs: 1, sources: [], claims: [] } }, frame.src.split("/").slice(0, 3).join("/"));
+    }, classification);
+    await expect(panel.getByText("Por que essa classificação?")).toBeVisible();
+    await audit(classification);
+  }
+  await info.attach("axe-estados.json", { body: JSON.stringify(states), contentType: "application/json" });
+});
