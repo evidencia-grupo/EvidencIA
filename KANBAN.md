@@ -4,7 +4,7 @@
 
 ---
 
-## 🧭 Visão Geral do Quadro Kanban
+## 1. Visão Geral do Quadro Kanban
 
 ```
 ┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐
@@ -15,7 +15,7 @@
 
 ---
 
-## 👥 Distribuição de Responsabilidades da Equipe (5 Membros)
+## 2. Distribuição de Responsabilidades da Equipe (5 Membros)
 
 A distribuição de trabalho foi balanceada de forma a atribuir domínios arquiteturais claros e ~8 pontos de história de MVP por integrante:
 
@@ -29,9 +29,9 @@ A distribuição de trabalho foi balanceada de forma a atribuir domínios arquit
 
 ---
 
-## 📊 Status das Histórias e Features por Coluna
+## 3. Status das Histórias e Features por Coluna
 
-### 1. 📋 Product Backlog (Refinado)
+### 3.1 Product Backlog (Refinado)
 Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 
 | ID | Épico / Feature | Título da História / Item | Responsável | Prioridade | Onda Lean | Story Points |
@@ -43,12 +43,12 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 
 ---
 
-### 2. 🎯 Ready for Sprint (Planejamento em 2 Semanas: 28/09 a 09/10)
+### 3.2 Ready for Sprint (Planejamento em 2 Semanas: 28/09 a 09/10)
 
 > **Prazo Fatal do Projeto:** 09 de Outubro de 2026 (Sexta-feira).  
 > **Cadência Operacional:** 2 Sprints semanais intensivas com 5 desenvolvedores.
 
-#### 🚀 Sprint 1 (Semana 1: 28/09 a 02/10) — MVP Core Funcional (Happy Path Ponta a Ponta)
+#### Sprint 1 (Semana 1: 28/09 a 02/10) — MVP Core Funcional (Happy Path Ponta a Ponta)
 *Objetivo: Fechar a cadeia completa de valor: clique no YouTube -> extração -> backend proxy -> IA -> painel Preact.*
 
 | Issue | Descrição da História | Responsável | Prazo | Status |
@@ -64,7 +64,7 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 
 ---
 
-#### 🛡️ Sprint 2 (Semana 2: 05/10 a 09/10) — Hardening, Acessibilidade, SLAs & Release 1.0 (Entrega Final)
+#### Sprint 2 (Semana 2: 05/10 a 09/10) — Hardening, Acessibilidade, SLAs & Release 1.0 (Entrega Final)
 *Objetivo: Blindagem de segurança, cache local instantâneo, acessibilidade WCAG 2.1 AA e testes E2E.*
 
 | Issue | Descrição da História / Tarefa | Responsável | Prazo | Status |
@@ -79,7 +79,7 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 
 ---
 
-### 3. ⚙️ In Progress (Desenvolvimento Ativo)
+### 3.3 In Progress (Desenvolvimento Ativo)
 *Histórias ou tarefas sendo executadas no ciclo atual:*
 
 | ID / Tarefa | Descrição da Atividade | Responsável | Branch de Trabalho | Status |
@@ -89,14 +89,14 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 
 ---
 
-### 4. 🔍 Code Review & QA (Validação)
+### 3.4 Code Review & QA (Validação)
 *Itens aguardando validação de critérios de aceitação e testes automatizados:*
 
 *(Nenhum item pendente de revisão no momento)*
 
 ---
 
-### 5. ✅ Done (Definition of Done Validada)
+### 3.5 Done (Definition of Done Validada)
 *Itens integrados, testados com $\ge 80\%$ de cobertura e com documentação atualizada:*
 
 - [x] **`DOC-01` — Levantamento de Requisitos e Elicitação:** Catálogo com 11 RFs e 7 RNFs homologados.
@@ -108,7 +108,7 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 
 ---
 
-## 🗓️ Cronograma Regressivo de 2 Semanas (28/09 a 09/10)
+## 4. Cronograma Regressivo de 2 Semanas (28/09 a 09/10)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -135,7 +135,7 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 
 ---
 
-## 📌 Regras de Movimentação do Quadro
+## 5. Regras de Movimentação do Quadro
 
 1. **Entrada em `In Progress`:** Requer que o desenvolvedor crie uma branch com o padrão `feat/huXX-descricao` ou `fix/huXX-descricao`.
 2. **Entrada em `Review & Test`:** Requer Pull Request aberto, cobertura de testes unitários $\ge 80\%$, e aprovação de linter/typecheck no CI.
@@ -143,3 +143,4 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
    - Critérios Gherkin validados por testes.
    - Zero alertas em auditoria de segurança e acessibilidade.
    - Atualização do catálogo de requisitos e documentação.
+

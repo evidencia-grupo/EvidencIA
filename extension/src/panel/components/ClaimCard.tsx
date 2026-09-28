@@ -1,4 +1,3 @@
-import { h } from "preact";
 import type { VerificationClaim } from "../../../../shared/types/api";
 
 interface ClaimCardProps {

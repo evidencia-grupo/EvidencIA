@@ -1,5 +1,3 @@
-import { h } from "preact";
-
 interface GaugeProps {
   score: number; // 0 a 100
   classification: "verdadeiro" | "moderado" | "falso" | "inconclusivo";

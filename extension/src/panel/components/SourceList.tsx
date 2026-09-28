@@ -1,4 +1,3 @@
-import { h } from "preact";
 import type { FactCheckingSource } from "../../../../shared/types/api";
 
 interface SourceListProps {

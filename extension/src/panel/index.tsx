@@ -1,4 +1,4 @@
-import { h, render } from "preact";
+import { render } from "preact";
 import { useState, useEffect } from "preact/hooks";
 import { Gauge } from "./components/Gauge";
 import { ClaimCard } from "./components/ClaimCard";
@@ -97,7 +97,7 @@ function App() {
           {/* Alerta de Incerteza Analítica (HU09 / RF-07) */}
           {data.classification === "inconclusivo" && (
             <div class="warning-badge" role="status">
-              ⚠️ Incerteza Analítica: As evidências encontradas são divergentes ou insuficientes para consolidar um veredito factual.
+              Aviso de Incerteza Analítica: As evidências encontradas são divergentes ou insuficientes para consolidar um veredito factual.
             </div>
           )}
 

@@ -4,7 +4,7 @@
 
 ---
 
-## 📌 Visão Geral
+## 1. Visão Geral
 
 O **EvidencIA** é um ecossistema projetado para capacitar usuários que consomem notícias e conteúdos informativos no YouTube a validar de forma autônoma a veracidade das afirmações apresentadas diretamente na página de reprodução (`/watch`).
 
@@ -16,7 +16,7 @@ O **EvidencIA** é um ecossistema projetado para capacitar usuários que consome
 
 ---
 
-## 🏗️ Arquitetura e Stack Tecnológica
+## 2. Arquitetura e Stack Tecnológica
 
 O repositório é organizado em formato **Monorepo**:
 
@@ -42,7 +42,7 @@ evidencia/
 
 ---
 
-## 📋 Gestão do Projeto e Backlog
+## 3. Gestão do Projeto e Backlog
 
 Consulte os artefatos de governança ágil diretamente no repositório:
 
@@ -52,16 +52,16 @@ Consulte os artefatos de governança ágil diretamente no repositório:
 
 ---
 
-## 🚀 Como Executar Localmente
+## 4. Como Executar Localmente
 
-### 1. Pré-requisitos
+### 4.1 Pré-requisitos
 - **Node.js** >= 20 LTS e **npm** >= 10
 - **Python** >= 3.12
 - Navegador Chromium (Google Chrome, Microsoft Edge ou Brave)
 
 ---
 
-### 2. Backend Proxy (Python FastAPI)
+### 4.2 Backend Proxy (Python FastAPI)
 
 ```bash
 cd backend
@@ -85,7 +85,7 @@ O backend estará disponível em `http://127.0.0.1:8000` (documentação interat
 
 ---
 
-### 3. Extensão de Navegador (Manifest V3)
+### 4.3 Extensão de Navegador (Manifest V3)
 
 ```bash
 cd extension
@@ -109,7 +109,7 @@ npm run build
 
 ---
 
-## 🧪 Estratégia de Testes
+## 5. Estratégia de Testes
 
 ```bash
 # Testes unitários da extensão
@@ -124,7 +124,7 @@ npm run test:contract
 
 ---
 
-## 🔒 Segurança e Governança
+## 6. Segurança e Governança
 
 - Nenhuma chave de API ou credencial sensível deve ser adicionada à pasta `extension/`.
 - Todos os endpoints externos são protegidos por Rate Limiting e validação de origem.
