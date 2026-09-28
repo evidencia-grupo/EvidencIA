@@ -10,6 +10,7 @@ from app.schemas import (
     VerificationClassification,
 )
 from app.config import settings
+from app.services.synthesis import synthesis_service
 
 
 class FactCheckerService:
@@ -90,15 +91,23 @@ class FactCheckerService:
         if contradicted_count > 0 and supported_count == 0:
             score = 25
             classification: VerificationClassification = "falso"
-            summary = "O vídeo apresenta afirmações que não encontram respaldo em dados consolidados e foram contraditas pelas evidências examinadas."
         elif supported_count > 0 and contradicted_count == 0:
             score = 85
             classification = "verdadeiro"
-            summary = "As principais afirmações apresentadas no vídeo coincidem com dados de fontes confiáveis e relatórios consolidados."
+        elif contradicted_count == 0 and supported_count == 0:
+            score = 50
+            classification = "inconclusivo"
         else:
             score = 58
             classification = "moderado"
-            summary = "O conteúdo mistura premissas verdadeiras com interpretações exageradas ou projeções não confirmadas. Recomenda-se cautela."
+
+        # Gera síntese sem jargões para Dona Lurdes (HU02 / RF-03)
+        summary = synthesis_service.generate_accessible_summary(
+            claims=claims,
+            classification=classification,
+            score=score,
+            video_title=request.videoTitle,
+        )
 
         elapsed_ms = int((time.perf_counter() - start_time) * 1000)
 
