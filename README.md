@@ -109,7 +109,7 @@ npm run build
 
 ---
 
-## 5. Estratégia de Testes
+## 5. Estratégia de Testes e CI/CD
 
 ```bash
 # Testes unitários da extensão
@@ -117,10 +117,25 @@ cd extension && npm run test
 
 # Testes automatizados do backend proxy
 cd backend && pytest
-
-# Testes de contrato de dados (JSON Schema)
-npm run test:contract
 ```
+
+### 5.1 Pipeline de Integração e Entrega Contínua (CI/CD)
+
+A esteira do GitHub Actions (`.github/workflows/ci.yml`) orquestra duas trilhas simultâneas com quatro estágios sequenciais rigorosos:
+
+- **Trilha Frontend (Extensão MV3):**  
+  `lint front` &rarr; `build front` &rarr; `test front` &rarr; `deploy front`
+  - *Lint:* Verificação estática de tipos via TypeScript (`tsc --noEmit`).
+  - *Build:* Compilação multi-entry via Vite e empacotamento em `dist/`.
+  - *Test:* Suíte unitária em Vitest para os parsers de legenda e Shadow DOM.
+  - *Deploy:* Geração e arquivamento do bundle zip para publicação na Chrome Web Store.
+
+- **Trilha Backend (Proxy FastAPI):**  
+  `lint back` &rarr; `build back` &rarr; `test back` &rarr; `deploy back`
+  - *Lint:* Análise estática com Ruff e compilação de bytecode (`py_compile`).
+  - *Build:* Resolução de dependências Pydantic v2 e validação de inicialização do app.
+  - *Test:* Suíte assíncrona de integração via Pytest e TestClient.
+  - *Deploy:* Homologação de artefatos pronta para contêiner e nuvem.
 
 ---
 
