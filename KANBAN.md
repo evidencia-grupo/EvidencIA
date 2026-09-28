@@ -43,28 +43,39 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 
 ---
 
-### 2. 🎯 Ready for Sprint (Sprints Imediatas)
+### 2. 🎯 Ready for Sprint (Planejamento em 2 Semanas: 28/09 a 09/10)
 
-#### 🚀 Sprint 1: Ingestão de Legendas & Gatilho na UI (E1 + E2)
-- [ ] **[#1 — HU01](https://github.com/evidencia-grupo/EvidencIA/issues/1) (Verificação Simplificada):** Botão de acionamento em Shadow DOM com feedback imediato $\le 1\text{s}$ (@MylenaTrindade | 5 pts)
-- [ ] **[#3 — HU03](https://github.com/evidencia-grupo/EvidencIA/issues/3) (Checagem Rápida no Player):** UI de carregamento e esqueleto de comunicação MV3 (@lipestile | 3 pts)
-- [ ] **[#5 — HU05](https://github.com/evidencia-grupo/EvidencIA/issues/5) (Ingestão de Transcrição):** Interceptador de faixas do player do YouTube (@luizoryone | 5 pts)
-- [ ] **[#10 — HU10](https://github.com/evidencia-grupo/EvidencIA/issues/10) (Ausência de Legendas):** Validação $< 1\text{s}$ com alerta informativo amigável (@luizoryone | 3 pts)
+> **Prazo Fatal do Projeto:** 09 de Outubro de 2026 (Sexta-feira).  
+> **Cadência Operacional:** 2 Sprints semanais intensivas com 5 desenvolvedores.
 
-#### ⚡ Sprint 2: Backend Proxy & Pipeline de IA (E3)
-- [ ] **[#2 — HU02](https://github.com/evidencia-grupo/EvidencIA/issues/2) (Síntese Estruturada):** Processador LLM para resumo analítico sem jargões (@pedrohpsantos | 5 pts)
-- [ ] **[#4 — HU04](https://github.com/evidencia-grupo/EvidencIA/issues/4) (Categorização de Alegações):** Extrator de alegações (apoiada / contradita / inconclusiva) (@pedrohpsantos | 5 pts)
-- [ ] **[#9 — HU09](https://github.com/evidencia-grupo/EvidencIA/issues/9) (Incerteza Analítica):** Detecção de conflito de fontes e badge no topo (@MylenaTrindade | 3 pts)
+#### 🚀 Sprint 1 (Semana 1: 28/09 a 02/10) — MVP Core Funcional (Happy Path Ponta a Ponta)
+*Objetivo: Fechar a cadeia completa de valor: clique no YouTube -> extração -> backend proxy -> IA -> painel Preact.*
 
-#### 🎨 Sprint 3: Painel Lateral, Velocímetro e Fontes (E4 + E1/E3 UI)
-- [ ] **[#7 — HU07](https://github.com/evidencia-grupo/EvidencIA/issues/7) (Auditoria Direta de Fontes):** Hiperligações externas com `target="_blank"` e `noopener` (@mahiaara | 3 pts)
-- [ ] **[#8 — HU08](https://github.com/evidencia-grupo/EvidencIA/issues/8) (Contextualização Temporal):** Metadados de publicação e canal no cabeçalho (@mahiaara | 3 pts)
-- [ ] **Painel Lateral Preact:** Integração de UI com Gauge e componentes acessíveis (@MylenaTrindade | 5 pts)
+| Issue | Descrição da História | Responsável | Prazo | Status |
+|:---|:---|:---:|:---:|:---:|
+| [#1](https://github.com/evidencia-grupo/EvidencIA/issues/1) | **HU01:** Botão em Shadow DOM com feedback $\le 1\text{s}$ | @MylenaTrindade | 02/10 | Ready |
+| [#3](https://github.com/evidencia-grupo/EvidencIA/issues/3) | **HU03:** UI de carregamento e mensageria MV3 | @lipestile | 02/10 | Ready |
+| [#5](https://github.com/evidencia-grupo/EvidencIA/issues/5) | **HU05:** Interceptador e higienizador de legendas do player | @luizoryone | 02/10 | Ready |
+| [#2](https://github.com/evidencia-grupo/EvidencIA/issues/2) | **HU02:** Orquestrador LLM para síntese sem jargões | @pedrohpsantos | 02/10 | Ready |
+| [#4](https://github.com/evidencia-grupo/EvidencIA/issues/4) | **HU04:** Extrator de alegações estruturadas (apoiada/contradita) | @pedrohpsantos | 02/10 | Ready |
+| [#7](https://github.com/evidencia-grupo/EvidencIA/issues/7) | **HU07:** Lista de fontes auditadas com `target="_blank"` | @mahiaara | 02/10 | Ready |
 
-#### 🛡️ Sprint 4: Performance, Cache Local e Homologação MVP (E5)
-- [ ] **[#6 — HU06](https://github.com/evidencia-grupo/EvidencIA/issues/6) (Cache Local com TTL 24h):** Persistência em `chrome.storage.local` com lazy eviction (@lipestile | 5 pts)
-- [ ] **SLA de Latência:** Validação de SLA $\le 10\text{ s}$ P90 e TBT $\le 50\text{ ms}$ (@lipestile, @pedrohpsantos | 5 pts)
-- [ ] **Homologação WCAG 2.1 AA:** Auditoria com `axe-core` e testes E2E Playwright (@MylenaTrindade, @luizoryone | 3 pts)
+*Marco de Sexta (02/10): Demonstração interna do Happy Path executando em vídeo real do YouTube.*
+
+---
+
+#### 🛡️ Sprint 2 (Semana 2: 05/10 a 09/10) — Hardening, Acessibilidade, SLAs & Release 1.0 (Entrega Final)
+*Objetivo: Blindagem de segurança, cache local instantâneo, acessibilidade WCAG 2.1 AA e testes E2E.*
+
+| Issue | Descrição da História / Tarefa | Responsável | Prazo | Status |
+|:---|:---|:---:|:---:|:---:|
+| [#10](https://github.com/evidencia-grupo/EvidencIA/issues/10) | **HU10:** Alerta rápido $< 1\text{s}$ para vídeos sem legendas | @luizoryone | 06/10 | Backlog |
+| [#9](https://github.com/evidencia-grupo/EvidencIA/issues/9) | **HU09:** Badge de incerteza analítica no topo do painel | @MylenaTrindade | 07/10 | Backlog |
+| [#6](https://github.com/evidencia-grupo/EvidencIA/issues/6) | **HU06:** Cache local `chrome.storage.local` (TTL 24h, lazy eviction) | @lipestile | 07/10 | Backlog |
+| [#8](https://github.com/evidencia-grupo/EvidencIA/issues/8) | **HU08:** Metadados temporais e canal no cabeçalho | @mahiaara | 08/10 | Backlog |
+| `QA-E2E` | Testes Playwright em Chromium e validação TBT $\le 50\text{ ms}$ | @luizoryone, @lipestile | 08/10 | Backlog |
+| `A11Y` | Auditoria de acessibilidade WCAG 2.1 AA via `axe-core` | @MylenaTrindade | 08/10 | Backlog |
+| `REL-01` | Congelamento de código, Tag `v1.0.0-mvp`, artefatos e entrega | Toda a equipe | 09/10 | Backlog |
 
 ---
 
@@ -73,8 +84,8 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 
 | ID / Tarefa | Descrição da Atividade | Responsável | Branch de Trabalho | Status |
 |:---|:---|:---:|:---:|:---:|
-| `SETUP-01` | Scaffolding do Monorepo (`extension/`, `backend/`, `shared/`) | Equipe Dev | `main` | **Em Andamento** |
-| `SETUP-02` | Definição de Schemas e Contratos Tipados (`contrato-api.md`) | Arquiteto | `main` | **Em Andamento** |
+| `SETUP-01` | Scaffolding do Monorepo (`extension/`, `backend/`, `shared/`) | Equipe Dev | `main` | **Concluído** |
+| `SETUP-02` | Definição de Schemas e Contratos Tipados (`contrato-api.md`) | Arquiteto | `main` | **Concluído** |
 
 ---
 
@@ -92,59 +103,33 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 - [x] **`DOC-02` — Decisões Arquiteturais Registradas:** ADR-001 (MV3), ADR-002 (Backend Proxy), ADR-003 (Cache Local).
 - [x] **`DOC-03` — Threat Model & Acessibilidade:** STRIDE formal, mapeamento LGPD e design tokens WCAG AA.
 - [x] **`DOC-04` — Especificação de Contrato:** Schemas TypeScript e JSON para os endpoints `/analyze` e `/health`.
+- [x] **`SETUP-01` — Setup Inicial do Monorepo:** Extensão Preact MV3, Backend FastAPI, Schemas e CI.
+- [x] **`GH-ISSUES` — Cadastro e Distribuição no GitHub:** 18 Issues cadastradas com datas (28/09 a 09/10) e assignees.
 
 ---
 
-## 🗓️ Detalhamento das Sprints e Alocação de Features
+## 🗓️ Cronograma Regressivo de 2 Semanas (28/09 a 09/10)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ SPRINT 0 (Semana 1-2): Fundação, Monorepo, Schemas e CI/CD                  │
+│ SEMANA 1 (28/09 a 02/10): SPRINT 1 — "CORE MVP FUNCIONAL"                   │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ • Estrutura de pastas da extensão e do backend proxy                        │
-│ • Schemas TypeScript e JSON exportados na pasta /shared                     │
-│ • Pipeline de CI (GitHub Actions) com linters e testes                      │
-│ • Docker/Virtualenv e scripts de execução local padronizados                │
+│ • Seg 28/09: Setup do monorepo, contratos e alinhamento de issues (FEITO)  │
+│ • Ter 29/09: Injeção do botão Shadow DOM (Mylena) + Endpoints FastAPI (Pedro)│
+│ • Qua 30/09: Parser de legendas (Luiz) + Agregador de fontes (Mayara)       │
+│ • Qui 01/10: Roteamento Service Worker (Felipe) + Painel Preact Gauge (Mylena)│
+│ • Sex 02/10: Integração do Happy Path completo (Demonstração E2E interna)   │
 └─────────────────────────────────────────────────────────────────────────────┘
                                       │
                                       ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ SPRINT 1 (Semana 3-4): Ingestão de Transcrição e Botão no Player (E1 + E2)  │
+│ SEMANA 2 (05/10 a 09/10): SPRINT 2 — "HARDENING, SLAS & ENTREGA FINAL"      │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ • Content Script com injeção em Shadow DOM no player do YouTube             │
-│ • Parser de legendas (TimedText / CaptionTracks)                            │
-│ • Fallback para vídeos sem legendas com alerta < 1s                         │
-│ • Entregáveis: HU01, HU03 (botão), HU05, HU10                               │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ SPRINT 2 (Semana 5-6): Backend Proxy Seguro e Orquestrador de IA (E3)       │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ • Endpoints FastAPI: POST /api/v1/analyze e GET /api/v1/health              │
-│ • Rate Limiting e cabeçalhos de segurança (CORS, TLS 1.3)                   │
-│ • Orquestração assíncrona de LLM com timeout de 8,0s                        │
-│ • Entregáveis: HU02 (backend), HU04 (backend), HU09 (backend)               │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ SPRINT 3 (Semana 7-8): Painel Lateral, Velocímetro e Fontes (E4 + E1/E3 UI)│
-├─────────────────────────────────────────────────────────────────────────────┤
-│ • Painel lateral em Preact rodando em iframe sandbox                        │
-│ • Componente Gauge (velocímetro de veracidade 0-100%)                       │
-│ • Cartões de alegações e lista de fontes auditáveis com target="_blank"     │
-│ • Entregáveis: HU02 (UI), HU04 (UI), HU07, HU09 (UI), HU08                  │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ SPRINT 4 (Semana 9-10): Cache Local, Auditoria de SLA e Homologação MVP     │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ • Cache de resultados em chrome.storage.local (TTL 24h e lazy eviction)     │
-│ • Testes E2E com Playwright em navegadores Chromium reais                   │
-│ • Auditoria Lighthouse: TBT <= 50ms; Auditoria axe-core: WCAG AA            │
-│ • Entregáveis: HU06, Validação RNF-01/02/06/07, Tag v1.0.0-MVP              │
+│ • Seg 05/10: Cache local chrome.storage.local (Felipe) + Erros legendas (Luiz)│
+│ • Ter 06/10: Badge de incerteza analítica (Mylena) + Rate limiter (Pedro)   │
+│ • Qua 07/10: Auditoria WCAG 2.1 AA (Mylena) + Metadados temporais (Mayara)  │
+│ • Qui 08/10: Medição de TBT <= 50ms (Luiz) + Testes Playwright (Felipe)     │
+│ • Sex 09/10 (ENTREGA FINAL): Tag v1.0.0-mvp, build de produção e docs       │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
