@@ -15,43 +15,56 @@
 
 ---
 
+## 👥 Distribuição de Responsabilidades da Equipe (5 Membros)
+
+A distribuição de trabalho foi balanceada de forma a atribuir domínios arquiteturais claros e ~8 pontos de história de MVP por integrante:
+
+| Membro | Domínio Arquitetural | Features & Épicos | Histórias Atribuídas no GitHub | Story Points (MVP) |
+|:---|:---|:---|:---|:---:|
+| **@MylenaTrindade** | **UI/UX & Acessibilidade WCAG 2.1 AA** | E1 (F2.1), E3 (F2.3), E6 (F3.1) | [#1 (HU01)](https://github.com/evidencia-grupo/EvidencIA/issues/1), [#9 (HU09)](https://github.com/evidencia-grupo/EvidencIA/issues/9), [#13 (Épico 1)](https://github.com/evidencia-grupo/EvidencIA/issues/13) | **8 pts** |
+| **@pedrohpsantos** | **Backend Proxy, IA & Segurança** | E3 (F1.2), Threat Model, E6 (F3.2) | [#2 (HU02)](https://github.com/evidencia-grupo/EvidencIA/issues/2), [#4 (HU04)](https://github.com/evidencia-grupo/EvidencIA/issues/4), [#15 (Épico 3)](https://github.com/evidencia-grupo/EvidencIA/issues/15) | **10 pts** |
+| **@luizoryone** | **Content Script, Ingestão & Legendas** | E2 (F1.1), Player YouTube, Shadow DOM | [#5 (HU05)](https://github.com/evidencia-grupo/EvidencIA/issues/5), [#10 (HU10)](https://github.com/evidencia-grupo/EvidencIA/issues/10), [#14 (Épico 2)](https://github.com/evidencia-grupo/EvidencIA/issues/14) | **8 pts** |
+| **@lipestile** | **Service Worker, Cache Local & SLAs** | E1 (F2.1), E5 (F1.3), Mensageria MV3 | [#3 (HU03)](https://github.com/evidencia-grupo/EvidencIA/issues/3), [#6 (HU06)](https://github.com/evidencia-grupo/EvidencIA/issues/6), [#17 (Épico 5)](https://github.com/evidencia-grupo/EvidencIA/issues/17) | **8 pts** |
+| **@mahiaara** | **Auditoria de Fontes & Contexto Temporal** | E4 (F2.2), Confiabilidade Editorial | [#7 (HU07)](https://github.com/evidencia-grupo/EvidencIA/issues/7), [#8 (HU08)](https://github.com/evidencia-grupo/EvidencIA/issues/8), [#16 (Épico 4)](https://github.com/evidencia-grupo/EvidencIA/issues/16) | **6 pts (+ Onda 2)** |
+
+---
+
 ## 📊 Status das Histórias e Features por Coluna
 
 ### 1. 📋 Product Backlog (Refinado)
-Itens especificados, priorizados via MoSCoW e prontos para entrar no ciclo de sprint conforme a capacidade da equipe:
+Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 
-| ID | Épico / Feature | Título da História / Item | Prioridade | Onda Lean | Story Points |
-|:---|:---|:---|:---:|:---:|:---:|
-| `HU08` | **E4** / F2.2 | Contextualização Temporal e Autoria do Vídeo | Should Have | Onda 2 | 3 |
-| `HU11` | **E6** / F3.1 | Perguntas Orientadoras para Reflexão Crítica | Could Have | Onda 3 (Out) | 5 |
-| `HU12` | **E6** / F3.2 | Avaliação de Relevância e Precisão da Análise | Could Have | Onda 3 (Out) | 3 |
-| `F3.3` | **E6** / F3.3 | Text-to-Speech e Recursos de Áudio Acessíveis | Could Have | Onda 3 (Out) | 8 |
+| ID | Épico / Feature | Título da História / Item | Responsável | Prioridade | Onda Lean | Story Points |
+|:---|:---|:---|:---:|:---:|:---:|:---:|
+| **#8** | **E4** / F2.2 | [HU08 — Contextualização Temporal e Autoria](https://github.com/evidencia-grupo/EvidencIA/issues/8) | @mahiaara | Should Have | Onda 2 | 3 |
+| **#11** | **E6** / F3.1 | [HU11 — Perguntas para Reflexão Crítica](https://github.com/evidencia-grupo/EvidencIA/issues/11) | @mahiaara, @MylenaTrindade | Could Have | Onda 3 (Out) | 5 |
+| **#12** | **E6** / F3.2 | [HU12 — Avaliação e Feedback da Análise](https://github.com/evidencia-grupo/EvidencIA/issues/12) | @lipestile, @pedrohpsantos | Could Have | Onda 3 (Out) | 3 |
+| `F3.3` | **E6** / F3.3 | Text-to-Speech e Recursos de Áudio Acessíveis | Equipe | Could Have | Onda 3 (Out) | 8 |
 
 ---
 
 ### 2. 🎯 Ready for Sprint (Sprints Imediatas)
 
-#### 🚀 Sprint 1: Ingestão de Legendas & Gatilho na UI
-- [ ] **`HU01` — Verificação Simplificada em Vídeo:** Botão de acionamento em Shadow DOM com feedback imediato $\le 1\text{s}$ (Must Have | 5 pts)
-- [ ] **`HU03` — Checagem Rápida no Player:** UI de carregamento e esqueleto de comunicação de mensagens (Must Have | 3 pts)
-- [ ] **`HU05` — Ingestão e Processamento de Legendas:** Interceptador de faixas do player do YouTube (Must Have | 5 pts)
-- [ ] **`HU10` — Notificação Rápida de Ausência de Legendas:** Validação $< 1\text{s}$ com alerta informativo amigável (Must Have | 3 pts)
+#### 🚀 Sprint 1: Ingestão de Legendas & Gatilho na UI (E1 + E2)
+- [ ] **[#1 — HU01](https://github.com/evidencia-grupo/EvidencIA/issues/1) (Verificação Simplificada):** Botão de acionamento em Shadow DOM com feedback imediato $\le 1\text{s}$ (@MylenaTrindade | 5 pts)
+- [ ] **[#3 — HU03](https://github.com/evidencia-grupo/EvidencIA/issues/3) (Checagem Rápida no Player):** UI de carregamento e esqueleto de comunicação MV3 (@lipestile | 3 pts)
+- [ ] **[#5 — HU05](https://github.com/evidencia-grupo/EvidencIA/issues/5) (Ingestão de Transcrição):** Interceptador de faixas do player do YouTube (@luizoryone | 5 pts)
+- [ ] **[#10 — HU10](https://github.com/evidencia-grupo/EvidencIA/issues/10) (Ausência de Legendas):** Validação $< 1\text{s}$ com alerta informativo amigável (@luizoryone | 3 pts)
 
-#### ⚡ Sprint 2: Backend Proxy & Pipeline de IA
-- [ ] **`HU02` (Backend) — Síntese Estruturada:** Processador LLM para resumo analítico sem jargões (Must Have | 5 pts)
-- [ ] **`HU04` (Backend) — Categorização de Alegações:** Extrator de alegações (apoiada / contradita / inconclusiva) (Must Have | 5 pts)
-- [ ] **`HU09` (Backend) — Incerteza Analítica:** Detecção de conflito de fontes ou falta de evidências (Must Have | 3 pts)
+#### ⚡ Sprint 2: Backend Proxy & Pipeline de IA (E3)
+- [ ] **[#2 — HU02](https://github.com/evidencia-grupo/EvidencIA/issues/2) (Síntese Estruturada):** Processador LLM para resumo analítico sem jargões (@pedrohpsantos | 5 pts)
+- [ ] **[#4 — HU04](https://github.com/evidencia-grupo/EvidencIA/issues/4) (Categorização de Alegações):** Extrator de alegações (apoiada / contradita / inconclusiva) (@pedrohpsantos | 5 pts)
+- [ ] **[#9 — HU09](https://github.com/evidencia-grupo/EvidencIA/issues/9) (Incerteza Analítica):** Detecção de conflito de fontes e badge no topo (@MylenaTrindade | 3 pts)
 
-#### 🎨 Sprint 3: Painel Lateral, Velocímetro e Fontes
-- [ ] **`HU02` (UI) — Renderização Acessível:** Painel sandboxed com tipografia e contraste WCAG 2.1 AA (Must Have | 5 pts)
-- [ ] **`HU04` (UI) — Cartões de Alegações:** Visualização destacada de alegações categorizadas (Must Have | 5 pts)
-- [ ] **`HU07` — Auditoria Direta de Fontes:** Lista de hiperligações externas com `target="_blank"` e `noopener` (Must Have | 3 pts)
-- [ ] **`HU09` (UI) — Badge de Incerteza:** Destaque visual no topo do painel quando o resultado for inconclusivo (Must Have | 2 pts)
+#### 🎨 Sprint 3: Painel Lateral, Velocímetro e Fontes (E4 + E1/E3 UI)
+- [ ] **[#7 — HU07](https://github.com/evidencia-grupo/EvidencIA/issues/7) (Auditoria Direta de Fontes):** Hiperligações externas com `target="_blank"` e `noopener` (@mahiaara | 3 pts)
+- [ ] **[#8 — HU08](https://github.com/evidencia-grupo/EvidencIA/issues/8) (Contextualização Temporal):** Metadados de publicação e canal no cabeçalho (@mahiaara | 3 pts)
+- [ ] **Painel Lateral Preact:** Integração de UI com Gauge e componentes acessíveis (@MylenaTrindade | 5 pts)
 
-#### 🛡️ Sprint 4: Performance, Cache Local e Homologação MVP
-- [ ] **`HU06` — Cache Local com TTL 24h:** Persistência em `chrome.storage.local` com lazy eviction (Should Have | 5 pts)
-- [ ] **`SLA-01` — Homologação de Latência:** Validação de SLA $\le 10\text{ s}$ P90 e TBT $\le 50\text{ ms}$ (Must Have | 5 pts)
-- [ ] **`SEC-01` — Hardening & Threat Model:** Auditoria SAST e validação de isolamento Shadow DOM / Sandbox (Must Have | 3 pts)
+#### 🛡️ Sprint 4: Performance, Cache Local e Homologação MVP (E5)
+- [ ] **[#6 — HU06](https://github.com/evidencia-grupo/EvidencIA/issues/6) (Cache Local com TTL 24h):** Persistência em `chrome.storage.local` com lazy eviction (@lipestile | 5 pts)
+- [ ] **SLA de Latência:** Validação de SLA $\le 10\text{ s}$ P90 e TBT $\le 50\text{ ms}$ (@lipestile, @pedrohpsantos | 5 pts)
+- [ ] **Homologação WCAG 2.1 AA:** Auditoria com `axe-core` e testes E2E Playwright (@MylenaTrindade, @luizoryone | 3 pts)
 
 ---
 
