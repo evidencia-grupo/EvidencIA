@@ -63,6 +63,21 @@ Consulte os artefatos de governança ágil diretamente no repositório:
 
 ### 4.2 Backend Proxy (Python FastAPI)
 
+#### Opção A (Recomendada): Usando uv
+```bash
+cd backend
+
+# Sincronizar ambiente virtual e dependências
+uv sync
+
+# Configurar variáveis de ambiente
+cp .env.example .env
+
+# Iniciar servidor local
+uv run uvicorn app.main:app --reload --port 8000
+```
+
+#### Opção B: Usando pip tradicional
 ```bash
 cd backend
 
@@ -72,8 +87,6 @@ source .venv/bin/activate
 
 # Instalar dependências
 pip install -r requirements.txt
-# Ou via pip em modo editável:
-pip install -e .
 
 # Configurar variáveis de ambiente
 cp .env.example .env
@@ -115,7 +128,10 @@ npm run build
 # Testes unitários da extensão
 cd extension && npm run test
 
-# Testes automatizados do backend proxy
+# Testes automatizados do backend proxy (via uv)
+cd backend && uv run pytest
+
+# Ou via pytest tradicional (com ambiente ativado)
 cd backend && pytest
 ```
 

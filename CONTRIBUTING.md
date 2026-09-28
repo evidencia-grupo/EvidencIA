@@ -55,7 +55,13 @@ npm run build        # Compilacao dos bundles para /dist e copia de manifest.jso
 ### No Backend Proxy (`backend/`)
 ```bash
 cd backend
-python -m pytest -v  # Validacao da integridade dos contratos e endpoints
+# Opcao A (Recomendada via uv):
+uv run ruff check .
+uv run pytest -v
+
+# Opcao B (Tradicional via pip):
+ruff check .
+python -m pytest -v
 ```
 
 ---

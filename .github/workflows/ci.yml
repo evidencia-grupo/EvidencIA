@@ -144,22 +144,23 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Python 3.12
-        uses: actions/setup-python@v5
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.12"
-          cache: "pip"
-          cache-dependency-path: backend/requirements.txt
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "backend/pyproject.toml"
+
+      - name: Setup Python 3.12
+        run: uv python install 3.12
 
       - name: Install Linting Tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff
+        run: uv sync --extra dev
 
       - name: Run Ruff Linter & Syntax Compile
         run: |
-          ruff check .
-          python -m py_compile app/main.py app/config.py app/schemas.py app/api/v1/endpoints.py app/services/fact_checker.py tests/test_api.py
+          uv run ruff check .
+          uv run python -m py_compile app/main.py app/config.py app/schemas.py app/api/v1/endpoints.py app/services/fact_checker.py tests/test_api.py
 
   build-back:
     name: Build Backend
@@ -172,26 +173,25 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Python 3.12
-        uses: actions/setup-python@v5
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.12"
-          cache: "pip"
-          cache-dependency-path: backend/requirements.txt
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "backend/pyproject.toml"
+
+      - name: Setup Python 3.12
+        run: uv python install 3.12
 
       - name: Install Runtime Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: uv sync
 
       - name: Verify Application Imports & Structure
         run: |
-          python -c "import app.main; print('FastAPI application initialized successfully.')"
+          uv run python -c "import app.main; print('FastAPI application initialized successfully.')"
 
       - name: Build Source and Binary Distributions
-        run: |
-          pip install build
-          python -m build
+        run: uv build
 
       - name: Archive Backend Package Artifacts
         uses: actions/upload-artifact@v4
@@ -211,21 +211,21 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Python 3.12
-        uses: actions/setup-python@v5
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.12"
-          cache: "pip"
-          cache-dependency-path: backend/requirements.txt
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "backend/pyproject.toml"
+
+      - name: Setup Python 3.12
+        run: uv python install 3.12
 
       - name: Install Dependencies & Test Suite
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-asyncio httpx
+        run: uv sync --extra dev
 
       - name: Run Backend Integration & Unit Tests
-        run: python -m pytest -v
+        run: uv run pytest -v
 
   deploy-back:
     name: Deploy Backend
