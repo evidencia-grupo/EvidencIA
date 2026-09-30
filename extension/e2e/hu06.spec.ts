@@ -299,7 +299,7 @@ test("HU06: Análise com erro não é salva no cache e permite nova tentativa", 
 
   await button.click();
 
-  await expect(panel.getByRole("alert")).toContainText("Legendas Indisponíveis");
+  await expect(panel.getByRole("alert")).toContainText("Este vídeo não tem legendas");
 
   // Confirma que nenhuma entrada de sucesso foi salva no storage para esse vídeo
   const stored = await extension.worker.evaluate(async () => {
