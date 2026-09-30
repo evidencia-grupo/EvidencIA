@@ -11,15 +11,17 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  
   "dependencies": {
     "preact": "^10.22.0"
   },
-  "devDependencies": {
-    "@preact/preset-vite": "^2.8.2",
-    "@types/chrome": "^0.0.268",
-    "@types/node": "^20.14.0",
-    "typescript": "^5.4.5",
-    "vite": "^5.2.11",
-    "vitest": "^1.6.0"
-  }
+"devDependencies": {
+  "@preact/preset-vite": "^2.8.2",
+  "@types/chrome": "^0.0.268",
+  "@types/node": "^20.14.0",
+  "jsdom": "^24.1.0",
+  "typescript": "^5.4.5",
+  "vite": "^5.2.11",
+  "vitest": "^1.6.0"
+}
 }
