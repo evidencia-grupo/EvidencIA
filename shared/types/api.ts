@@ -43,6 +43,7 @@ export interface FactCheckingSource {
 }
 
 export interface AnalyzeResponse {
+  analysisMode: "demo" | "live";
   videoId: string;
   analyzedAt: string;
   score: number; // 0 a 100

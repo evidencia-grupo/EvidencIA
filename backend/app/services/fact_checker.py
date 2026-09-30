@@ -10,6 +10,7 @@ from app.schemas import (
     VerificationClassification,
 )
 from app.config import settings
+from app.services.synthesis import synthesis_service
 
 
 class FactCheckerService:
@@ -36,8 +37,9 @@ class FactCheckerService:
         if settings.LLM_PROVIDER == "mock":
             return await self._mock_analysis(request, start_time)
 
-        # Implementação extensível para provedores reais (OpenAI, Gemini, Anthropic)
-        return await self._mock_analysis(request, start_time)
+        # HU03: integração com a IA própria ainda em preparação.
+        # Substituir este bloqueio pelo pipeline factual quando o serviço estiver disponível.
+        raise RuntimeError("A integração com a IA própria ainda está em preparação. Configure mock apenas para demonstração.")
 
     async def _mock_analysis(self, request: AnalyzeRequest, start_time: float) -> AnalyzeResponse:
         # Simula processamento assíncrono realista (ex.: 1200ms)
@@ -70,7 +72,7 @@ class FactCheckerService:
             FactCheckingSource(
                 id="src-01",
                 title="Repositório Institucional de Evidências Factual",
-                url="https://www.scielo.br",
+                url="https://www.scielo.br/",
                 domain="scielo.br",
                 reliabilityScore=0.96,
                 publishedAt="2026-01-15T00:00:00Z",
@@ -78,7 +80,7 @@ class FactCheckerService:
             FactCheckingSource(
                 id="src-02",
                 title="Agência Pública de Checagem e Jornalismo",
-                url="https://apublica.org",
+                url="https://apublica.org/",
                 domain="apublica.org",
                 reliabilityScore=0.91,
                 publishedAt="2026-03-20T00:00:00Z",
@@ -92,19 +94,28 @@ class FactCheckerService:
         if contradicted_count > 0 and supported_count == 0:
             score = 25
             classification: VerificationClassification = "falso"
-            summary = "O vídeo apresenta afirmações que não encontram respaldo em dados consolidados e foram contraditas pelas evidências examinadas."
         elif supported_count > 0 and contradicted_count == 0:
             score = 85
             classification = "verdadeiro"
-            summary = "As principais afirmações apresentadas no vídeo coincidem com dados de fontes confiáveis e relatórios consolidados."
+        elif contradicted_count == 0 and supported_count == 0:
+            score = 50
+            classification = "inconclusivo"
         else:
             score = 58
             classification = "moderado"
-            summary = "O conteúdo mistura premissas verdadeiras com interpretações exageradas ou projeções não confirmadas. Recomenda-se cautela."
+
+        # Gera síntese sem jargões para Dona Lurdes (HU02 / RF-03)
+        summary = synthesis_service.generate_accessible_summary(
+            claims=claims,
+            classification=classification,
+            score=score,
+            video_title=request.videoTitle,
+        )
 
         elapsed_ms = int((time.perf_counter() - start_time) * 1000)
 
         return AnalyzeResponse(
+            analysisMode="demo",
             videoId=request.videoId,
             analyzedAt=datetime.now(timezone.utc).isoformat(),
             score=score,

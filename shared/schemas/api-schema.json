@@ -53,6 +53,7 @@
     "AnalyzeResponse": {
       "type": "object",
       "required": [
+        "analysisMode",
         "videoId",
         "analyzedAt",
         "score",
@@ -63,6 +64,7 @@
         "processingTimeMs"
       ],
       "properties": {
+        "analysisMode": { "type": "string", "enum": ["demo", "live"] },
         "videoId": { "type": "string" },
         "analyzedAt": { "type": "string", "format": "date-time" },
         "score": { "type": "integer", "minimum": 0, "maximum": 100 },
