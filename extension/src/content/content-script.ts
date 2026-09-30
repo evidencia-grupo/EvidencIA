@@ -1,4 +1,5 @@
 import { extractCaptionsFromPage } from "./caption-parser";
+import { toFriendlyMessage } from "./friendly-messages";
 import type { AnalyzeRequest } from "../../../shared/types/api";
 
 let currentVideoId: string | null = null;
@@ -211,7 +212,7 @@ function injectTriggerBadge() {
       status.textContent = data ? "Checagem concluída" : "Legendas indisponíveis";
     } catch (error) {
       if (!active()) return;
-      publish({ type: "ANALYSIS_ERROR", error: error instanceof Error ? error.message : "Falha na checagem. Tente novamente." });
+      publish({ type: "ANALYSIS_ERROR", error: toFriendlyMessage(error) });
       button.querySelector("span")!.textContent = "Tentar novamente";
       status.textContent = "Falha na checagem";
     } finally {

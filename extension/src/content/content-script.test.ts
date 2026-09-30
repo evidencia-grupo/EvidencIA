@@ -122,3 +122,12 @@ it("aguarda metadados, recria iframe removido e suporta chegada pela home", asyn
   navigate("/"); document.body.innerHTML = '<ytd-watch-metadata></ytd-watch-metadata>';
   navigate("/watch?v=next"); expect(button()).toBeTruthy();
 });
+it("mostra no painel um aviso simples em vez do erro técnico", async () => {
+  await import("./content-script"); panelMessage("PANEL_READY");
+  const post = vi.spyOn(frame().contentWindow!, "postMessage");
+  sendMessage.mockResolvedValueOnce({ success: false }).mockResolvedValueOnce({ success: false, error: "Falha no servidor intermediário: HTTP 503" });
+  button().click(); await flush();
+  const error = post.mock.calls.map(([msg]) => msg as { type: string; error?: string }).find(msg => msg.type === "ANALYSIS_ERROR")?.error;
+  expect(error).toBe("Não conseguimos checar este vídeo agora. Tente de novo em instantes.");
+  expect(error).not.toMatch(/HTTP|servidor/);
+});
