@@ -1,0 +1,125 @@
+{
+  "date": "2026-09-28",
+  "environment": {
+    "os": "macOS arm64",
+    "node": "24.21.0",
+    "python": "3.14.6",
+    "chromium": "153.0.8010.12",
+    "provider": "mock",
+    "network": "YouTube fixture interception + actual FastAPI on localhost",
+    "sampleSize": 10,
+    "p90Method": "nearest rank"
+  },
+  "summaryMs": {
+    "feedbackMs": {
+      "min": 13.9,
+      "p90": 23.1,
+      "max": 23.3
+    },
+    "summaryMs": {
+      "min": 426,
+      "p90": 435.8,
+      "max": 437.6
+    },
+    "cacheMs": {
+      "min": 31.2,
+      "p90": 31.8,
+      "max": 31.8
+    },
+    "blockingMs": {
+      "min": 0,
+      "p90": 0,
+      "max": 0
+    }
+  },
+  "samples": [
+    {
+      "feedbackMs": 21.699951171875,
+      "summaryMs": 435.800048828125,
+      "cacheMs": 31.60009765625,
+      "blockingMs": 0,
+      "provider": "mock",
+      "network": "localhost/fixtures"
+    },
+    {
+      "feedbackMs": 14.5,
+      "summaryMs": 427.099853515625,
+      "cacheMs": 31.499755859375,
+      "blockingMs": 0,
+      "provider": "mock",
+      "network": "localhost/fixtures"
+    },
+    {
+      "feedbackMs": 23.099853515625,
+      "summaryMs": 429.89990234375,
+      "cacheMs": 31.800048828125,
+      "blockingMs": 0,
+      "provider": "mock",
+      "network": "localhost/fixtures"
+    },
+    {
+      "feedbackMs": 14,
+      "summaryMs": 426,
+      "cacheMs": 31.39990234375,
+      "blockingMs": 0,
+      "provider": "mock",
+      "network": "localhost/fixtures"
+    },
+    {
+      "feedbackMs": 19.699951171875,
+      "summaryMs": 427.599853515625,
+      "cacheMs": 31.599853515625,
+      "blockingMs": 0,
+      "provider": "mock",
+      "network": "localhost/fixtures"
+    },
+    {
+      "feedbackMs": 13.89990234375,
+      "summaryMs": 428.999755859375,
+      "cacheMs": 31.7998046875,
+      "blockingMs": 0,
+      "provider": "mock",
+      "network": "localhost/fixtures"
+    },
+    {
+      "feedbackMs": 23,
+      "summaryMs": 431.599853515625,
+      "cacheMs": 31.800048828125,
+      "blockingMs": 0,
+      "provider": "mock",
+      "network": "localhost/fixtures"
+    },
+    {
+      "feedbackMs": 23.300048828125,
+      "summaryMs": 437.600341796875,
+      "cacheMs": 31.30029296875,
+      "blockingMs": 0,
+      "provider": "mock",
+      "network": "localhost/fixtures"
+    },
+    {
+      "feedbackMs": 21.89990234375,
+      "summaryMs": 430.900146484375,
+      "cacheMs": 31.2001953125,
+      "blockingMs": 0,
+      "provider": "mock",
+      "network": "localhost/fixtures"
+    },
+    {
+      "feedbackMs": 14.300048828125,
+      "summaryMs": 426.800048828125,
+      "cacheMs": 31.400146484375,
+      "blockingMs": 0,
+      "provider": "mock",
+      "network": "localhost/fixtures"
+    }
+  ],
+  "buildSha256": {
+    "assets/panel-B_TRl1eI.js": "8ebe28936b61c7e66c371bbea3fc3006e27b3843463f9051f6385fa22f5d3dda",
+    "assets/panel-BkqBelVV.css": "24b82f04a36d79fa815a25da51f93ffd538a0a31d1a81c511ba5e3a82cd13de5",
+    "background.js": "007f18bfd9d443f2868647285a1bbbdb7e87a4ee25b00f1525d26f602c719432",
+    "content.js": "fd99be099df1a4056861cc60fdbeda5a39a63507267582cfe84ceee412b413b5",
+    "manifest.json": "b5f63333eda445f7d2256fefde9baa526e5185b49f0e31e17ea2b0b70e37cf78",
+    "src/panel/index.html": "dd0b9c76b7a878cb8041cc63478dc1fbef7e28c3a02329fdc317927154a007d7"
+  }
+}

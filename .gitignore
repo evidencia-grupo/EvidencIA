@@ -73,3 +73,6 @@ backend/ml/datasets/raw/
 backend/ml/datasets/processed/
 !backend/ml/datasets/sample_facts.json
 
+# Relatórios de execução Playwright
+playwright-report/
+test-results/

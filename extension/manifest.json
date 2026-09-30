@@ -3,23 +3,39 @@
   "name": "EvidencIA — Fact-Checking para YouTube",
   "version": "1.0.0",
   "description": "Extensão de checagem de fatos e veracidade de afirmações em vídeos do YouTube com IA e painel lateral.",
-  "permissions": ["activeTab", "storage"],
-  "host_permissions": ["https://www.youtube.com/*"],
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "http://127.0.0.1:8000/*"
+  ],
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
   "content_scripts": [
     {
-      "matches": ["https://www.youtube.com/watch*"],
-      "js": ["content.js"],
+      "matches": [
+        "https://www.youtube.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["src/panel/index.html", "assets/*"],
-      "matches": ["https://www.youtube.com/*"]
+      "resources": [
+        "src/panel/index.html",
+        "assets/*"
+      ],
+      "matches": [
+        "https://www.youtube.com/*"
+      ]
     }
   ],
   "action": {
