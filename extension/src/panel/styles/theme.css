@@ -59,6 +59,23 @@ body {
   color: var(--color-text-secondary);
 }
 
+.video-metadata {
+  margin-top: 8px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.video-metadata-title {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.temporal-context {
+  margin-top: 4px;
+  max-width: 290px;
+}
+
 .close-btn {
   background: transparent;
   border: none;

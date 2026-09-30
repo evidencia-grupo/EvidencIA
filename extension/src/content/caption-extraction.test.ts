@@ -3,29 +3,30 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { extractCaptionsFromPage, parseCaptionBody } from "./caption-parser";
 const sendMessage = vi.fn();
 const text = "A transcrição de teste contém mais de cinquenta caracteres e informações suficientes para checar.";
+const metadata = { videoTitle: "Vídeo histórico", channelName: "Canal História", uploadDate: "2021-04-15T00:00:00Z", durationSeconds: 120 };
 beforeEach(() => {
   vi.stubGlobal("chrome", { runtime: { sendMessage } });
-  sendMessage.mockResolvedValue({ success: true, data: [{ baseUrl: "https://www.youtube.com/api/timedtext", languageCode: "pt-BR" }] });
+  sendMessage.mockResolvedValue({ success: true, data: { tracks: [{ baseUrl: "https://www.youtube.com/api/timedtext", languageCode: "pt-BR" }], metadata } });
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, text: async () => `<transcript><text>${text}</text></transcript>` }));
 });
 it("extrai XML, entidades e segmentos JSON3 sem timestamps", async () => {
-  expect(await extractCaptionsFromPage("video")).toEqual({ videoId: "video", transcript: text, language: "pt-BR" });
+  expect(await extractCaptionsFromPage("video")).toEqual({ videoId: "video", transcript: text, language: "pt-BR", ...metadata });
   expect(parseCaptionBody('<transcript><text>A &lt; B &amp; C &#233;</text></transcript>')).toBe("A &lt; B & C é".replace("&lt;", "<"));
   expect(parseCaptionBody(JSON.stringify({ events: [{ segs: [{ utf8: text }, {}] }, {}] }))).toBe(text);
   expect(parseCaptionBody('{}')).toBe("");
   expect(() => parseCaptionBody('<broken>')).toThrow("interpretar");
 });
 it("usa primeira faixa se português indisponível; ausência é distinta de falha", async () => {
-  sendMessage.mockResolvedValueOnce({ success: true, data: [{ baseUrl: "https://www.youtube.com/api/timedtext", languageCode: "en" }] });
+  sendMessage.mockResolvedValueOnce({ success: true, data: { tracks: [{ baseUrl: "https://www.youtube.com/api/timedtext", languageCode: "en" }], metadata } });
   expect((await extractCaptionsFromPage("video"))?.language).toBe("en");
-  sendMessage.mockResolvedValueOnce({ success: true, data: [] });
+  sendMessage.mockResolvedValueOnce({ success: true, data: { tracks: [], metadata } });
   expect(await extractCaptionsFromPage("video")).toBeNull();
 });
 it.each([
   [{ success: false, error: "Erro específico" }, "Erro específico"],
   [undefined, "acessar"],
   [{ success: true, data: null }, "inválida"],
-  [{ success: true, data: [{ baseUrl: "https://evil.test/", languageCode: "pt" }] }, "Endereço"],
+  [{ success: true, data: { tracks: [{ baseUrl: "https://evil.test/", languageCode: "pt" }], metadata } }, "Endereço"],
 ])("trata resposta inválida %s", async (reply, message) => {
   sendMessage.mockResolvedValue(reply);
   await expect(extractCaptionsFromPage("video")).rejects.toThrow(message);
