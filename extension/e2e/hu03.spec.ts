@@ -120,7 +120,7 @@ test("HU03: sem legendas encerra carregamento sem interromper player", async ({ 
   const { page, button, panel } = await setup(extension.context, "empty", false);
   await page.evaluate(() => { (window as any).pauses = 0; document.querySelector("video")!.pause = () => { (window as any).pauses++; }; });
   await button.click();
-  await expect(panel.getByRole("alert")).toContainText("Legendas Indisponíveis");
+  await expect(panel.getByRole("alert")).toContainText("Este vídeo não tem legendas");
   expect(await page.evaluate(() => (window as any).pauses)).toBe(0);
   await expect(page.getByRole("button", { name: /Sem legendas/ })).toBeEnabled();
 });
@@ -132,12 +132,12 @@ test("HU03: erro HTTP permite nova tentativa; timeout nunca mostra sucesso tardi
   });
   const { page, button, panel } = await setup(extension.context);
   await button.click();
-  await expect(panel.getByRole("alert")).toContainText("HTTP 503");
+  await expect(panel.getByRole("alert")).toContainText("Não conseguimos checar este vídeo agora");
   await extension.worker.evaluate(() => {
     globalThis.fetch = async (_url, init) => new Promise((_resolve, reject) => init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError"))));
   });
   await page.getByRole("button", { name: "Tentar novamente" }).click();
-  await expect(panel.getByRole("alert")).toContainText(/Tempo limite/, { timeout: 11000 });
+  await expect(panel.getByRole("alert")).toContainText(/demorou mais do que o esperado/, { timeout: 11000 });
   await expect(page.getByRole("button", { name: "Tentar novamente" })).toBeEnabled();
 });
 
@@ -181,7 +181,7 @@ test("HU03: WCAG nos estados de carregamento, falha e classificações", async (
   const { page, button, panel } = await setup(extension.context);
   await extension.worker.evaluate(() => { globalThis.fetch = async () => new Promise(() => {}); });
   await button.click();
-  await expect(panel.getByRole("status")).toContainText("Extraindo");
+  await expect(panel.getByRole("status")).toContainText("analisando o que é dito");
   const states: Array<{ state: string; violations: unknown[]; incomplete: unknown[] }> = [];
   async function audit(state: string) {
     const result = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();

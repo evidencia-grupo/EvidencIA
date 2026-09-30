@@ -88,10 +88,16 @@ it("ausência de legendas encerra carregamento; erro inesperado tem fallback", a
 });
 it("timeout aborta a extração e rejeita resposta tardia", async () => {
   await import("./content-script");
+  panelMessage("PANEL_READY");
+  const post = vi.spyOn(frame().contentWindow!, "postMessage");
   let resolve!: (value: unknown) => void;
   sendMessage.mockReturnValueOnce(new Promise(r => { resolve = r; }));
   button().click(); await vi.advanceTimersByTimeAsync(9500);
   expect(button().getAttribute("aria-disabled")).toBe("false");
+  expect(post).toHaveBeenCalledWith(
+    { type: "ANALYSIS_ERROR", error: "A checagem demorou mais do que o esperado. Tente de novo em instantes." },
+    "https://extension.test",
+  );
   resolve({ success: true, data: { score: 99 } }); await flush();
   expect(button().textContent).not.toContain("99%");
 });
@@ -115,4 +121,13 @@ it("aguarda metadados, recria iframe removido e suporta chegada pela home", asyn
   frame().remove(); button().click(); await flush(); expect(frame().isConnected).toBe(true);
   navigate("/"); document.body.innerHTML = '<ytd-watch-metadata></ytd-watch-metadata>';
   navigate("/watch?v=next"); expect(button()).toBeTruthy();
+});
+it("mostra no painel um aviso simples em vez do erro técnico", async () => {
+  await import("./content-script"); panelMessage("PANEL_READY");
+  const post = vi.spyOn(frame().contentWindow!, "postMessage");
+  sendMessage.mockResolvedValueOnce({ success: false }).mockResolvedValueOnce({ success: false, error: "Falha no servidor intermediário: HTTP 503" });
+  button().click(); await flush();
+  const error = post.mock.calls.map(([msg]) => msg as { type: string; error?: string }).find(msg => msg.type === "ANALYSIS_ERROR")?.error;
+  expect(error).toBe("Não conseguimos checar este vídeo agora. Tente de novo em instantes.");
+  expect(error).not.toMatch(/HTTP|servidor/);
 });

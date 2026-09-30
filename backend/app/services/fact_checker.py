@@ -15,15 +15,14 @@ from app.schemas import (
 from app.config import settings
 from app.services.synthesis import synthesis_service
 from app.services.fact_check_client import fact_check_client
+from app.services.brazilian_fact_matcher import brazilian_fact_matcher
+from app.services.ollama_service import ollama_service
 
 
 class FactCheckerService:
     """
-    Serviço orquestrador do pipeline de checagem factual:
-    1. Extração atômica de alegações factuais checáveis (inspirado em ClaimPT / HU04).
-    2. Consulta assíncrona à Google Fact Check Tools API (ClaimReview RAG) e bases de evidência.
-    3. Categorização estruturada com justificativa analítica não-dogmática (HU04).
-    4. Geração de síntese sem jargões para Dona Lurdes (HU02 / RF-03).
+    Serviço orquestrador do pipeline de checagem factual com suporte a IA local (Ollama/Qwen 2.5-3B)
+    e priorização de bases de dados de checagem brasileiras (FactChecks.br).
     """
 
     @staticmethod
@@ -68,34 +67,65 @@ class FactCheckerService:
         if settings.LLM_PROVIDER not in ["ollama", "gemini", "openai", "development", "local"]:
             raise RuntimeError("A integração com a IA própria ainda está em preparação. Configure mock apenas para demonstração.")
 
-        # Extração de alegações atômicas checáveis (HU04 / ClaimPT)
-        extracted_propositions = self._extract_check_worthy_claims(request.transcript, request.videoTitle)
+        # 1. Tenta extrair alegações com Qwen 2.5-3B via Ollama local (se configurado)
+        extracted_propositions = None
+        if settings.LLM_PROVIDER == "ollama":
+            qwen_claims = await ollama_service.extract_claims_with_qwen(request.transcript, request.videoTitle)
+            if qwen_claims:
+                extracted_propositions = [
+                    (
+                        c.get("text", ""),
+                        c.get("status", "inconclusiva"),
+                        c.get("evidence_summary", "Alegação isolada via Qwen 2.5-3B local."),
+                        float(c.get("confidence", 0.90)),
+                    )
+                    for c in qwen_claims
+                ]
+
+        if not extracted_propositions:
+            # Extração analítica atômica (inspirada no padrão do dataset brasileiro ClaimPT)
+            extracted_propositions = self._extract_check_worthy_claims(request.transcript, request.videoTitle)
 
         claims: List[VerificationClaim] = []
         sources: List[FactCheckingSource] = []
 
-        # Consulta concorrente à Google Fact Check Tools API para as alegações identificadas
+        # 2. Verificação com prioridade a datasets brasileiros (FactChecks.br) -> Google Fact Check API -> Análise
         for idx, (prop_text, default_status, default_evidence, default_conf) in enumerate(extracted_propositions):
             claim_id = f"clm-{idx + 1:02d}"
+            claim_source_ids: List[str] = []
 
-            # Realiza busca na Google Fact Check Tools API (ClaimReview)
-            fc_results = await fact_check_client.search_claims(prop_text)
-
-            if fc_results:
-                matched = fc_results[0]
-                status: ClaimVerificationStatus = matched["status"]
+            # Prioridade 1: Casamento direto com dataset curado de agências brasileiras (Lupa, Aos Fatos, Boatos.org)
+            br_match = brazilian_fact_matcher.find_match(prop_text)
+            if br_match:
+                status: ClaimVerificationStatus = br_match["status"]
                 evidence_summary = (
-                    f"Checagem formal registrada: {matched['evidence_summary']}. "
-                    "Análise baseada em apuração de agência jornalística certificada pela IFCN."
+                    f"Checagem brasileira registrada ({br_match['rating_text']}): {br_match['evidence_summary']}"
                 )
-                confidence = matched["confidence"]
-                if matched.get("source"):
-                    sources.append(matched["source"])
+                confidence = br_match["confidence"]
+                if br_match.get("source"):
+                    source = FactCheckingSource.model_validate(br_match["source"])
+                    sources.append(source)
+                    claim_source_ids.append(source.id)
             else:
-                # Avaliação analítica e factual não-dogmática (HU04)
-                status = default_status
-                evidence_summary = default_evidence
-                confidence = default_conf
+                # Prioridade 2: Consulta à Google Fact Check Tools API (ClaimReview)
+                fc_results = await fact_check_client.search_claims(prop_text)
+                if fc_results:
+                    matched = fc_results[0]
+                    status = matched["status"]
+                    evidence_summary = (
+                        f"Checagem formal registrada: {matched['evidence_summary']}. "
+                        "Análise baseada em apuração de agência jornalística certificada pela IFCN."
+                    )
+                    confidence = matched["confidence"]
+                    if matched.get("source"):
+                        source = FactCheckingSource.model_validate(matched["source"])
+                        sources.append(source)
+                        claim_source_ids.append(source.id)
+                else:
+                    # Prioridade 3: Avaliação analítica e factual não-dogmática (HU04)
+                    status = default_status
+                    evidence_summary = default_evidence
+                    confidence = default_conf
 
             claims.append(
                 VerificationClaim(
@@ -104,6 +134,7 @@ class FactCheckerService:
                     status=status,
                     evidenceSummary=evidence_summary,
                     confidence=confidence,
+                    sourceIds=claim_source_ids,
                 )
             )
 
@@ -128,6 +159,11 @@ class FactCheckerService:
                 ),
             ]
 
+        fallback_source_ids = [source.id for source in sources[:2]]
+        for claim in claims:
+            if not claim.sourceIds:
+                claim.sourceIds = fallback_source_ids
+
         # Calcula score e classificação com ponderação equilibrada
         supported_count = sum(1 for c in claims if c.status == "apoiada")
         contradicted_count = sum(1 for c in claims if c.status == "contraditada")
@@ -143,17 +179,30 @@ class FactCheckerService:
             score = 50
             classification = "inconclusivo"
         else:
-            # Mistura de fatos apoiados e contraditas ou dados preliminares
             score = 58
             classification = "moderado"
 
-        # Gera síntese sem jargões para Dona Lurdes (HU02 / RF-03)
-        summary = synthesis_service.generate_accessible_summary(
-            claims=claims,
-            classification=classification,
-            score=score,
-            video_title=request.videoTitle,
-        )
+        # 3. Síntese sem jargões para Dona Lurdes (HU02 / RF-03), tentando Qwen se disponível
+        summary = None
+        if settings.LLM_PROVIDER == "ollama":
+            claims_dict_list = [
+                {"status": c.status, "text": c.text, "evidence_summary": c.evidenceSummary}
+                for c in claims
+            ]
+            summary = await ollama_service.generate_accessible_summary_with_qwen(
+                claims=claims_dict_list,
+                classification=classification,
+                score=score,
+                video_title=request.videoTitle,
+            )
+
+        if not summary:
+            summary = synthesis_service.generate_accessible_summary(
+                claims=claims,
+                classification=classification,
+                score=score,
+                video_title=request.videoTitle,
+            )
 
         elapsed_ms = int((time.perf_counter() - start_time) * 1000)
 
@@ -259,6 +308,7 @@ class FactCheckerService:
                     status="apoiada",
                     evidenceSummary="Relatórios institucionais e publicações científicas de referência foram consultados.",
                     confidence=0.92,
+                    sourceIds=["src-01"],
                 ),
                 VerificationClaim(
                     id="clm-02",
@@ -266,6 +316,7 @@ class FactCheckerService:
                     status="apoiada",
                     evidenceSummary="Há evidências preliminares corroboradas na literatura.",
                     confidence=0.78,
+                    sourceIds=["src-01", "src-02"],
                 ),
             ]
         elif "talvez" in transcript_lower and "dados" not in transcript_lower:
@@ -276,6 +327,7 @@ class FactCheckerService:
                     status="contraditada",
                     evidenceSummary="Relatórios institucionais desmentem a premissa.",
                     confidence=0.92,
+                    sourceIds=["src-01"],
                 ),
                 VerificationClaim(
                     id="clm-02",
@@ -283,6 +335,7 @@ class FactCheckerService:
                     status="inconclusiva",
                     evidenceSummary="Há evidências preliminares, mas com divergência metodológica na literatura.",
                     confidence=0.78,
+                    sourceIds=["src-01", "src-02"],
                 ),
             ]
         elif "alegação" in transcript_lower and "dados" not in transcript_lower and "estudo" not in transcript_lower:
@@ -293,6 +346,7 @@ class FactCheckerService:
                     status="contraditada",
                     evidenceSummary="Publicações preliminares contradizem a afirmação.",
                     confidence=0.92,
+                    sourceIds=["src-01"],
                 ),
                 VerificationClaim(
                     id="clm-02",
@@ -300,6 +354,7 @@ class FactCheckerService:
                     status="apoiada",
                     evidenceSummary="Fontes públicas corroboram parte das evidências.",
                     confidence=0.78,
+                    sourceIds=["src-01", "src-02"],
                 ),
             ]
         else:
@@ -312,6 +367,7 @@ class FactCheckerService:
                     status=prop_status,
                     evidenceSummary=prop_ev,
                     confidence=prop_conf,
+                    sourceIds=["src-01", "src-02"],
                 )
                 for i, (prop_text, prop_status, prop_ev, prop_conf) in enumerate(extracted)
             ]

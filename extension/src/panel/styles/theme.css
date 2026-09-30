@@ -107,6 +107,16 @@ body {
   gap: 6px;
 }
 
+.source-link {
+  color: #A8D8FF;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.source-link:hover {
+  color: #FFFFFF;
+}
+
 .alert-box {
   background: rgba(229, 57, 53, 0.15);
   border: 1px solid var(--color-veracidade-falsa);

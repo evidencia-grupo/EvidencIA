@@ -54,6 +54,10 @@ def test_analyze_video_success():
     assert data["classification"] in ["verdadeiro", "moderado", "falso", "inconclusivo"]
     assert len(data["claims"]) > 0
     assert len(data["sources"]) > 0
+    source_ids = {source["id"] for source in data["sources"]}
+    for claim in data["claims"]:
+        assert claim["sourceIds"]
+        assert set(claim["sourceIds"]).issubset(source_ids)
     assert data["processingTimeMs"] >= 0
 
 

@@ -30,6 +30,7 @@ export interface VerificationClaim {
   status: ClaimVerificationStatus;
   evidenceSummary: string;
   confidence: number;
+  sourceIds?: string[];
 }
 
 export interface FactCheckingSource {

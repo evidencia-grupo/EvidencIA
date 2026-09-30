@@ -46,7 +46,7 @@ export function App() {
         setLoading(false);
         setNoCaptions(false);
         setData(null);
-        setError(msg.error || "Ocorreu uma falha ao checar as alegações.");
+        setError(msg.error || "Não conseguimos checar este vídeo agora. Tente de novo em instantes.");
       }
     };
 
@@ -100,21 +100,21 @@ export function App() {
       {/* Alerta de ausência de legendas (HU10 / RNF-06) */}
       {noCaptions && (
         <section class="alert-box" role="alert">
-          <strong>Legendas Indisponíveis:</strong> Este vídeo não possui transcrição ou legendas ativadas pelo criador. A checagem factual não pôde ser gerada.
+          <strong>Este vídeo não tem legendas.</strong> Sem as legendas não conseguimos saber o que é dito, então a checagem não pôde ser feita. Você pode tentar com outro vídeo.
         </section>
       )}
 
       {/* Erro de rede ou indisponibilidade temporária */}
       {error && (
         <section class="alert-box" role="alert">
-          <strong>Aviso de Instabilidade:</strong> {error}
+          <strong>Algo deu errado.</strong> {error}
         </section>
       )}
 
       {/* Estado de Carregamento inicial */}
       {loading && (
         <div role="status" style={{ textAlign: "center", padding: "40px 0", color: "var(--color-text-secondary)" }}>
-          <p>Extraindo transcrição e consultando evidências...</p>
+          <p>Estamos analisando o que é dito no vídeo. Isso leva só alguns segundos...</p>
         </div>
       )}
 
@@ -143,7 +143,6 @@ export function App() {
             <h3 style={{ fontSize: "14px", fontWeight: "600", color: "var(--color-text-primary)" }}>
               Alegações Analisadas ({data.claims.length})
             </h3>
-
             {/* Alegações Contraditas pelas Evidências */}
             {data.claims.some((c) => c.status === "contraditada") && (
               <section aria-labelledby="heading-contraditadas">
@@ -156,7 +155,7 @@ export function App() {
                 {data.claims
                   .filter((c) => c.status === "contraditada")
                   .map((claim) => (
-                    <ClaimCard key={claim.id} claim={claim} />
+                    <ClaimCard key={claim.id} claim={claim} sources={data.sources} />
                   ))}
               </section>
             )}
@@ -173,7 +172,7 @@ export function App() {
                 {data.claims
                   .filter((c) => c.status === "apoiada")
                   .map((claim) => (
-                    <ClaimCard key={claim.id} claim={claim} />
+                    <ClaimCard key={claim.id} claim={claim} sources={data.sources} />
                   ))}
               </section>
             )}
@@ -190,7 +189,7 @@ export function App() {
                 {data.claims
                   .filter((c) => c.status === "inconclusiva")
                   .map((claim) => (
-                    <ClaimCard key={claim.id} claim={claim} />
+                    <ClaimCard key={claim.id} claim={claim} sources={data.sources} />
                   ))}
               </section>
             )}

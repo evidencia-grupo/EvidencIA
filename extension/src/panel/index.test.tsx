@@ -21,7 +21,7 @@ afterEach(() => act(() => render(null, document.getElementById("app")!)));
 it("sincroniza início, sucesso, erros e limpa resultado anterior", () => {
   expect(document.body.textContent).toContain("para iniciar");
   message({ type: "ANALYSIS_START" });
-  expect(document.querySelector('[role="status"]')?.textContent).toContain("Extraindo");
+  expect(document.querySelector('[role="status"]')?.textContent).toContain("analisando o que é dito");
   message({ type: "ANALYSIS_SUCCESS", data });
   expect(document.body.textContent).toContain(data.summary);
   expect(document.body.textContent).toContain("Vídeo histórico");
@@ -30,13 +30,13 @@ it("sincroniza início, sucesso, erros e limpa resultado anterior", () => {
   expect(document.body.textContent).toContain("Contexto de 2021");
   expect(document.body.textContent).toContain("Demonstração");
   expect(document.querySelector("a")?.getAttribute("rel")).toBe("noopener noreferrer");
-  message({ type: "ANALYSIS_ERROR", error: "HTTP 503" });
-  expect(document.body.textContent).toContain("HTTP 503");
+  message({ type: "ANALYSIS_ERROR", error: "Parece que sua internet caiu." });
+  expect(document.body.textContent).toContain("Parece que sua internet caiu.");
   expect(document.body.textContent).not.toContain(data.summary);
   message({ type: "ANALYSIS_ERROR" });
-  expect(document.body.textContent).toContain("Ocorreu uma falha");
+  expect(document.body.textContent).toContain("Não conseguimos checar este vídeo agora");
   message({ type: "NO_CAPTIONS_AVAILABLE" });
-  expect(document.body.textContent).toContain("Legendas Indisponíveis");
+  expect(document.body.textContent).toContain("Este vídeo não tem legendas");
   message({ type: "ANALYSIS_START" });
   expect(document.querySelector('[role="alert"]')).toBeNull();
 });
@@ -96,4 +96,13 @@ it("ignora remetentes externos, confirma foco e fecha pelo botão/Escape", () =>
   expect(post).toHaveBeenCalledTimes(2);
   expect(post).toHaveBeenCalledWith({ type: "CLOSE_PANEL" }, "https://www.youtube.com");
   post.mockRestore();
+});
+it("avisos de carregamento, erro e falta de legendas não usam termos técnicos", () => {
+  const jargon = /HTTP|SLA|servidor|transcri|instabilidade|extraindo|evidências|fetch|timeout|\berro\b \d/i;
+  message({ type: "ANALYSIS_START" });
+  expect(document.body.textContent).not.toMatch(jargon);
+  message({ type: "ANALYSIS_ERROR" });
+  expect(document.body.textContent).not.toMatch(jargon);
+  message({ type: "NO_CAPTIONS_AVAILABLE" });
+  expect(document.body.textContent).not.toMatch(jargon);
 });
