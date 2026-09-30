@@ -166,3 +166,10 @@ A esteira do GitHub Actions (`.github/workflows/ci.yml`) orquestra duas trilhas 
 O fluxo da HU03 inclui feedback imediato, leitura das legendas do player, painel sincronizado, cache de 24h, timeout e recuperação de falhas. A integração de IA/busca ainda será implementada: o backend atual identifica respostas como demonstração (`analysisMode: demo`) e o painel mostra esse aviso. Não use essas respostas como checagem factual.
 
 Consulte [HU03.md](./HU03.md) para testes de aceitação, cobertura, acessibilidade, comandos de execução e dependências de homologação. Após alterar o código, execute `npm run build` em `extension/`, recarregue a extensão em `chrome://extensions` e atualize o vídeo no YouTube. Selecione a pasta `extension/dist` em **Carregar sem compactação**.
+
+## HU06 — Consulta Imediata via Cache Local
+
+A história HU06 (Persona: Carlos Augusto) assegura que vídeos já auditados nas últimas 24 horas sejam recuperados de forma instantânea via `chrome.storage.local` com latência inferior a 1 segundo (e meta $< 100\text{ms}$ em ambiente controlado pela ADR-003), sem nova extração de legendas nem consumo de rede externa. Registros expirados ou corrompidos passam por *lazy eviction* automática, disparando nova análise completa.
+
+Consulte [HU06.md](./HU06.md) para a matriz de critérios de aceitação, rastreabilidade e [docs/hu06-evidencias.md](docs/hu06-evidencias.md) para os relatórios de execução.
+
