@@ -3,6 +3,7 @@ import { useState, useLayoutEffect } from "preact/hooks";
 import { Gauge } from "./components/Gauge";
 import { ClaimCard } from "./components/ClaimCard";
 import { SourceList } from "./components/SourceList";
+import { UncertaintyAlert } from "./components/UncertaintyAlert";
 import type { AnalyzeResponse } from "../../../shared/types/api";
 
 export function App() {
@@ -104,14 +105,10 @@ export function App() {
       {/* Resultado da Análise */}
       {data && (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {/* Alerta de Incerteza Analítica no topo, antes de qualquer detalhe (HU09 / RF-07) */}
+          <UncertaintyAlert classification={data.classification} claims={data.claims} />
           {data.analysisMode === "demo" && (
             <div class="warning-badge" role="status">Demonstração: resultado simulado para testar a extensão. Não constitui checagem factual.</div>
-          )}
-          {/* Alerta de Incerteza Analítica (HU09 / RF-07) */}
-          {data.classification === "inconclusivo" && (
-            <div class="warning-badge" role="status">
-              Aviso de Incerteza Analítica: As evidências encontradas são divergentes ou insuficientes para consolidar um veredito factual.
-            </div>
           )}
 
           {/* Velocímetro de Veracidade */}
