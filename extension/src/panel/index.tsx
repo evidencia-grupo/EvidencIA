@@ -3,7 +3,15 @@ import { useState, useLayoutEffect } from "preact/hooks";
 import { Gauge } from "./components/Gauge";
 import { ClaimCard } from "./components/ClaimCard";
 import { SourceList } from "./components/SourceList";
+import { UncertaintyAlert } from "./components/UncertaintyAlert";
 import type { AnalyzeResponse } from "../../../shared/types/api";
+
+function formatUploadDate(value?: string | null): string {
+  if (!value) return "Data não disponível";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Data não disponível";
+  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeZone: "UTC" }).format(date);
+}
 
 export function App() {
   const [loading, setLoading] = useState(false);
@@ -69,6 +77,15 @@ export function App() {
         <div>
           <h1 class="panel-title">Veracidade do Vídeo</h1>
           <p class="panel-subtitle">Análise factual e referências</p>
+          {data && (
+            <div class="video-metadata" aria-label="Metadados de publicação do vídeo">
+              <p class="video-metadata-title">{data.videoTitle || "Título não disponível"}</p>
+              <p>{data.channelName || "Canal não disponível"} · {formatUploadDate(data.uploadDate)}</p>
+              {data.temporalContext?.isOldContent && (
+                <p class="temporal-context">Contexto temporal: {data.temporalContext.message}</p>
+              )}
+            </div>
+          )}
         </div>
         <button
           class="close-btn"
@@ -104,14 +121,10 @@ export function App() {
       {/* Resultado da Análise */}
       {data && (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {/* Alerta de Incerteza Analítica no topo, antes de qualquer detalhe (HU09 / RF-07) */}
+          <UncertaintyAlert classification={data.classification} claims={data.claims} />
           {data.analysisMode === "demo" && (
             <div class="warning-badge" role="status">Demonstração: resultado simulado para testar a extensão. Não constitui checagem factual.</div>
-          )}
-          {/* Alerta de Incerteza Analítica (HU09 / RF-07) */}
-          {data.classification === "inconclusivo" && (
-            <div class="warning-badge" role="status">
-              Aviso de Incerteza Analítica: As evidências encontradas são divergentes ou insuficientes para consolidar um veredito factual.
-            </div>
           )}
 
           {/* Velocímetro de Veracidade */}
