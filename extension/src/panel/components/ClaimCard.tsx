@@ -67,7 +67,7 @@ export function ClaimCard({ claim, sources }: ClaimCardProps) {
           <ul style={{ margin: "4px 0 0", paddingLeft: "18px" }}>
             {claimSources.map((source) => (
               <li key={source.id}>
-                <a href={source.url} target="_blank" rel="noopener noreferrer">
+                <a class="source-link" href={source.url} target="_blank" rel="noopener noreferrer">
                   {source.title}
                 </a>
               </li>
