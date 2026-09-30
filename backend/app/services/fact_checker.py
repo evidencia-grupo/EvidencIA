@@ -14,6 +14,8 @@ from app.schemas import (
 from app.config import settings
 from app.services.synthesis import synthesis_service
 from app.services.fact_check_client import fact_check_client
+from app.services.ollama_service import ollama_service
+from app.services.brazilian_fact_matcher import brazilian_fact_matcher
 
 
 class FactCheckerService:
@@ -38,34 +40,60 @@ class FactCheckerService:
             raise TimeoutError("Tempo limite de inferência e busca de 8,0s excedido no servidor.")
 
     async def _execute_analysis(self, request: AnalyzeRequest, start_time: float) -> AnalyzeResponse:
-        # Extração de alegações atômicas checáveis (HU04 / ClaimPT)
-        extracted_propositions = self._extract_check_worthy_claims(request.transcript, request.videoTitle)
+        # 1. Tenta extrair alegações com Qwen 2.5-3B via Ollama local (se configurado)
+        extracted_propositions = None
+        if settings.LLM_PROVIDER == "ollama":
+            qwen_claims = await ollama_service.extract_claims_with_qwen(request.transcript, request.videoTitle)
+            if qwen_claims:
+                extracted_propositions = [
+                    (
+                        c.get("text", ""),
+                        c.get("status", "inconclusiva"),
+                        c.get("evidence_summary", "Alegação isolada via Qwen 2.5-3B local."),
+                        float(c.get("confidence", 0.90)),
+                    )
+                    for c in qwen_claims
+                ]
+
+        if not extracted_propositions:
+            # Extração analítica atômica (inspirada no padrão do dataset brasileiro ClaimPT)
+            extracted_propositions = self._extract_check_worthy_claims(request.transcript, request.videoTitle)
 
         claims: List[VerificationClaim] = []
         sources: List[FactCheckingSource] = []
 
-        # Consulta concorrente à Google Fact Check Tools API para as alegações identificadas
+        # 2. Verificação com prioridade a datasets brasileiros (FactChecks.br) -> Google Fact Check API -> Análise
         for idx, (prop_text, default_status, default_evidence, default_conf) in enumerate(extracted_propositions):
             claim_id = f"clm-{idx + 1:02d}"
 
-            # Realiza busca na Google Fact Check Tools API (ClaimReview)
-            fc_results = await fact_check_client.search_claims(prop_text)
-
-            if fc_results:
-                matched = fc_results[0]
-                status: ClaimVerificationStatus = matched["status"]
+            # Prioridade 1: Casamento direto com dataset curado de agências brasileiras (Lupa, Aos Fatos, Boatos.org)
+            br_match = brazilian_fact_matcher.find_match(prop_text)
+            if br_match:
+                status: ClaimVerificationStatus = br_match["status"]
                 evidence_summary = (
-                    f"Checagem formal registrada: {matched['evidence_summary']}. "
-                    "Análise baseada em apuração de agência jornalística certificada pela IFCN."
+                    f"Checagem brasileira registrada ({br_match['rating_text']}): {br_match['evidence_summary']}"
                 )
-                confidence = matched["confidence"]
-                if matched.get("source"):
-                    sources.append(matched["source"])
+                confidence = br_match["confidence"]
+                if br_match.get("source"):
+                    sources.append(br_match["source"])
             else:
-                # Avaliação analítica e factual não-dogmática (HU04)
-                status = default_status
-                evidence_summary = default_evidence
-                confidence = default_conf
+                # Prioridade 2: Consulta à Google Fact Check Tools API (ClaimReview)
+                fc_results = await fact_check_client.search_claims(prop_text)
+                if fc_results:
+                    matched = fc_results[0]
+                    status = matched["status"]
+                    evidence_summary = (
+                        f"Checagem formal registrada: {matched['evidence_summary']}. "
+                        "Análise baseada em apuração de agência jornalística certificada pela IFCN."
+                    )
+                    confidence = matched["confidence"]
+                    if matched.get("source"):
+                        sources.append(matched["source"])
+                else:
+                    # Prioridade 3: Avaliação analítica e factual não-dogmática (HU04)
+                    status = default_status
+                    evidence_summary = default_evidence
+                    confidence = default_conf
 
             claims.append(
                 VerificationClaim(
@@ -117,13 +145,23 @@ class FactCheckerService:
             score = 58
             classification = "moderado"
 
-        # Gera síntese sem jargões para Dona Lurdes (HU02 / RF-03)
-        summary = synthesis_service.generate_accessible_summary(
-            claims=claims,
-            classification=classification,
-            score=score,
-            video_title=request.videoTitle,
-        )
+        # 3. Geração de síntese: tenta Qwen local via Ollama se ativo, com fallback para synthesis_service
+        summary = None
+        if settings.LLM_PROVIDER == "ollama":
+            summary = await ollama_service.generate_accessible_summary_with_qwen(
+                claims=[c.model_dump() for c in claims],
+                classification=classification,
+                score=score,
+                video_title=request.videoTitle,
+            )
+
+        if not summary:
+            summary = synthesis_service.generate_accessible_summary(
+                claims=claims,
+                classification=classification,
+                score=score,
+                video_title=request.videoTitle,
+            )
 
         elapsed_ms = int((time.perf_counter() - start_time) * 1000)
 

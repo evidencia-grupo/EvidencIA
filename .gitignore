@@ -57,6 +57,19 @@ coverage/
 .vscode/
 .idea/
 *.sublime-project
-*.sublime-workspace
 .DS_Store
 Thumbs.db
+
+# Modelos e Pesos de IA (Nunca commitar binários pesados no Git)
+*.safetensors
+*.bin
+*.gguf
+*.pt
+*.pth
+*.onnx
+models/checkpoints/
+ml/cache/
+backend/ml/datasets/raw/
+backend/ml/datasets/processed/
+!backend/ml/datasets/sample_facts.json
+

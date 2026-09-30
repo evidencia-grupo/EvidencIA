@@ -96,6 +96,24 @@ uvicorn app.main:app --reload --port 8000
 ```
 O backend estará disponível em `http://127.0.0.1:8000` (documentação interativa em `/docs`).
 
+#### 4.2.1 Execução com Ollama Local (Qwen 2.5-3B) e Datasets Brasileiros
+
+O EvidencIA prioriza inferência local sem custos de nuvem e alinhamento com dados de checagem do Brasil:
+
+1. **Instalar e Iniciar o Ollama com o Qwen 2.5-3B:**
+   ```bash
+   # Baixar e executar o modelo localmente (requer apenas ~2.2 GB de RAM)
+   ollama run qwen2.5:3b
+   ```
+2. **Datasets Brasileiros (FactChecks.br & Fake.br):**
+   O backend já inclui uma base de checagens brasileiras curadas (`ml/datasets/sample_facts.json`) para testes offline rápidos e CI/CD. Para baixar ou inspecionar os datasets completos do Hugging Face:
+   ```bash
+   cd backend
+   # Inspecionar / baixar FactChecks.br (~10k+ checagens da Lupa, Aos Fatos, Boatos.org)
+   python ml/datasets/dataset_downloader.py --dataset factchecks --output-dir ml/datasets/data
+   ```
+3. **Degradação Graciosa:** Caso o daemon do Ollama não esteja ativo, o backend não falha nem trava: ele degrada suavemente para a base curada brasileira local (`sample_facts.json`) ou oráculo externo (Google Fact Check Tools API).
+
 ---
 
 ### 4.3 Extensão de Navegador (Manifest V3)
