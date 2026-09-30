@@ -32,9 +32,19 @@ class FactCheckingSource(BaseModel):
     publishedAt: Optional[str] = Field(None, description="Data de publicação original")
 
 
+class TemporalContext(BaseModel):
+    publicationYear: Optional[int] = Field(None, description="Ano original de publicação do vídeo")
+    isOldContent: bool = Field(..., description="Indica se o vídeo foi publicado antes do ano atual")
+    message: str = Field(..., description="Orientação para interpretar as alegações no contexto da publicação")
+
+
 class AnalyzeResponse(BaseModel):
     analysisMode: Literal["demo", "live"]
     videoId: str
+    videoTitle: str
+    channelName: str
+    uploadDate: Optional[str] = None
+    temporalContext: TemporalContext
     analyzedAt: str
     score: int = Field(..., ge=0, le=100, description="Índice numérico de veracidade de 0 a 100")
     classification: VerificationClassification

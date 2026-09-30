@@ -56,8 +56,8 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 | [#1](https://github.com/evidencia-grupo/EvidencIA/issues/1) | **HU01:** Botão em Shadow DOM com feedback $\le 1\text{s}$ | @MylenaTrindade | 02/10 | Ready |
 | [#3](https://github.com/evidencia-grupo/EvidencIA/issues/3) | **HU03:** UI de carregamento e mensageria MV3 | @lipestile | 02/10 | Ready |
 | [#5](https://github.com/evidencia-grupo/EvidencIA/issues/5) | **HU05:** Interceptador e higienizador de legendas do player | @luizoryone | 02/10 | Ready |
-| [#2](https://github.com/evidencia-grupo/EvidencIA/issues/2) | **HU02:** Orquestrador LLM para síntese sem jargões | @pedrohpsantos | 02/10 | Ready |
-| [#4](https://github.com/evidencia-grupo/EvidencIA/issues/4) | **HU04:** Extrator de alegações estruturadas (apoiada/contradita) | @pedrohpsantos | 02/10 | Ready |
+| [#2](https://github.com/evidencia-grupo/EvidencIA/issues/2) | **HU02:** Orquestrador LLM para síntese sem jargões | @pedrohpsantos | 02/10 | **Concluído** |
+| [#4](https://github.com/evidencia-grupo/EvidencIA/issues/4) | **HU04:** Extrator de alegações estruturadas (apoiada/contradita) | @pedrohpsantos | 02/10 | **Concluído** |
 | [#7](https://github.com/evidencia-grupo/EvidencIA/issues/7) | **HU07:** Lista de fontes auditadas com `target="_blank"` | @mahiaara | 02/10 | Ready |
 
 *Marco de Sexta (02/10): Demonstração interna do Happy Path executando em vídeo real do YouTube.*
@@ -105,6 +105,8 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 - [x] **`DOC-04` — Especificação de Contrato:** Schemas TypeScript e JSON para os endpoints `/analyze` e `/health`.
 - [x] **`SETUP-01` — Setup Inicial do Monorepo:** Extensão Preact MV3, Backend FastAPI, Schemas e CI.
 - [x] **`GH-ISSUES` — Cadastro e Distribuição no GitHub:** 18 Issues cadastradas com datas (28/09 a 09/10) e assignees.
+- [x] **`#2 (HU02)` — Síntese Estruturada sem Jargões:** Geração de síntese acessível para Dona Lurdes (RF-03) e separação visual de alegações no painel lateral Preact (RF-06).
+- [x] **`#4 (HU04)` — Categorização Estruturada de Alegações:** Extração atômica de alegações checáveis (ClaimPT) e integração RAG com Google Fact Check Tools API / ClaimReview sem vereditos dogmáticos (RF-06).
 
 ---
 

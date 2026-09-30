@@ -3,7 +3,15 @@ import { useState, useLayoutEffect } from "preact/hooks";
 import { Gauge } from "./components/Gauge";
 import { ClaimCard } from "./components/ClaimCard";
 import { SourceList } from "./components/SourceList";
+import { UncertaintyAlert } from "./components/UncertaintyAlert";
 import type { AnalyzeResponse } from "../../../shared/types/api";
+
+function formatUploadDate(value?: string | null): string {
+  if (!value) return "Data não disponível";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Data não disponível";
+  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeZone: "UTC" }).format(date);
+}
 
 export function App() {
   const [loading, setLoading] = useState(false);
@@ -69,6 +77,15 @@ export function App() {
         <div>
           <h1 class="panel-title">Veracidade do Vídeo</h1>
           <p class="panel-subtitle">Análise factual e referências</p>
+          {data && (
+            <div class="video-metadata" aria-label="Metadados de publicação do vídeo">
+              <p class="video-metadata-title">{data.videoTitle || "Título não disponível"}</p>
+              <p>{data.channelName || "Canal não disponível"} · {formatUploadDate(data.uploadDate)}</p>
+              {data.temporalContext?.isOldContent && (
+                <p class="temporal-context">Contexto temporal: {data.temporalContext.message}</p>
+              )}
+            </div>
+          )}
         </div>
         <button
           class="close-btn"
@@ -104,14 +121,10 @@ export function App() {
       {/* Resultado da Análise */}
       {data && (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {/* Alerta de Incerteza Analítica no topo, antes de qualquer detalhe (HU09 / RF-07) */}
+          <UncertaintyAlert classification={data.classification} claims={data.claims} />
           {data.analysisMode === "demo" && (
             <div class="warning-badge" role="status">Demonstração: resultado simulado para testar a extensão. Não constitui checagem factual.</div>
-          )}
-          {/* Alerta de Incerteza Analítica (HU09 / RF-07) */}
-          {data.classification === "inconclusivo" && (
-            <div class="warning-badge" role="status">
-              Aviso de Incerteza Analítica: As evidências encontradas são divergentes ou insuficientes para consolidar um veredito factual.
-            </div>
           )}
 
           {/* Velocímetro de Veracidade */}
@@ -125,14 +138,62 @@ export function App() {
             </p>
           </div>
 
-          {/* Lista de Alegações Estruturadas (HU04 / RF-06) */}
-          <div>
-            <h2 style={{ fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "var(--color-text-secondary)" }}>
+          {/* Lista de Alegações Estruturadas com Separação Nítida (HU02 / HU04 / RF-03 / RF-06) */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <h3 style={{ fontSize: "14px", fontWeight: "600", color: "var(--color-text-primary)" }}>
               Alegações Analisadas ({data.claims.length})
-            </h2>
-            {data.claims.map((claim) => (
-              <ClaimCard key={claim.id} claim={claim} />
-            ))}
+            </h3>
+
+            {/* Alegações Contraditas pelas Evidências */}
+            {data.claims.some((c) => c.status === "contraditada") && (
+              <section aria-labelledby="heading-contraditadas">
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+                  <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--color-veracidade-falsa)" }} />
+                  <h4 id="heading-contraditadas" style={{ fontSize: "12px", fontWeight: "600", color: "#E57373", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    Contraditas por Fatos ({data.claims.filter((c) => c.status === "contraditada").length})
+                  </h4>
+                </div>
+                {data.claims
+                  .filter((c) => c.status === "contraditada")
+                  .map((claim) => (
+                    <ClaimCard key={claim.id} claim={claim} />
+                  ))}
+              </section>
+            )}
+
+            {/* Alegações Apoiadas por Evidências */}
+            {data.claims.some((c) => c.status === "apoiada") && (
+              <section aria-labelledby="heading-apoiadas">
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+                  <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--color-veracidade-apoiada)" }} />
+                  <h4 id="heading-apoiadas" style={{ fontSize: "12px", fontWeight: "600", color: "#81C784", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    Com Respaldo Científico ({data.claims.filter((c) => c.status === "apoiada").length})
+                  </h4>
+                </div>
+                {data.claims
+                  .filter((c) => c.status === "apoiada")
+                  .map((claim) => (
+                    <ClaimCard key={claim.id} claim={claim} />
+                  ))}
+              </section>
+            )}
+
+            {/* Alegações Sem Comprovação Conclusiva */}
+            {data.claims.some((c) => c.status === "inconclusiva") && (
+              <section aria-labelledby="heading-inconclusivas">
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+                  <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--color-veracidade-inconclusiva)" }} />
+                  <h4 id="heading-inconclusivas" style={{ fontSize: "12px", fontWeight: "600", color: "#FFF59D", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    Sem Comprovação Conclusiva ({data.claims.filter((c) => c.status === "inconclusiva").length})
+                  </h4>
+                </div>
+                {data.claims
+                  .filter((c) => c.status === "inconclusiva")
+                  .map((claim) => (
+                    <ClaimCard key={claim.id} claim={claim} />
+                  ))}
+              </section>
+            )}
           </div>
 
           {/* Lista de Fontes com Hyperlinks (HU07 / RF-04) */}

@@ -3,7 +3,7 @@ const storage = { get: vi.fn(), set: vi.fn(), remove: vi.fn() };
 vi.stubGlobal("chrome", { runtime: { id: "extension", onMessage: { addListener: vi.fn() } }, storage: { local: storage } });
 const { getCachedResult, handleAnalyzeRequest } = await import("./service-worker");
 const listener = vi.mocked(chrome.runtime.onMessage.addListener).mock.calls[0][0];
-const data = { analysisMode: "demo", analyzedAt: "2026-09-28T00:00:00Z", processingTimeMs: 100, classification: "verdadeiro", videoId: "video", summary: "Síntese", claims: [], sources: [], score: 80 };
+const data = { analysisMode: "demo", analyzedAt: "2026-09-28T00:00:00Z", processingTimeMs: 100, classification: "verdadeiro", videoId: "video", videoTitle: "Título", channelName: "Canal", uploadDate: "2021-04-15T00:00:00Z", temporalContext: { publicationYear: 2021, isOldContent: true, message: "Contexto de 2021" }, summary: "Síntese", claims: [], sources: [], score: 80 };
 const payload = { videoId: "video", videoTitle: "Título", channelName: "Canal", transcript: "transcrição" };
 beforeEach(() => {
   vi.useFakeTimers();
