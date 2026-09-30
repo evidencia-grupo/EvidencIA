@@ -125,14 +125,62 @@ export function App() {
             </p>
           </div>
 
-          {/* Lista de Alegações Estruturadas (HU04 / RF-06) */}
-          <div>
-            <h2 style={{ fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "var(--color-text-secondary)" }}>
+          {/* Lista de Alegações Estruturadas com Separação Nítida (HU02 / HU04 / RF-03 / RF-06) */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <h3 style={{ fontSize: "14px", fontWeight: "600", color: "var(--color-text-primary)" }}>
               Alegações Analisadas ({data.claims.length})
-            </h2>
-            {data.claims.map((claim) => (
-              <ClaimCard key={claim.id} claim={claim} />
-            ))}
+            </h3>
+
+            {/* Alegações Contraditas pelas Evidências */}
+            {data.claims.some((c) => c.status === "contraditada") && (
+              <section aria-labelledby="heading-contraditadas">
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+                  <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--color-veracidade-falsa)" }} />
+                  <h4 id="heading-contraditadas" style={{ fontSize: "12px", fontWeight: "600", color: "#E57373", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    Contraditas por Fatos ({data.claims.filter((c) => c.status === "contraditada").length})
+                  </h4>
+                </div>
+                {data.claims
+                  .filter((c) => c.status === "contraditada")
+                  .map((claim) => (
+                    <ClaimCard key={claim.id} claim={claim} />
+                  ))}
+              </section>
+            )}
+
+            {/* Alegações Apoiadas por Evidências */}
+            {data.claims.some((c) => c.status === "apoiada") && (
+              <section aria-labelledby="heading-apoiadas">
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+                  <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--color-veracidade-apoiada)" }} />
+                  <h4 id="heading-apoiadas" style={{ fontSize: "12px", fontWeight: "600", color: "#81C784", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    Com Respaldo Científico ({data.claims.filter((c) => c.status === "apoiada").length})
+                  </h4>
+                </div>
+                {data.claims
+                  .filter((c) => c.status === "apoiada")
+                  .map((claim) => (
+                    <ClaimCard key={claim.id} claim={claim} />
+                  ))}
+              </section>
+            )}
+
+            {/* Alegações Sem Comprovação Conclusiva */}
+            {data.claims.some((c) => c.status === "inconclusiva") && (
+              <section aria-labelledby="heading-inconclusivas">
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+                  <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--color-veracidade-inconclusiva)" }} />
+                  <h4 id="heading-inconclusivas" style={{ fontSize: "12px", fontWeight: "600", color: "#FFF59D", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    Sem Comprovação Conclusiva ({data.claims.filter((c) => c.status === "inconclusiva").length})
+                  </h4>
+                </div>
+                {data.claims
+                  .filter((c) => c.status === "inconclusiva")
+                  .map((claim) => (
+                    <ClaimCard key={claim.id} claim={claim} />
+                  ))}
+              </section>
+            )}
           </div>
 
           {/* Lista de Fontes com Hyperlinks (HU07 / RF-04) */}
