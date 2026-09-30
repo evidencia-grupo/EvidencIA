@@ -71,7 +71,7 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 |:---|:---|:---:|:---:|:---:|
 | [#10](https://github.com/evidencia-grupo/EvidencIA/issues/10) | **HU10:** Alerta rápido $< 1\text{s}$ para vídeos sem legendas | @luizoryone | 06/10 | Backlog |
 | [#9](https://github.com/evidencia-grupo/EvidencIA/issues/9) | **HU09:** Badge de incerteza analítica no topo do painel | @MylenaTrindade | 07/10 | Backlog |
-| [#6](https://github.com/evidencia-grupo/EvidencIA/issues/6) | **HU06:** Cache local `chrome.storage.local` (TTL 24h, lazy eviction) | @lipestile | 07/10 | Backlog |
+| [#6](https://github.com/evidencia-grupo/EvidencIA/issues/6) | **HU06:** Cache local `chrome.storage.local` (TTL 24h, lazy eviction) | @lipestile | 07/10 | In Review |
 | [#8](https://github.com/evidencia-grupo/EvidencIA/issues/8) | **HU08:** Metadados temporais e canal no cabeçalho | @mahiaara | 08/10 | Backlog |
 | `QA-E2E` | Testes Playwright em Chromium e validação TBT $\le 50\text{ ms}$ | @luizoryone, @lipestile | 08/10 | Backlog |
 | `A11Y` | Auditoria de acessibilidade WCAG 2.1 AA via `axe-core` | @MylenaTrindade | 08/10 | Backlog |
@@ -92,7 +92,10 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 ### 3.4 Code Review & QA (Validação)
 *Itens aguardando validação de critérios de aceitação e testes automatizados:*
 
-*(Nenhum item pendente de revisão no momento)*
+| Issue / Tarefa | Descrição da Atividade | Responsável | Branch de Trabalho | Status |
+|:---|:---|:---:|:---:|:---:|
+| [#3](https://github.com/evidencia-grupo/EvidencIA/issues/3) | **HU03:** UI de carregamento e mensageria MV3 | @lipestile | `feat/hu03-checagem-rapida` | **Aguardando PR** |
+| [#6](https://github.com/evidencia-grupo/EvidencIA/issues/6) | **HU06:** Cache local `chrome.storage.local` (TTL 24h, lazy eviction) | @lipestile | `feat/hu06-cache-local` | **Aguardando PR** |
 
 ---
 

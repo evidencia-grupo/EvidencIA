@@ -19,6 +19,7 @@ jobs:
   lint-front:
     name: Lint Frontend
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: extension
@@ -43,6 +44,7 @@ jobs:
     name: Build Frontend
     needs: [lint-front]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: extension
@@ -74,6 +76,7 @@ jobs:
     name: Test Frontend
     needs: [build-front]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: extension
@@ -108,7 +111,7 @@ jobs:
       - name: Install E2E Backend and Chromium
         run: |
           python -m pip install -r ../backend/requirements.txt
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
 
       - name: Acceptance, Keyboard and Accessibility Tests
         run: npm run test:e2e
@@ -127,6 +130,7 @@ jobs:
     name: Deploy Frontend
     needs: [test-front]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: extension
@@ -166,6 +170,7 @@ jobs:
   lint-back:
     name: Lint Backend
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: backend
@@ -195,6 +200,7 @@ jobs:
     name: Build Backend
     needs: [lint-back]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: backend
@@ -233,6 +239,7 @@ jobs:
     name: Test Backend
     needs: [build-back]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: backend
@@ -260,6 +267,7 @@ jobs:
     name: Deploy Backend
     needs: [test-back]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: backend
