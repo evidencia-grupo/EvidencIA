@@ -24,7 +24,7 @@ def test_unimplemented_provider_never_returns_fake_success(monkeypatch):
     monkeypatch.setattr(settings, "LLM_PROVIDER", "not-integrated")
     response = TestClient(app).post("/api/v1/analyze", json=request().model_dump())
     assert response.status_code == 503
-    assert "ainda não foi integrado" in response.json()["detail"]
+    assert "IA própria ainda está em preparação" in response.json()["detail"]
 
 
 def test_timeout_becomes_504(monkeypatch):

@@ -1,5 +1,16 @@
 # HU03 — Evidências de validação local
 
+## Revalidação em 30/09/2026
+
+- Tipagem, build, Ruff, 63 testes Vitest, 10 testes Pytest (com warnings tratados como erro) e 7 cenários Playwright aprovados.
+- Cobertura da extensão: 99,74% de linhas/instruções, 95,68% de ramificações e 100% de funções. Backend: 97,62% com ramificações.
+- O cenário de cache agora recarrega a página do vídeo e confirma a recuperação do armazenamento local com fetch do worker bloqueado e sem nova extração de legendas.
+- Medição desta execução no Chromium: feedback 12,0ms; síntese simulada 443,9ms; reabertura do painel por cache 31,7ms; cache após recarregar o vídeo 13,8ms. Uma execução não representa P90 de produção.
+- Parecer: confirmação visual e cache aprovados no ambiente controlado. A síntese em até 10s foi aprovada somente com mock, backend localhost e legendas controladas. O critério factual permanece pendente.
+- O responsável definiu que será usada uma IA própria e autorizou manter a integração como **ainda em preparação**. Não fechar a issue como integralmente aceita até integrar e homologar esse pipeline.
+
+## Validação anterior
+
 Data: 28/09/2026. macOS arm64; Node 24.21.0; Python 3.14.6; Chromium 153.0.8010.12 headless, perfil descartável. Extensão compilada carregada com Manifest V3, content script isolado, iframe real e Service Worker real.
 
 ## Resultados

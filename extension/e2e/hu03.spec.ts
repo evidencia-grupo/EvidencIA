@@ -92,7 +92,19 @@ test("HU03: feedback <= 1s, síntese <= 10s, cache < 100ms sem nova extração/r
   const cacheMs = await frame.evaluate(() => (window as any).renderedAt) - second.click;
   expect(cacheMs).toBeLessThan(100);
   expect(captionCalls()).toBe(1);
-  await info.attach("tempos.json", { body: JSON.stringify({ feedbackMs: first.feedback, summaryMs: firstRender - first.click, cacheMs, blockingMs: first.blocking, provider: "mock", network: "localhost/fixtures" }), contentType: "application/json" });
+  // Reabrir o vídeo deve recuperar o armazenamento local, sem estado do painel anterior.
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Verificar Veracidade" })).toBeVisible();
+  await expect(panel.getByRole("button", { name: /Fechar painel/, includeHidden: true })).toBeAttached();
+  const reopenedFrame = await measureRender(page);
+  await page.getByRole("button", { name: "Verificar Veracidade" }).click();
+  await expect(panel.getByText(cached.summary)).toBeVisible();
+  await expect.poll(() => reopenedFrame.evaluate(() => (window as any).renderedAt)).toBeTruthy();
+  const reopened = await page.evaluate(() => (window as any).hu03);
+  const reopenedCacheMs = await reopenedFrame.evaluate(() => (window as any).renderedAt) - reopened.click;
+  expect(reopenedCacheMs).toBeLessThan(100);
+  expect(captionCalls()).toBe(1);
+  await info.attach("tempos.json", { body: JSON.stringify({ feedbackMs: first.feedback, summaryMs: firstRender - first.click, cacheMs, reopenedCacheMs, blockingMs: first.blocking, provider: "mock", network: "localhost/fixtures" }), contentType: "application/json" });
 });
 
 test("HU03: cache expirado é substituído e iframe frio recebe o resultado", async ({ extension }) => {

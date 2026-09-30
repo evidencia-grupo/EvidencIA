@@ -36,7 +36,9 @@ class FactCheckerService:
         if settings.LLM_PROVIDER == "mock":
             return await self._mock_analysis(request, start_time)
 
-        raise RuntimeError("O provedor factual ainda não foi integrado. Configure mock apenas para demonstração.")
+        # HU03: integração com a IA própria ainda em preparação.
+        # Substituir este bloqueio pelo pipeline factual quando o serviço estiver disponível.
+        raise RuntimeError("A integração com a IA própria ainda está em preparação. Configure mock apenas para demonstração.")
 
     async def _mock_analysis(self, request: AnalyzeRequest, start_time: float) -> AnalyzeResponse:
         # Simula processamento assíncrono realista (ex.: 1200ms)
