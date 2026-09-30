@@ -50,11 +50,24 @@
       },
       "additionalProperties": false
     },
+    "TemporalContext": {
+      "type": "object",
+      "required": ["isOldContent", "message"],
+      "properties": {
+        "publicationYear": { "type": ["integer", "null"] },
+        "isOldContent": { "type": "boolean" },
+        "message": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
     "AnalyzeResponse": {
       "type": "object",
       "required": [
         "analysisMode",
         "videoId",
+        "videoTitle",
+        "channelName",
+        "temporalContext",
         "analyzedAt",
         "score",
         "classification",
@@ -66,6 +79,10 @@
       "properties": {
         "analysisMode": { "type": "string", "enum": ["demo", "live"] },
         "videoId": { "type": "string" },
+        "videoTitle": { "type": "string" },
+        "channelName": { "type": "string" },
+        "uploadDate": { "type": ["string", "null"], "format": "date-time" },
+        "temporalContext": { "$ref": "#/definitions/TemporalContext" },
         "analyzedAt": { "type": "string", "format": "date-time" },
         "score": { "type": "integer", "minimum": 0, "maximum": 100 },
         "classification": { "$ref": "#/definitions/VerificationClassification" },

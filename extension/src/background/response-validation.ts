@@ -4,6 +4,12 @@ export function isAnalysis(value: unknown, videoId: string): value is AnalyzeRes
   if (!value || typeof value !== "object") return false;
   const data = value as AnalyzeResponse;
   return data.videoId === videoId && Number.isInteger(data.score) && data.score >= 0 && data.score <= 100
+    && typeof data.videoTitle === "string" && data.videoTitle.trim().length > 0
+    && typeof data.channelName === "string" && data.channelName.trim().length > 0
+    && (data.uploadDate == null || Number.isFinite(Date.parse(data.uploadDate)))
+    && Boolean(data.temporalContext) && typeof data.temporalContext.message === "string"
+    && typeof data.temporalContext.isOldContent === "boolean"
+    && (data.temporalContext.publicationYear == null || Number.isInteger(data.temporalContext.publicationYear))
     && ["verdadeiro", "moderado", "falso", "inconclusivo"].includes(data.classification)
     && typeof data.summary === "string" && data.summary.trim().length > 0
     && typeof data.analyzedAt === "string" && Number.isFinite(Date.parse(data.analyzedAt))

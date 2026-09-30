@@ -22,7 +22,7 @@ beforeEach(() => {
   history.replaceState({}, "", "/watch?v=video");
   document.body.innerHTML = '<h1 class="ytd-watch-metadata">Título</h1><div id="channel-name">Canal</div><div id="above-the-fold"></div>';
   sendMessage.mockReset().mockResolvedValue({ success: true, data: { score: 85 } });
-  vi.mocked(extractCaptionsFromPage).mockReset().mockResolvedValue({ videoId: "video", transcript: "texto", language: "pt" });
+  vi.mocked(extractCaptionsFromPage).mockReset().mockResolvedValue({ videoId: "video", transcript: "texto", language: "pt", videoTitle: "Título", channelName: "Canal", uploadDate: "2021-04-15T00:00:00Z", durationSeconds: 120 });
   vi.stubGlobal("chrome", { runtime: { getURL: (path: string) => `https://extension.test/${path}`, sendMessage } });
 });
 afterEach(() => {
@@ -70,7 +70,7 @@ it("propaga orçamento total no cache miss", async () => {
   sendMessage.mockResolvedValueOnce({ success: true, data: null }).mockResolvedValueOnce({ success: true, data: { score: 70 } });
   const start = Date.now(); button().click(); await flush();
   expect(button().textContent).toContain("70%");
-  expect(sendMessage.mock.calls[1][0]).toMatchObject({ deadline: start + 9500, payload: { videoTitle: "Título", channelName: "Canal" } });
+  expect(sendMessage.mock.calls[1][0]).toMatchObject({ deadline: start + 9500, payload: { videoTitle: "Título", channelName: "Canal", uploadDate: "2021-04-15T00:00:00Z", durationSeconds: 120 } });
 });
 it.each([undefined, { success: false, error: "Falhou" }])("erro do worker permite nova tentativa %s", async reply => {
   await import("./content-script");
