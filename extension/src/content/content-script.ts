@@ -1,11 +1,37 @@
 import { extractCaptionsFromPage } from "./caption-parser";
 import type { AnalyzeRequest } from "../../../shared/types/api";
 
-console.log("[EvidencIA] Content script inicializado em", window.location.href);
-
 let currentVideoId: string | null = null;
 let panelIframe: HTMLIFrameElement | null = null;
 let badgeContainer: HTMLDivElement | null = null;
+let generation = 0;
+let panelReady = false;
+let panelState: unknown = null;
+let activeController: AbortController | null = null;
+let injectionTimer: ReturnType<typeof setTimeout> | undefined;
+const panelOrigin = chrome.runtime.getURL("").replace(/\/$/, "");
+
+function publish(message: unknown) {
+  panelState = message;
+  if (panelReady) panelIframe?.contentWindow?.postMessage(message, panelOrigin);
+}
+
+function closePanel() {
+  togglePanel(false);
+  badgeContainer?.shadowRoot?.querySelector<HTMLButtonElement>("button")?.focus();
+}
+
+window.addEventListener("message", (event) => {
+  if (event.source !== panelIframe?.contentWindow || event.origin !== panelOrigin) return;
+  if (event.data?.type === "PANEL_READY") {
+    panelReady = true;
+    if (panelState) publish(panelState);
+    if (panelIframe?.style.display === "block") panelIframe.contentWindow?.postMessage({ type: "FOCUS_PANEL" }, panelOrigin);
+  } else if (event.data?.type === "CLOSE_PANEL") closePanel();
+});
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && panelIframe?.style.display === "block") closePanel();
+});
 
 function getVideoIdFromUrl(): string | null {
   const urlParams = new URLSearchParams(window.location.search);
@@ -13,9 +39,11 @@ function getVideoIdFromUrl(): string | null {
 }
 
 function initSidePanel() {
-  if (panelIframe) return;
+  if (panelIframe?.isConnected) return;
+  panelReady = false;
 
   panelIframe = document.createElement("iframe");
+  panelIframe.title = "Checagem factual do vídeo";
   panelIframe.id = "evidencia-side-panel";
   panelIframe.src = chrome.runtime.getURL("src/panel/index.html");
   panelIframe.setAttribute("sandbox", "allow-scripts allow-same-origin");
@@ -23,7 +51,7 @@ function initSidePanel() {
     position: fixed;
     top: 56px;
     right: 0;
-    width: 380px;
+    width: min(380px, 100vw);
     height: calc(100vh - 56px);
     border: none;
     border-left: 1px solid #3F3F3F;
@@ -37,18 +65,25 @@ function initSidePanel() {
 }
 
 function togglePanel(visible: boolean) {
-  initSidePanel();
+  if (visible) initSidePanel();
   if (panelIframe) {
     panelIframe.style.display = visible ? "block" : "none";
+    if (visible && panelReady) {
+      panelIframe.focus();
+      panelIframe.contentWindow?.postMessage({ type: "FOCUS_PANEL" }, panelOrigin);
+    }
+    badgeContainer?.shadowRoot?.querySelector("button")?.setAttribute("aria-expanded", String(visible));
   }
 }
 
 function injectTriggerBadge() {
+  if (location.pathname !== "/watch") return;
   const videoId = getVideoIdFromUrl();
   if (!videoId) return;
-  if (videoId === currentVideoId && badgeContainer) return;
+  if (videoId === currentVideoId && badgeContainer?.isConnected) return;
 
   currentVideoId = videoId;
+  initSidePanel();
 
   // Encontra o container abaixo do título do vídeo do YouTube
   const targetArea =
@@ -57,7 +92,8 @@ function injectTriggerBadge() {
     document.querySelector("ytd-watch-metadata");
 
   if (!targetArea) {
-    setTimeout(injectTriggerBadge, 1000);
+    clearTimeout(injectionTimer);
+    injectionTimer = setTimeout(injectTriggerBadge, 250);
     return;
   }
 
@@ -93,13 +129,13 @@ function injectTriggerBadge() {
       background: #272727;
       border-color: #2BA640;
     }
+    .evidencia-btn:focus-visible { outline: 3px solid #FBC02D; outline-offset: 3px; }
     .evidencia-icon {
       width: 16px;
       height: 16px;
       fill: #2BA640;
     }
     .evidencia-loading {
-      opacity: 0.7;
       cursor: wait;
     }
   `;
@@ -107,70 +143,82 @@ function injectTriggerBadge() {
   const button = document.createElement("button");
   button.className = "evidencia-btn";
   button.innerHTML = `
-    <svg class="evidencia-icon" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+    <svg aria-hidden="true" class="evidencia-icon" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
     <span>Verificar Veracidade</span>
   `;
 
+  // Impede que atalhos globais do player também consumam Enter/Espaço.
+  for (const eventName of ["keydown", "keyup"]) {
+    button.addEventListener(eventName, (event) => {
+      if (["Enter", " "].includes((event as KeyboardEvent).key)) event.stopPropagation();
+    });
+  }
+  button.type = "button";
+  button.setAttribute("aria-expanded", "false");
+  const status = document.createElement("span");
+  status.setAttribute("role", "status");
+  status.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)";
+  shadowRoot.appendChild(status);
   button.addEventListener("click", async () => {
-    // 1. Confirmação visual imediata <= 1s (RNF-01 / HU01 / HU03)
+    if (button.getAttribute("aria-disabled") === "true") return;
+    const run = ++generation;
+    const controller = new AbortController();
+    activeController = controller;
+    const deadline = Date.now() + 9500;
+    const active = () => run === generation && getVideoIdFromUrl() === videoId;
+    button.setAttribute("aria-disabled", "true");
     button.classList.add("evidencia-loading");
     button.querySelector("span")!.textContent = "Analisando...";
+    status.textContent = "Analisando vídeo";
     togglePanel(true);
-
+    publish({ type: "ANALYSIS_START" });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const checkActive = () => {
+      if (!active() || Date.now() >= deadline) throw new Error("Checagem encerrada. Tente novamente.");
+    };
     try {
-      // 2. Extrai metadados do vídeo
-      const videoTitle =
-        document.querySelector("h1.ytd-watch-metadata")?.textContent?.trim() ||
-        document.title;
-      const channelName =
-        document.querySelector("#channel-name")?.textContent?.trim() || "Canal YouTube";
-
-      // 3. Extrai legendas (HU05 / HU10)
-      const captions = await extractCaptionsFromPage(videoId);
-
-      if (!captions) {
-        button.querySelector("span")!.textContent = "Sem Legendas";
-        button.classList.remove("evidencia-loading");
-        // Notifica o painel sobre a ausência de legendas (HU10)
-        panelIframe?.contentWindow?.postMessage(
-          { type: "NO_CAPTIONS_AVAILABLE" },
-          "*"
-        );
-        return;
-      }
-
-      const requestPayload: AnalyzeRequest = {
-        videoId,
-        videoTitle,
-        channelName,
-        transcript: captions.transcript,
-        language: captions.language,
+      const work = async () => {
+        const cached = await chrome.runtime.sendMessage({ type: "GET_CACHE", videoId });
+        checkActive();
+        if (cached?.success && cached.data) return cached.data;
+        const captions = await extractCaptionsFromPage(videoId, controller.signal);
+        checkActive();
+        if (!captions) return null;
+        const payload: AnalyzeRequest = {
+          videoId,
+          videoTitle: document.querySelector("h1.ytd-watch-metadata")?.textContent?.trim() || document.title,
+          channelName: document.querySelector("#channel-name")?.textContent?.trim() || "Canal YouTube",
+          transcript: captions.transcript,
+          language: captions.language,
+        };
+        const response = await chrome.runtime.sendMessage({ type: "ANALYZE_VIDEO", payload, deadline });
+        checkActive();
+        if (!response?.success) throw new Error(response?.error || "Não foi possível checar o vídeo. Tente novamente.");
+        return response.data;
       };
-
-      // 4. Solicita análise ao Service Worker
-      chrome.runtime.sendMessage(
-        { type: "ANALYZE_VIDEO", payload: requestPayload },
-        (response) => {
-          button.classList.remove("evidencia-loading");
-          if (response?.success) {
-            button.querySelector("span")!.textContent = `Veracidade: ${response.data.score}%`;
-            panelIframe?.contentWindow?.postMessage(
-              { type: "ANALYSIS_SUCCESS", data: response.data },
-              "*"
-            );
-          } else {
-            button.querySelector("span")!.textContent = "Erro na Checagem";
-            panelIframe?.contentWindow?.postMessage(
-              { type: "ANALYSIS_ERROR", error: response?.error },
-              "*"
-            );
-          }
-        }
-      );
-    } catch (err) {
-      button.classList.remove("evidencia-loading");
-      button.querySelector("span")!.textContent = "Erro Inesperado";
-      console.error("[EvidencIA] Erro na checagem:", err);
+      const data = await Promise.race([
+        work(),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error("Tempo limite de 10 segundos excedido. Tente novamente.")), Math.max(0, deadline - Date.now()));
+        }),
+      ]);
+      if (!active()) return;
+      publish(data ? { type: "ANALYSIS_SUCCESS", data } : { type: "NO_CAPTIONS_AVAILABLE" });
+      button.querySelector("span")!.textContent = data ? `Veracidade: ${data.score}%` : "Sem legendas — tentar novamente";
+      status.textContent = data ? "Checagem concluída" : "Legendas indisponíveis";
+    } catch (error) {
+      if (!active()) return;
+      publish({ type: "ANALYSIS_ERROR", error: error instanceof Error ? error.message : "Falha na checagem. Tente novamente." });
+      button.querySelector("span")!.textContent = "Tentar novamente";
+      status.textContent = "Falha na checagem";
+    } finally {
+      clearTimeout(timer);
+      controller.abort();
+      if (active()) {
+        generation++;
+        button.setAttribute("aria-disabled", "false");
+        button.classList.remove("evidencia-loading");
+      }
     }
   });
 
@@ -181,8 +229,16 @@ function injectTriggerBadge() {
 
 // O YouTube é uma SPA — escuta evento nativo de navegação
 window.addEventListener("yt-navigate-finish", () => {
+  generation++;
+  activeController?.abort();
+  clearTimeout(injectionTimer);
+  currentVideoId = null;
+  badgeContainer?.remove();
+  badgeContainer = null;
+  panelState = null;
+  togglePanel(false);
   if (window.location.pathname === "/watch") {
-    setTimeout(injectTriggerBadge, 500);
+    injectTriggerBadge();
   } else {
     togglePanel(false);
   }
@@ -190,5 +246,5 @@ window.addEventListener("yt-navigate-finish", () => {
 
 // Executa na carga inicial se já estiver em /watch
 if (window.location.pathname === "/watch") {
-  setTimeout(injectTriggerBadge, 1000);
+  injectTriggerBadge();
 }
