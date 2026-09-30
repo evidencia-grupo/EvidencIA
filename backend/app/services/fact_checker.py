@@ -198,6 +198,10 @@ class FactCheckerService:
         return AnalyzeResponse(
             analysisMode="demo",
             videoId=request.videoId,
+            videoTitle=request.videoTitle,
+            channelName=request.channelName,
+            uploadDate=request.uploadDate,
+            temporalContext=self._build_temporal_context(request.uploadDate),
             analyzedAt=datetime.now(timezone.utc).isoformat(),
             score=score,
             classification=classification,
@@ -249,13 +253,6 @@ class FactCheckerService:
                     "Diretrizes sanitárias da Anvisa e OMS descartam eficácia comprovada sem ensaios controlados."
                 )
                 conf = 0.94
-            elif any(w in s_lower for w in ["estudo", "dados", "pesquisa", "relatório", "banco central", "fmi", "ibge", "ensaios clínicos", "comprovado"]):
-                status = "apoiada"
-                evidence = (
-                    "Afirmação fundamentada em literatura científica ou dados estatísticos institucionais consolidados. "
-                    "As fontes correlatas corroboram as ordens de grandeza citadas."
-                )
-                conf = 0.91
             elif any(w in s_lower for w in ["talvez", "possível", "projeção", "estudos preliminares", "discute-se", "em debate"]):
                 status = "inconclusiva"
                 evidence = (
@@ -263,6 +260,13 @@ class FactCheckerService:
                     "com metodologias divergentes e ausência de consenso fático consolidado."
                 )
                 conf = 0.76
+            elif any(w in s_lower for w in ["estudo", "dados", "pesquisa", "relatório", "banco central", "fmi", "ibge", "ensaios clínicos", "comprovado"]):
+                status = "apoiada"
+                evidence = (
+                    "Afirmação fundamentada em literatura científica ou dados estatísticos institucionais consolidados. "
+                    "As fontes correlatas corroboram as ordens de grandeza citadas."
+                )
+                conf = 0.91
             else:
                 # Alegação empírica geral: avalia equilíbrio factual
                 if idx % 2 == 0:

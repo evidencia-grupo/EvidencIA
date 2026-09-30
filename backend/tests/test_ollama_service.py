@@ -29,8 +29,10 @@ def test_ollama_service_configuration():
 @pytest.mark.asyncio
 async def test_ollama_service_is_available_online():
     """Valida checagem de integridade quando o Ollama está online."""
-    with patch("httpx.AsyncClient.get") as mock_get:
-        mock_resp = AsyncMock()
+    from unittest.mock import MagicMock
+
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_get.return_value = mock_resp
 
@@ -41,6 +43,8 @@ async def test_ollama_service_is_available_online():
 @pytest.mark.asyncio
 async def test_ollama_service_extract_claims_success():
     """Valida extração estruturada de alegações via Qwen quando o modelo responde com JSON válido."""
+    from unittest.mock import MagicMock
+
     mock_claims_payload = {
         "claims": [
             {
@@ -59,8 +63,8 @@ async def test_ollama_service_extract_claims_success():
         }
     }
 
-    with patch("httpx.AsyncClient.post") as mock_post:
-        mock_resp = AsyncMock()
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+        mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.json.return_value = mock_ollama_response
         mock_post.return_value = mock_resp
@@ -76,8 +80,10 @@ async def test_ollama_service_extract_claims_success():
 @pytest.mark.asyncio
 async def test_ollama_service_extract_claims_errors():
     """Valida tratamento seguro contra respostas HTTP de erro ou JSON inválido."""
-    with patch("httpx.AsyncClient.post") as mock_post:
-        mock_resp = AsyncMock()
+    from unittest.mock import MagicMock
+
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+        mock_resp = MagicMock()
         mock_resp.status_code = 500
         mock_resp.text = "Internal Model Error"
         mock_post.return_value = mock_resp
@@ -86,8 +92,8 @@ async def test_ollama_service_extract_claims_errors():
         claims = await service.extract_claims_with_qwen("Transcrição", "Título")
         assert claims is None
 
-    with patch("httpx.AsyncClient.post") as mock_post:
-        mock_resp = AsyncMock()
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+        mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.json.return_value = {"message": {"content": "not-valid-json"}}
         mock_post.return_value = mock_resp
@@ -100,6 +106,8 @@ async def test_ollama_service_extract_claims_errors():
 @pytest.mark.asyncio
 async def test_ollama_service_generate_summary_lifecycle():
     """Valida síntese analítica gerada pelo Qwen em cenários de sucesso e falha."""
+    from unittest.mock import MagicMock
+
     mock_ollama_response = {
         "message": {
             "role": "assistant",
@@ -107,8 +115,8 @@ async def test_ollama_service_generate_summary_lifecycle():
         }
     }
 
-    with patch("httpx.AsyncClient.post") as mock_post:
-        mock_resp = AsyncMock()
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+        mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.json.return_value = mock_ollama_response
         mock_post.return_value = mock_resp
@@ -123,8 +131,8 @@ async def test_ollama_service_generate_summary_lifecycle():
         assert summary is not None
         assert "Dona Lurdes" in summary
 
-    with patch("httpx.AsyncClient.post") as mock_post:
-        mock_resp = AsyncMock()
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+        mock_resp = MagicMock()
         mock_resp.status_code = 500
         mock_resp.text = "Error"
         mock_post.return_value = mock_resp

@@ -181,8 +181,10 @@ async def test_hu04_fact_check_client_search_network_success():
         ]
     }
 
-    with patch("httpx.AsyncClient.get") as mock_get:
-        mock_resp = AsyncMock()
+    from unittest.mock import MagicMock
+
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.json.return_value = mock_payload
         mock_get.return_value = mock_resp
@@ -196,8 +198,10 @@ async def test_hu04_fact_check_client_search_network_success():
 @pytest.mark.asyncio
 async def test_hu04_fact_check_client_search_error_handling():
     """Valida tratamento seguro de erros HTTP 500 ou exceções de rede."""
-    with patch("httpx.AsyncClient.get") as mock_get:
-        mock_resp = AsyncMock()
+    from unittest.mock import MagicMock
+
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_resp = MagicMock()
         mock_resp.status_code = 500
         mock_resp.text = "Internal Server Error"
         mock_get.return_value = mock_resp
@@ -206,7 +210,7 @@ async def test_hu04_fact_check_client_search_error_handling():
         res = await client_fc.search_claims("termo")
         assert res == []
 
-    with patch("httpx.AsyncClient.get", side_effect=Exception("Connection timed out")):
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock, side_effect=Exception("Connection timed out")):
         client_fc = FactCheckClient(api_key="dummy_valid_key")
         res = await client_fc.search_claims("termo")
         assert res == []
