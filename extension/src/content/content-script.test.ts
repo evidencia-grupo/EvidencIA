@@ -95,7 +95,7 @@ it("timeout aborta a extração e rejeita resposta tardia", async () => {
   button().click(); await vi.advanceTimersByTimeAsync(9500);
   expect(button().getAttribute("aria-disabled")).toBe("false");
   expect(post).toHaveBeenCalledWith(
-    { type: "ANALYSIS_ERROR", error: "Tempo limite de 10 segundos excedido. Tente novamente." },
+    { type: "ANALYSIS_ERROR", error: "A checagem demorou mais do que o esperado. Tente de novo em instantes." },
     "https://extension.test",
   );
   resolve({ success: true, data: { score: 99 } }); await flush();

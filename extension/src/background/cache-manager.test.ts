@@ -9,6 +9,14 @@ const { CACHE_TTL_MS, isValidCacheEntry, getCachedResult, saveCachedResult } = a
 const mockAnalysis: AnalyzeResponse = {
   analysisMode: "demo",
   videoId: "video-test",
+  videoTitle: "Título do Vídeo de Teste",
+  channelName: "Canal de Teste",
+  uploadDate: "2026-01-15T00:00:00Z",
+  temporalContext: {
+    publicationYear: 2026,
+    isOldContent: false,
+    message: "As alegações foram apresentadas em 2026.",
+  },
   analyzedAt: "2026-09-30T10:00:00Z",
   score: 88,
   classification: "verdadeiro",

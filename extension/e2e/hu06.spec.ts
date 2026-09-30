@@ -102,6 +102,14 @@ async function measureRender(page: import("@playwright/test").Page) {
 const mockValidEntry: LocalCacheEntry = {
   analysisMode: "demo",
   videoId: "video-carlos",
+  videoTitle: "Vídeo de Teste Carlos Augusto",
+  channelName: "Canal de Testes",
+  uploadDate: "2026-01-15T00:00:00Z",
+  temporalContext: {
+    publicationYear: 2026,
+    isOldContent: false,
+    message: "As alegações foram apresentadas em 2026.",
+  },
   analyzedAt: "2026-09-30T10:00:00Z",
   score: 92,
   classification: "verdadeiro",
