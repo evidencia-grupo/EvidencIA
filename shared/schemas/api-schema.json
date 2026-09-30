@@ -26,13 +26,14 @@
     },
     "VerificationClaim": {
       "type": "object",
-      "required": ["id", "text", "status", "evidenceSummary", "confidence"],
+      "required": ["id", "text", "status", "evidenceSummary", "confidence", "sourceIds"],
       "properties": {
         "id": { "type": "string" },
         "text": { "type": "string" },
         "status": { "$ref": "#/definitions/ClaimVerificationStatus" },
         "evidenceSummary": { "type": "string" },
-        "confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+        "confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "sourceIds": { "type": "array", "items": { "type": "string" } }
       },
       "additionalProperties": false
     },

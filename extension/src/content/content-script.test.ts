@@ -88,10 +88,16 @@ it("ausência de legendas encerra carregamento; erro inesperado tem fallback", a
 });
 it("timeout aborta a extração e rejeita resposta tardia", async () => {
   await import("./content-script");
+  panelMessage("PANEL_READY");
+  const post = vi.spyOn(frame().contentWindow!, "postMessage");
   let resolve!: (value: unknown) => void;
   sendMessage.mockReturnValueOnce(new Promise(r => { resolve = r; }));
   button().click(); await vi.advanceTimersByTimeAsync(9500);
   expect(button().getAttribute("aria-disabled")).toBe("false");
+  expect(post).toHaveBeenCalledWith(
+    { type: "ANALYSIS_ERROR", error: "Tempo limite de 10 segundos excedido. Tente novamente." },
+    "https://extension.test",
+  );
   resolve({ success: true, data: { score: 99 } }); await flush();
   expect(button().textContent).not.toContain("99%");
 });

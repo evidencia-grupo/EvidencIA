@@ -174,7 +174,8 @@ function injectTriggerBadge() {
     publish({ type: "ANALYSIS_START" });
     let timer: ReturnType<typeof setTimeout> | undefined;
     const checkActive = () => {
-      if (!active() || Date.now() >= deadline) throw new Error("Checagem encerrada. Tente novamente.");
+      if (!active()) throw new Error("Checagem encerrada. Tente novamente.");
+      if (Date.now() >= deadline) throw new Error("Tempo limite de 10 segundos excedido. Tente novamente.");
     };
     try {
       const work = async () => {

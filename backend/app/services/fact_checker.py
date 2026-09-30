@@ -92,6 +92,7 @@ class FactCheckerService:
         # 2. Verificação com prioridade a datasets brasileiros (FactChecks.br) -> Google Fact Check API -> Análise
         for idx, (prop_text, default_status, default_evidence, default_conf) in enumerate(extracted_propositions):
             claim_id = f"clm-{idx + 1:02d}"
+            claim_source_ids: List[str] = []
 
             # Prioridade 1: Casamento direto com dataset curado de agências brasileiras (Lupa, Aos Fatos, Boatos.org)
             br_match = brazilian_fact_matcher.find_match(prop_text)
@@ -102,7 +103,9 @@ class FactCheckerService:
                 )
                 confidence = br_match["confidence"]
                 if br_match.get("source"):
-                    sources.append(br_match["source"])
+                    source = FactCheckingSource.model_validate(br_match["source"])
+                    sources.append(source)
+                    claim_source_ids.append(source.id)
             else:
                 # Prioridade 2: Consulta à Google Fact Check Tools API (ClaimReview)
                 fc_results = await fact_check_client.search_claims(prop_text)
@@ -115,7 +118,9 @@ class FactCheckerService:
                     )
                     confidence = matched["confidence"]
                     if matched.get("source"):
-                        sources.append(matched["source"])
+                        source = FactCheckingSource.model_validate(matched["source"])
+                        sources.append(source)
+                        claim_source_ids.append(source.id)
                 else:
                     # Prioridade 3: Avaliação analítica e factual não-dogmática (HU04)
                     status = default_status
@@ -129,6 +134,7 @@ class FactCheckerService:
                     status=status,
                     evidenceSummary=evidence_summary,
                     confidence=confidence,
+                    sourceIds=claim_source_ids,
                 )
             )
 
@@ -152,6 +158,11 @@ class FactCheckerService:
                     publishedAt="2026-03-20T00:00:00Z",
                 ),
             ]
+
+        fallback_source_ids = [source.id for source in sources[:2]]
+        for claim in claims:
+            if not claim.sourceIds:
+                claim.sourceIds = fallback_source_ids
 
         # Calcula score e classificação com ponderação equilibrada
         supported_count = sum(1 for c in claims if c.status == "apoiada")
@@ -297,6 +308,7 @@ class FactCheckerService:
                     status="apoiada",
                     evidenceSummary="Relatórios institucionais e publicações científicas de referência foram consultados.",
                     confidence=0.92,
+                    sourceIds=["src-01"],
                 ),
                 VerificationClaim(
                     id="clm-02",
@@ -304,6 +316,7 @@ class FactCheckerService:
                     status="apoiada",
                     evidenceSummary="Há evidências preliminares corroboradas na literatura.",
                     confidence=0.78,
+                    sourceIds=["src-01", "src-02"],
                 ),
             ]
         elif "talvez" in transcript_lower and "dados" not in transcript_lower:
@@ -314,6 +327,7 @@ class FactCheckerService:
                     status="contraditada",
                     evidenceSummary="Relatórios institucionais desmentem a premissa.",
                     confidence=0.92,
+                    sourceIds=["src-01"],
                 ),
                 VerificationClaim(
                     id="clm-02",
@@ -321,6 +335,7 @@ class FactCheckerService:
                     status="inconclusiva",
                     evidenceSummary="Há evidências preliminares, mas com divergência metodológica na literatura.",
                     confidence=0.78,
+                    sourceIds=["src-01", "src-02"],
                 ),
             ]
         elif "alegação" in transcript_lower and "dados" not in transcript_lower and "estudo" not in transcript_lower:
@@ -331,6 +346,7 @@ class FactCheckerService:
                     status="contraditada",
                     evidenceSummary="Publicações preliminares contradizem a afirmação.",
                     confidence=0.92,
+                    sourceIds=["src-01"],
                 ),
                 VerificationClaim(
                     id="clm-02",
@@ -338,6 +354,7 @@ class FactCheckerService:
                     status="apoiada",
                     evidenceSummary="Fontes públicas corroboram parte das evidências.",
                     confidence=0.78,
+                    sourceIds=["src-01", "src-02"],
                 ),
             ]
         else:
@@ -350,6 +367,7 @@ class FactCheckerService:
                     status=prop_status,
                     evidenceSummary=prop_ev,
                     confidence=prop_conf,
+                    sourceIds=["src-01", "src-02"],
                 )
                 for i, (prop_text, prop_status, prop_ev, prop_conf) in enumerate(extracted)
             ]

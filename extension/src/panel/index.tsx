@@ -143,7 +143,6 @@ export function App() {
             <h3 style={{ fontSize: "14px", fontWeight: "600", color: "var(--color-text-primary)" }}>
               Alegações Analisadas ({data.claims.length})
             </h3>
-
             {/* Alegações Contraditas pelas Evidências */}
             {data.claims.some((c) => c.status === "contraditada") && (
               <section aria-labelledby="heading-contraditadas">
@@ -156,7 +155,7 @@ export function App() {
                 {data.claims
                   .filter((c) => c.status === "contraditada")
                   .map((claim) => (
-                    <ClaimCard key={claim.id} claim={claim} />
+                    <ClaimCard key={claim.id} claim={claim} sources={data.sources} />
                   ))}
               </section>
             )}
@@ -173,7 +172,7 @@ export function App() {
                 {data.claims
                   .filter((c) => c.status === "apoiada")
                   .map((claim) => (
-                    <ClaimCard key={claim.id} claim={claim} />
+                    <ClaimCard key={claim.id} claim={claim} sources={data.sources} />
                   ))}
               </section>
             )}
@@ -190,7 +189,7 @@ export function App() {
                 {data.claims
                   .filter((c) => c.status === "inconclusiva")
                   .map((claim) => (
-                    <ClaimCard key={claim.id} claim={claim} />
+                    <ClaimCard key={claim.id} claim={claim} sources={data.sources} />
                   ))}
               </section>
             )}
