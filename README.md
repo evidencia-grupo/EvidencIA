@@ -177,17 +177,17 @@ A esteira do GitHub Actions (`.github/workflows/ci.yml`) orquestra duas trilhas 
 
 - Nenhuma chave de API ou credencial sensível deve ser adicionada à pasta `extension/`.
 - Todos os endpoints externos são protegidos por Rate Limiting e validação de origem.
-- Em caso de dúvidas de conformidade, consulte o [Threat Model (STRIDE)](../documentation/docs/tecnico/threat-model.md).
+- Em caso de dúvidas de conformidade, consulte o [Threat Model (STRIDE)](https://evidencia-grupo.github.io/documentation/tecnico/threat-model/).
 
-## HU03 — Validação da checagem no player
+---
 
-O fluxo da HU03 inclui feedback imediato, leitura das legendas do player, painel sincronizado, cache de 24h, timeout e recuperação de falhas. A integração de IA/busca ainda será implementada: o backend atual identifica respostas como demonstração (`analysisMode: demo`) e o painel mostra esse aviso. Não use essas respostas como checagem factual.
+## 7. Documentação Técnica e Evidências
 
-Consulte [HU03.md](./HU03.md) para testes de aceitação, cobertura, acessibilidade, comandos de execução e dependências de homologação. Após alterar o código, execute `npm run build` em `extension/`, recarregue a extensão em `chrome://extensions` e atualize o vídeo no YouTube. Selecione a pasta `extension/dist` em **Carregar sem compactação**.
+Toda a documentação técnica, especificações de requisitos, decisões arquiteturais (ADRs) e relatórios de evidência de teste estão centralizados no repositório dedicado [`documentation`](https://github.com/evidencia-grupo/documentation) e publicados no portal:
 
-## HU06 — Consulta Imediata via Cache Local
-
-A história HU06 (Persona: Carlos Augusto) assegura que vídeos já auditados nas últimas 24 horas sejam recuperados de forma instantânea via `chrome.storage.local` com latência inferior a 1 segundo (e meta $< 100\text{ms}$ em ambiente controlado pela ADR-003), sem nova extração de legendas nem consumo de rede externa. Registros expirados ou corrompidos passam por *lazy eviction* automática, disparando nova análise completa.
-
-Consulte [HU06.md](./HU06.md) para a matriz de critérios de aceitação, rastreabilidade e [docs/hu06-evidencias.md](docs/hu06-evidencias.md) para os relatórios de execução.
-
+* **Portal de Documentação:** [https://evidencia-grupo.github.io/documentation/](https://evidencia-grupo.github.io/documentation/)
+* **Arquitetura do Sistema:** [Arquitetura e Engenharia](https://evidencia-grupo.github.io/documentation/tecnico/arquitetura/)
+* **Pipeline de IA e Datasets:** [Pipeline IA & Datasets](https://evidencia-grupo.github.io/documentation/tecnico/ia-e-datasets/)
+* **Evidências de Validação (HU03):** [Relatório de Homologação HU03](https://evidencia-grupo.github.io/documentation/tecnico/evidencias/hu03-checagem-rapida/)
+* **Evidências de Validação (HU06 — Cache Local):** [Relatório de Homologação HU06](https://evidencia-grupo.github.io/documentation/tecnico/evidencias/hu06-cache-local/)
+* **Backlog de Histórias de Usuário:** [Backlog e Critérios Gherkin](https://evidencia-grupo.github.io/documentation/requisitos/backlog-e-historias/)
