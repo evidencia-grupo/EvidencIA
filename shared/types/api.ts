@@ -41,9 +41,19 @@ export interface FactCheckingSource {
   publishedAt?: string;
 }
 
+export interface TemporalContext {
+  publicationYear?: number | null;
+  isOldContent: boolean;
+  message: string;
+}
+
 export interface AnalyzeResponse {
   analysisMode: "demo" | "live";
   videoId: string;
+  videoTitle: string;
+  channelName: string;
+  uploadDate?: string | null;
+  temporalContext: TemporalContext;
   analyzedAt: string;
   score: number; // 0 a 100
   classification: VerificationClassification;

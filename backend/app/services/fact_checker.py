@@ -7,6 +7,7 @@ from app.schemas import (
     AnalyzeResponse,
     VerificationClaim,
     FactCheckingSource,
+    TemporalContext,
     VerificationClassification,
 )
 from app.config import settings
@@ -20,6 +21,29 @@ class FactCheckerService:
     2. Agregação paralela de evidências e busca factual
     3. Síntese e cômputo da nota de veracidade
     """
+
+    @staticmethod
+    def _build_temporal_context(upload_date: str | None) -> TemporalContext:
+        publication_year = None
+        if upload_date:
+            try:
+                publication_year = datetime.fromisoformat(upload_date.replace("Z", "+00:00")).year
+            except ValueError:
+                pass
+
+        if publication_year is None:
+            message = "Data de publicação indisponível; avalie as alegações sem presumir o período do vídeo."
+        else:
+            message = (
+                f"As alegações foram apresentadas em {publication_year}; "
+                "mudanças posteriores não tornam falsa uma afirmação correta à época."
+            )
+
+        return TemporalContext(
+            publicationYear=publication_year,
+            isOldContent=publication_year is not None and publication_year < datetime.now(timezone.utc).year,
+            message=message,
+        )
 
     async def analyze(self, request: AnalyzeRequest) -> AnalyzeResponse:
         start_time = time.perf_counter()
@@ -115,6 +139,10 @@ class FactCheckerService:
         return AnalyzeResponse(
             analysisMode="demo",
             videoId=request.videoId,
+            videoTitle=request.videoTitle,
+            channelName=request.channelName,
+            uploadDate=request.uploadDate,
+            temporalContext=self._build_temporal_context(request.uploadDate),
             analyzedAt=datetime.now(timezone.utc).isoformat(),
             score=score,
             classification=classification,

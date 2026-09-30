@@ -1,5 +1,13 @@
-/** HU05/HU10: lê faixas no mundo MAIN através do worker e busca somente legendas do YouTube. */
-export interface ExtractedCaptions { videoId: string; transcript: string; language: string }
+/** HU05/HU08/HU10: lê faixas e metadados no mundo MAIN através do worker. */
+export interface ExtractedCaptions {
+  videoId: string;
+  transcript: string;
+  language: string;
+  videoTitle: string;
+  channelName: string;
+  uploadDate?: string;
+  durationSeconds?: number;
+}
 
 export function sanitizeTranscriptText(rawText: string): string {
   return rawText.replace(/<[^>]+>/g, " ").replace(/\[[\p{L}\s]+\]/gu, "")
@@ -20,7 +28,11 @@ export async function extractCaptionsFromPage(videoId: string, signal?: AbortSig
   const result = await chrome.runtime.sendMessage({ type: "GET_CAPTION_TRACKS", videoId });
   signal?.throwIfAborted();
   if (!result?.success) throw new Error(result?.error || "Não foi possível acessar as legendas. Tente novamente.");
-  const tracks = result.data as Array<{ baseUrl: string; languageCode: string }>;
+  const payload = result.data as {
+    tracks?: Array<{ baseUrl: string; languageCode: string }>;
+    metadata?: Pick<ExtractedCaptions, "videoTitle" | "channelName" | "uploadDate" | "durationSeconds">;
+  };
+  const tracks = payload?.tracks;
   if (!Array.isArray(tracks)) throw new Error("Resposta de legendas inválida.");
   if (!tracks.length) return null;
   const track = tracks.find(item => item.languageCode.startsWith("pt")) ?? tracks[0];
@@ -30,5 +42,13 @@ export async function extractCaptionsFromPage(videoId: string, signal?: AbortSig
   if (!response.ok) throw new Error(`Não foi possível baixar as legendas (HTTP ${response.status}). Tente novamente.`);
   const transcript = parseCaptionBody(await response.text());
   if (transcript.length < 50) throw new Error("A transcrição recebida está vazia ou é curta demais para análise. Tente novamente.");
-  return { videoId, transcript, language: track.languageCode };
+  return {
+    videoId,
+    transcript,
+    language: track.languageCode,
+    videoTitle: payload.metadata?.videoTitle || document.title,
+    channelName: payload.metadata?.channelName || "Canal YouTube",
+    uploadDate: payload.metadata?.uploadDate,
+    durationSeconds: payload.metadata?.durationSeconds,
+  };
 }
