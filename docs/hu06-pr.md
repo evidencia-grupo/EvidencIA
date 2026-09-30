@@ -1,6 +1,6 @@
 ## Identificação da Mudança
 
-- **Issue Relacionada:** Closes #6 (manter aberta até homologação em produção com IA própria).
+- **Issue Relacionada:** Refs #6 (manter aberta até homologação em produção com IA própria).
 - **História de Usuário / Tarefa:** HU06 — Consulta Imediata via Cache Local.
 - **Tipo de Alteração:**
   - [x] Nova Funcionalidade (Feature)
@@ -30,14 +30,14 @@ Implementa a arquitetura de persistência e recuperação instantânea de checag
 - **Épico / Feature:** Épico E5 — Performance e Cache / Feature F1.3 — Cache Local e Otimização de Rede.
 - **Requisitos Vinculados:** RF-09 (Exibição de síntese e classificação), RNF-01 (Latência $< 1\text{s}$ no cache), RNF-05 (Eficiência e retenção restrita).
 - **Decisão Arquitetural Relacionada:** ADR-003 (Cache local de 24 horas via `chrome.storage.local`), alinhada com ADR-001 (Isolamento MV3) e ADR-002 (Backend Proxy).
-- **Dependência de Branch:** Esta branch (`feat/hu06-cache-local`) foi baseada na branch `feat/hu03-checagem-rapida` (PR #3), que introduziu o pipeline básico de UI e mensageria MV3. Recomenda-se integrar a HU03 previamente ou realizar o merge sequencial.
+- **Dependência de Branch:** Esta branch (`feat/hu06-cache-local`) foi baseada na branch `feat/hu03-checagem-rapida` (HU03), que introduziu o pipeline básico de UI e mensageria MV3. A HU03 já foi integrada à main pelo PR #19.
 
 ---
 
 ## Checklist de Qualidade (Definition of Done)
 
 - [x] Código compilado e tipado sem erros (`npm run typecheck` estrito e Ruff aprovado).
-- [x] Testes unitários implementados e executando com 100% de sucesso (90 testes na extensão, 10 testes no backend).
+- [x] Testes unitários implementados e executando com 100% de sucesso (97 testes na extensão, 10 testes no backend).
 - [x] Cobertura de testes unitários superior a 80% nos módulos modificados (`cache-manager.ts` com 100%; extensão total com 99,76% de linhas; backend com 97,62% de branches).
 - [x] Nenhum segredo, chave de API ou credencial privada incluída no commit.
 - [x] Navegabilidade por teclado e acessibilidade mantidas sem regressão.
@@ -50,7 +50,7 @@ Implementa a arquitetura de persistência e recuperação instantânea de checag
 
 ## Validação e Limites
 
-- **Testes Unitários:** 90 testes Vitest na extensão e 10 testes Pytest no backend.
+- **Testes Unitários:** 97 testes Vitest na extensão e 10 testes Pytest no backend.
 - **Testes E2E (Playwright no Chromium):** 12 cenários cobrindo cache hit instantâneo, persistência pós-reload (`page.reload()`), lazy eviction de registro com 24h exatas, descarte de timestamp futuro / payload divergente, proteção contra gravação de erros e resiliência a falhas de I/O.
 - **Métricas:** Latência de renderização no cache hit medida entre 18ms e 42ms. Zero requisições de rede ou extrações de legenda disparadas no cache hit.
 - **Limitações:** A suíte utiliza dados mock/controlados e perfil Chromium descartável. A integração com IA própria e a validação em ambiente real de produção dependem de etapas subsequentes da equipe.

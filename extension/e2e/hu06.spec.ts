@@ -139,7 +139,9 @@ test("HU06: Cenário 1 — Cache válido disponível exibe resultado em <1s sem 
 
   // Garante que o fetch do Service Worker falharia se qualquer requisição de rede fosse tentada
   await extension.worker.evaluate(() => {
+    (globalThis as any).cacheFetchCalls = 0;
     globalThis.fetch = async () => {
+      (globalThis as any).cacheFetchCalls++;
       throw new Error("REDE_BLOQUEADA: nenhuma chamada externa de checagem deve ocorrer no cache hit.");
     };
   });
@@ -156,9 +158,11 @@ test("HU06: Cenário 1 — Cache válido disponível exibe resultado em <1s sem 
 
   // Verifica ausência absoluta de chamadas externas de legendas e backend
   expect(captionCalls()).toBe(0);
+  expect(await extension.worker.evaluate(() => (globalThis as any).cacheFetchCalls)).toBe(0);
 
   // Medição de latência estrita: < 1s (critério obrigatório) e < 100ms (meta controlada ADR-003)
   const clickTime = await page.evaluate(() => (window as any).hu06.click);
+  await expect.poll(() => frame.evaluate(() => (window as any).renderedAt)).toBeTruthy();
   const renderTime = await frame.evaluate(() => (window as any).renderedAt);
   const latencyMs = renderTime - clickTime;
   expect(latencyMs).toBeGreaterThan(0);
@@ -174,7 +178,9 @@ test("HU06: Cenário 1b — Cache continua funcionando após recarregar a págin
   }, mockValidEntry);
 
   await extension.worker.evaluate(() => {
+    (globalThis as any).cacheFetchCalls = 0;
     globalThis.fetch = async () => {
+      (globalThis as any).cacheFetchCalls++;
       throw new Error("REDE_BLOQUEADA: não deve acessar backend.");
     };
   });
@@ -184,14 +190,17 @@ test("HU06: Cenário 1b — Cache continua funcionando após recarregar a págin
   // Recarrega a página simulando nova navegação/reabertura do mesmo vídeo
   await page.reload();
   await expect(page.getByRole("button", { name: "Verificar Veracidade" })).toBeVisible();
+  await expect(panel.getByRole("button", { name: /Fechar painel/, includeHidden: true })).toBeAttached();
   const reopenedFrame = await measureRender(page);
 
   await button.click();
 
   await expect(panel.getByText(mockValidEntry.summary)).toBeVisible();
   expect(captionCalls()).toBe(0);
+  expect(await extension.worker.evaluate(() => (globalThis as any).cacheFetchCalls)).toBe(0);
 
   const reopenedClick = await page.evaluate(() => (window as any).hu06.click);
+  await expect.poll(() => reopenedFrame.evaluate(() => (window as any).renderedAt)).toBeTruthy();
   const reopenedRender = await reopenedFrame.evaluate(() => (window as any).renderedAt);
   const latency = reopenedRender - reopenedClick;
   expect(latency).toBeLessThan(1000);

@@ -168,21 +168,13 @@ describe("cache-manager", () => {
       expect(isValidCacheEntry(entryStillValid, "video-test", FIXED_NOW)).toBe(true);
     });
 
-    it("trata TTL negativo, zero ou não finito assumindo o padrão de 24 horas", () => {
-      const entryZeroTtl = {
-        ...mockAnalysis,
-        timestamp: FIXED_NOW - 1000,
-        ttl: 0,
-      };
-      expect(isValidCacheEntry(entryZeroTtl, "video-test", FIXED_NOW)).toBe(true);
+    it.each([0, -500, NaN, Infinity, null, "86400000", CACHE_TTL_MS + 1])(
+      "rejeita TTL corrompido ou superior a 24 horas: %s",
+      (ttl) => {
+        expect(isValidCacheEntry({ ...mockAnalysis, timestamp: FIXED_NOW - 1000, ttl }, "video-test", FIXED_NOW)).toBe(false);
+      }
+    );
 
-      const entryNegativeTtl = {
-        ...mockAnalysis,
-        timestamp: FIXED_NOW - 1000,
-        ttl: -500,
-      };
-      expect(isValidCacheEntry(entryNegativeTtl, "video-test", FIXED_NOW)).toBe(true);
-    });
   });
 
   describe("getCachedResult", () => {
@@ -216,6 +208,12 @@ describe("cache-manager", () => {
 
       const result = await getCachedResult("video-test", FIXED_NOW);
       expect(result).toBeNull();
+      expect(storage.remove).toHaveBeenCalledWith("video-test");
+    });
+
+    it("remove registro nulo como corrompido", async () => {
+      storage.get.mockResolvedValue({ "video-test": null });
+      expect(await getCachedResult("video-test", FIXED_NOW)).toBeNull();
       expect(storage.remove).toHaveBeenCalledWith("video-test");
     });
 

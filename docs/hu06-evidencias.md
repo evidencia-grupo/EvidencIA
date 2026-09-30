@@ -89,3 +89,15 @@ All checks passed!
 10 passed in 1.88s
 Required test coverage of 81.0% reached. Total coverage: 97.62%
 ```
+
+
+## Revalidação da revisão — 30/09/2026
+
+Corrigidos TTLs corrompidos ou superiores a 24h e remoção de entradas nulas. TTL ausente mantém compatibilidade com registros anteriores; TTL explícito deve ser finito, positivo e no máximo 24h. Testes de regressão cobrem esses limites.
+
+- Tipagem e build aprovados; 97 testes Vitest e 10 testes Pytest aprovados; Ruff sem erros.
+- Cobertura da extensão: 99,76% de linhas, 96,01% de ramificações; cache-manager com 100% nas quatro métricas. Backend: 97,62% de cobertura combinada com ramificações.
+- Os testes E2E de cache agora contam tentativas de fetch do worker e exigem zero, além de zero consultas de legendas; aguardam o frame de renderização antes de medir a latência.
+- A IA própria permanece em preparação; a validação factual de produção não é demonstrada pelos testes com mock.
+
+- Playwright: 12 cenários aprovados (24,1s de execução total), incluindo cache abaixo de 100ms antes e após reload e renovação de registros expirados/corrompidos.

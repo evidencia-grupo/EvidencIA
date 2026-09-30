@@ -34,9 +34,10 @@ export function isValidCacheEntry(entry: unknown, expectedVideoId: string, now =
 
   // Validação do TTL: número finito e positivo
   const ttl =
-    typeof candidate.ttl === "number" && Number.isFinite(candidate.ttl) && candidate.ttl > 0
-      ? candidate.ttl
-      : CACHE_TTL_MS;
+    candidate.ttl === undefined ? CACHE_TTL_MS : candidate.ttl;
+  if (typeof ttl !== "number" || !Number.isFinite(ttl) || ttl <= 0 || ttl > CACHE_TTL_MS) {
+    return false;
+  }
 
   // Critério de expiração: idade igual ou superior ao TTL é descartada
   const age = now - candidate.timestamp;
@@ -58,7 +59,7 @@ export async function getCachedResult(videoId: string, now = Date.now()): Promis
   try {
     const result = await chrome.storage.local.get(videoId);
     const entry = result?.[videoId];
-    if (entry === undefined || entry === null) {
+    if (entry === undefined) {
       return null;
     }
 
