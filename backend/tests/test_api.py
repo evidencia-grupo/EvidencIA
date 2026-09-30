@@ -1,7 +1,14 @@
+import pytest
+from app.config import settings
 from fastapi.testclient import TestClient
 from app.main import app
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def mock_provider(monkeypatch):
+    monkeypatch.setattr(settings, "LLM_PROVIDER", "mock")
 
 
 def test_health_check():
@@ -9,7 +16,8 @@ def test_health_check():
     response = client.get("/api/v1/health")
     assert response.status_code == 200
     data = response.json()
-    assert data["status"] == "healthy"
+    assert data["status"] == "degraded"
+    assert data["services"]["llmConnector"] == "demo"
     assert data["version"] == "1.0.0"
     assert "services" in data
     assert "timestamp" in data
@@ -29,6 +37,7 @@ def test_analyze_video_success():
     response = client.post("/api/v1/analyze", json=payload)
     assert response.status_code == 200
     data = response.json()
+    assert data["analysisMode"] == "demo"
     assert data["videoId"] == "test-vid-123"
     assert 0 <= data["score"] <= 100
     assert data["classification"] in ["verdadeiro", "moderado", "falso", "inconclusivo"]

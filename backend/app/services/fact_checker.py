@@ -36,8 +36,9 @@ class FactCheckerService:
         if settings.LLM_PROVIDER == "mock":
             return await self._mock_analysis(request, start_time)
 
-        # Implementação extensível para provedores reais (OpenAI, Gemini, Anthropic)
-        return await self._mock_analysis(request, start_time)
+        # HU03: integração com a IA própria ainda em preparação.
+        # Substituir este bloqueio pelo pipeline factual quando o serviço estiver disponível.
+        raise RuntimeError("A integração com a IA própria ainda está em preparação. Configure mock apenas para demonstração.")
 
     async def _mock_analysis(self, request: AnalyzeRequest, start_time: float) -> AnalyzeResponse:
         # Simula processamento assíncrono realista (ex.: 1200ms)
@@ -68,7 +69,7 @@ class FactCheckerService:
             FactCheckingSource(
                 id="src-01",
                 title="Repositório Institucional de Evidências Factual",
-                url="https://www.scielo.br",
+                url="https://www.scielo.br/",
                 domain="scielo.br",
                 reliabilityScore=0.96,
                 publishedAt="2026-01-15T00:00:00Z",
@@ -76,7 +77,7 @@ class FactCheckerService:
             FactCheckingSource(
                 id="src-02",
                 title="Agência Pública de Checagem e Jornalismo",
-                url="https://apublica.org",
+                url="https://apublica.org/",
                 domain="apublica.org",
                 reliabilityScore=0.91,
                 publishedAt="2026-03-20T00:00:00Z",
@@ -103,6 +104,7 @@ class FactCheckerService:
         elapsed_ms = int((time.perf_counter() - start_time) * 1000)
 
         return AnalyzeResponse(
+            analysisMode="demo",
             videoId=request.videoId,
             analyzedAt=datetime.now(timezone.utc).isoformat(),
             score=score,
