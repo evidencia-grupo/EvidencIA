@@ -53,6 +53,7 @@ class FactCheckerService:
                 status="apoiada" if "estudo" in transcript_lower or "dados" in transcript_lower else "contraditada",
                 evidenceSummary="Relatórios institucionais e publicações científicas de referência foram consultados.",
                 confidence=0.92,
+                sourceIds=["src-01"],
             ),
             VerificationClaim(
                 id="clm-02",
@@ -60,6 +61,7 @@ class FactCheckerService:
                 status="inconclusiva" if "talvez" in transcript_lower or "possível" in transcript_lower else "apoiada",
                 evidenceSummary="Há evidências preliminares, mas com divergência metodológica na literatura.",
                 confidence=0.78,
+                sourceIds=["src-01", "src-02"],
             ),
         ]
 

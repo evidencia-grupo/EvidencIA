@@ -1,10 +1,11 @@
-import type { VerificationClaim } from "../../../../shared/types/api";
+import type { FactCheckingSource, VerificationClaim } from "../../../../shared/types/api";
 
 interface ClaimCardProps {
   claim: VerificationClaim;
+  sources: FactCheckingSource[];
 }
 
-export function ClaimCard({ claim }: ClaimCardProps) {
+export function ClaimCard({ claim, sources }: ClaimCardProps) {
   const getBadgeStyle = () => {
     switch (claim.status) {
       case "apoiada":
@@ -32,6 +33,7 @@ export function ClaimCard({ claim }: ClaimCardProps) {
   };
 
   const badge = getBadgeStyle();
+  const claimSources = sources.filter((source) => claim.sourceIds.includes(source.id));
 
   return (
     <div class="card" style={{ marginBottom: "8px" }}>
@@ -59,6 +61,20 @@ export function ClaimCard({ claim }: ClaimCardProps) {
       <p style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
         {claim.evidenceSummary}
       </p>
+      {claimSources.length > 0 && (
+        <div style={{ marginTop: "8px", fontSize: "12px" }}>
+          <strong>Referências:</strong>
+          <ul style={{ margin: "4px 0 0", paddingLeft: "18px" }}>
+            {claimSources.map((source) => (
+              <li key={source.id}>
+                <a href={source.url} target="_blank" rel="noopener noreferrer">
+                  {source.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

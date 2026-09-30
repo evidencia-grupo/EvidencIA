@@ -21,6 +21,7 @@ class VerificationClaim(BaseModel):
     status: ClaimVerificationStatus = Field(..., description="Status de verificação factual")
     evidenceSummary: str = Field(..., description="Resumo das evidências consultadas")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Grau de certeza (0.0 a 1.0)")
+    sourceIds: List[str] = Field(default_factory=list, description="IDs das fontes usadas na checagem")
 
 
 class FactCheckingSource(BaseModel):

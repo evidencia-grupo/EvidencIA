@@ -118,7 +118,7 @@ function App() {
               Alegações Analisadas ({data.claims.length})
             </h3>
             {data.claims.map((claim) => (
-              <ClaimCard key={claim.id} claim={claim} />
+              <ClaimCard key={claim.id} claim={claim} sources={data.sources} />
             ))}
           </div>
 
