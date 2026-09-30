@@ -160,3 +160,9 @@ A esteira do GitHub Actions (`.github/workflows/ci.yml`) orquestra duas trilhas 
 - Nenhuma chave de API ou credencial sensível deve ser adicionada à pasta `extension/`.
 - Todos os endpoints externos são protegidos por Rate Limiting e validação de origem.
 - Em caso de dúvidas de conformidade, consulte o [Threat Model (STRIDE)](../documentation/docs/tecnico/threat-model.md).
+
+## HU03 — Validação da checagem no player
+
+O fluxo da HU03 inclui feedback imediato, leitura das legendas do player, painel sincronizado, cache de 24h, timeout e recuperação de falhas. A integração de IA/busca ainda será implementada: o backend atual identifica respostas como demonstração (`analysisMode: demo`) e o painel mostra esse aviso. Não use essas respostas como checagem factual.
+
+Consulte [HU03.md](./HU03.md) para testes de aceitação, cobertura, acessibilidade, comandos de execução e dependências de homologação. Após alterar o código, execute `npm run build` em `extension/`, recarregue a extensão em `chrome://extensions` e atualize o vídeo no YouTube. Selecione a pasta `extension/dist` em **Carregar sem compactação**.

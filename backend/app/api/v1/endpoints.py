@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Header, status
 from typing import Optional
 
 from app.schemas import AnalyzeRequest, AnalyzeResponse, HealthResponse
+from app.config import settings
 from app.services.fact_checker import fact_checker_service
 
 router = APIRouter(prefix="/api/v1", tags=["Fact-Checking"])
@@ -48,11 +49,11 @@ async def analyze_video(
 )
 async def health_check():
     return HealthResponse(
-        status="healthy",
+        status="degraded",
         version="1.0.0",
         services={
-            "llmConnector": "operational",
-            "searchConnector": "operational",
+            "llmConnector": "demo" if settings.LLM_PROVIDER == "mock" else "not_integrated",
+            "searchConnector": "not_integrated",
             "cacheStore": "operational",
         },
         timestamp=datetime.now(timezone.utc).isoformat(),

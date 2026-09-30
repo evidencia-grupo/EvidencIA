@@ -60,3 +60,7 @@ coverage/
 *.sublime-workspace
 .DS_Store
 Thumbs.db
+
+# Relatórios de execução Playwright
+playwright-report/
+test-results/

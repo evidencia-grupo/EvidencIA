@@ -33,6 +33,7 @@ class FactCheckingSource(BaseModel):
 
 
 class AnalyzeResponse(BaseModel):
+    analysisMode: Literal["demo", "live"]
     videoId: str
     analyzedAt: str
     score: int = Field(..., ge=0, le=100, description="Índice numérico de veracidade de 0 a 100")
