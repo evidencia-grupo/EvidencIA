@@ -186,8 +186,10 @@ function injectTriggerBadge() {
         if (!captions) return null;
         const payload: AnalyzeRequest = {
           videoId,
-          videoTitle: document.querySelector("h1.ytd-watch-metadata")?.textContent?.trim() || document.title,
-          channelName: document.querySelector("#channel-name")?.textContent?.trim() || "Canal YouTube",
+          videoTitle: captions.videoTitle,
+          channelName: captions.channelName,
+          uploadDate: captions.uploadDate,
+          durationSeconds: captions.durationSeconds,
           transcript: captions.transcript,
           language: captions.language,
         };
