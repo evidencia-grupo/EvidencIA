@@ -33,7 +33,7 @@ export function ClaimCard({ claim, sources }: ClaimCardProps) {
   };
 
   const badge = getBadgeStyle();
-  const claimSources = sources.filter((source) => claim.sourceIds.includes(source.id));
+  const claimSources = sources.filter((source) => (claim.sourceIds ?? []).includes(source.id));
 
   return (
     <div class="card" style={{ marginBottom: "8px" }}>
