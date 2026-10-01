@@ -39,3 +39,83 @@ it("distingue HTTP, transcrição vazia e cancelamento", async () => {
   const controller = new AbortController(); controller.abort();
   await expect(extractCaptionsFromPage("video", controller.signal)).rejects.toThrow();
 });
+
+it("processa JSON3 real preservando palavras do mesmo evento", () => {
+  const body = JSON.stringify({
+    events: [
+      {
+        tStartMs: 440,
+        dDurationMs: 4640,
+        segs: [
+          { utf8: "Tá" },
+          { utf8: " começando" },
+          { utf8: " o programa" },
+        ],
+      },
+      {
+        tStartMs: 5080,
+        dDurationMs: 4639,
+        segs: [
+          { utf8: "bem-vindo." },
+        ],
+      },
+    ],
+  });
+
+  expect(parseCaptionBody(body)).toBe(
+    "Tá começando o programa bem-vindo.",
+  );
+});
+
+it("ignora eventos JSON3 contendo somente quebra de linha", () => {
+  const body = JSON.stringify({
+    events: [
+      {
+        segs: [{ utf8: "Primeira fala." }],
+      },
+      {
+        aAppend: 1,
+        segs: [{ utf8: "\n" }],
+      },
+      {
+        segs: [{ utf8: "Segunda fala." }],
+      },
+    ],
+  });
+
+  expect(parseCaptionBody(body)).toBe(
+    "Primeira fala. Segunda fala.",
+  );
+});
+
+it("remove marcador de musica sem remover a fala", () => {
+  const body = JSON.stringify({
+    events: [
+      {
+        segs: [{ utf8: "[música]" }],
+      },
+      {
+        segs: [{ utf8: "A fala continua normalmente." }],
+      },
+    ],
+  });
+
+  expect(parseCaptionBody(body)).toBe(
+    "A fala continua normalmente.",
+  );
+});
+
+it("remove marcador de troca de locutor sem remover a fala", () => {
+  const body = JSON.stringify({
+    events: [
+      {
+        segs: [
+          { utf8: ">> Tudo" },
+          { utf8: " bem?" },
+        ],
+      },
+    ],
+  });
+
+  expect(parseCaptionBody(body)).toBe("Tudo bem?");
+});
