@@ -1,15 +1,15 @@
-# Sprint 2 — Checklist de Issues & Plano de Conclusão do Projeto
+# Sprint 2 — Checklist de Issues & Execução Operacional
 
 > **Milestone:** Sprint 2  
-> **Objetivo:** Converter os resultados da investigação da Sprint 1 em um pipeline de evidências e uma UX que preserve o pensamento crítico, eliminando a dependência estrutural do Ollama local e o score global.  
-> **Total de Story Points:** 38 SP (9 issues)  
-> **Referências:** [ADR-006](../documentation/docs/tecnico/decisoes/ADR-006-evidence-first-architecture.md) · [Sprint Backlog](../documentation/docs/scrum/sprint-02/sprint-backlog.md)
+> **Objetivo:** Converter os resultados da investigação da Sprint 1 em um pipeline de evidências e uma UX que preserve o pensamento crítico (Evidence-First), eliminando a dependência estrutural do Ollama local e removendo em definitivo o score global e velocímetros da extensão.  
+> **Total de Story Points:** 39 SP (9 issues oficiais)  
+> **Referência Arquitetural:** [ADR-006 (Evidence-First Architecture)](../../documentation/docs/tecnico/decisoes/ADR-006-evidence-first-architecture.md) · [KANBAN.md](../../KANBAN.md)
 
 ---
 
-## Panorama de Progresso (Transição Sprint 1 → Sprint 2)
+## 1. Panorama de Progresso (Transição Sprint 1 → Sprint 2)
 
-### Sprint 1 (Concluída e Integrada via PR #31)
+### Sprint 1 — Concluída e Integrada via PR #31 (`27c53e8`)
 - [x] **IS-01:** Guiding Questions publicadas e validadas (`documentation/docs/visao/guiding-questions.md`)
 - [x] **IS-02:** Alinhamento da Essential Question (`documentation/docs/visao/essential-question-alignment.md`)
 - [x] **IS-03:** Dataset registry versionado (`backend/ml/datasets/sources.yaml`)
@@ -21,187 +21,433 @@
 - [x] **IS-09:** Proveniência e manifest de dados (`backend/data/manifest.json`, `manifest.py`)
 - [x] **IS-10:** Congelamento da UI do gauge ativo (`.github/FREEZE.md`, `.github/workflows/freeze-guard.yml`)
 - [x] **IS-11:** Interface LLMProvider e guard anti-mock (`backend/app/services/providers/`)
+- [x] **Clean-up:** Diretório `scripts/` removido com sucesso.
 
 ---
 
-## Issues da Sprint 2 (38 SP)
+## 2. Matriz de Atribuição da Equipe na Sprint 2 (Alinhada ao Kanban)
 
-### #S2-01 — Provider Abstraction: Migração de OllamaProvider e RemoteLLMProvider
-**Labels:** `sprint-2` `backend` `p0` `sp-5` · **Estimativa:** 5 SP · **HU Relacionada:** HU16
-
-**Contexto:**
-Vinculado ao ADR-006 e ao isolamento de provedores criado na Sprint 1. Conecta o `FactCheckerService` à interface `LLMProvider`, permitindo alternância transparente entre inferência local (Qwen 2.5-3B) e modelos remotos, eliminando o acoplamento com `ollama_service.py`.
-
-**Descrição Técnica:**
-- Conectar `FactCheckerService` ao `get_provider()` de `backend/app/services/providers/factory.py`.
-- Implementar `OllamaProvider.extract_claims` e `OllamaProvider.generate_reflection` em `backend/app/services/providers/ollama.py`, migrando as regras de prompt e tratamento JSON de `ollama_service.py`.
-- Implementar `RemoteLLMProvider` em `backend/app/services/providers/remote.py` com suporte a endpoints compatíveis com OpenAI/vLLM.
-- Desacoplar `fact_checker.py` da importação direta de `ollama_service`.
-
-**Critérios de Aceitação:**
-- [ ] `FactCheckerService` obtém provedor exclusivamente via `get_provider()`
-- [ ] `OllamaProvider` implementa `extract_claims` e `generate_reflection` sem levantar `NotImplementedError`
-- [ ] `RemoteLLMProvider` funcional via `REMOTE_LLM_BASE_URL` e `REMOTE_LLM_API_KEY`
-- [ ] Suíte de testes `test_provider_contract.py` executando com 100% de sucesso
-- [ ] Testes de regressão `test_fact_checker.py` e `test_ollama_service.py` passam sem falhas
+| Issue | HU / ID | Título da História / Atividade | Épico | Responsável Principal | Co-responsável | Prioridade MoSCoW | SP |
+|:---:|:---:|:---|:---|:---:|:---:|:---:|:---:|
+| [#32](https://github.com/evidencia-grupo/EvidencIA/issues/32) | **HU16** | Provider Abstraction: Migração de OllamaProvider e RemoteLLMProvider | `epic:e3-ia-checagem` | @pedrohpsantos | — | `must-have` / `mvp:onda-1` | 5 |
+| [#33](https://github.com/evidencia-grupo/EvidencIA/issues/33) | **HU13** | Evidence-First Schema: Migração de Contratos e Eliminação do Score Global | `epic:e3-ia-checagem` | @pedrohpsantos | @mahiaara | `must-have` / `mvp:onda-1` | 5 |
+| [#34](https://github.com/evidencia-grupo/EvidencIA/issues/34) | **HU02** | Descongelamento Formal e Remoção do Score Global da UI | `epic:e3-ia-checagem` | @MylenaTrindade | — | `must-have` / `mvp:onda-1` | 3 |
+| [#35](https://github.com/evidencia-grupo/EvidencIA/issues/35) | **HU14** | Evidence Cards no Painel da Extensão | `epic:e4-confianca-fontes` | @MylenaTrindade | @luizoryone | `must-have` / `mvp:onda-1` | 5 |
+| [#36](https://github.com/evidencia-grupo/EvidencIA/issues/36) | **HU15** | Reflection Questions no Painel da Extensão | `epic:e6-engajamento` | @mahiaara | @MylenaTrindade | `must-have` / `mvp:onda-1` | 5 |
+| [#37](https://github.com/evidencia-grupo/EvidencIA/issues/37) | **HU16** | Failure/Timeout Handling: Modo Evidence-Only e Eliminação de Mocks | `epic:e3-ia-checagem` | @pedrohpsantos | @lipestile | `must-have` / `mvp:onda-1` | 3 |
+| [#38](https://github.com/evidencia-grupo/EvidencIA/issues/38) | **HU03** | Testes de Latência e Performance (P90 <= 10s) | `epic:e5-performance-cache` | @lipestile | — | `must-have` / `mvp:onda-1` | 5 |
+| [#39](https://github.com/evidencia-grupo/EvidencIA/issues/39) | **QA-E2E** | Testes E2E com Playwright para o Fluxo Evidence-First | `epic:e5-performance-cache` | @luizoryone | @lipestile | `must-have` / `mvp:onda-1` | 5 |
+| [#40](https://github.com/evidencia-grupo/EvidencIA/issues/40) | **REL-01** | Sprint Review Evidence & Documentação Final do Projeto | `epic:e6-engajamento` | @mahiaara | @pedrohpsantos | `must-have` / `mvp:onda-1` | 3 |
+| **Total** | | | | | | | **39 SP** |
 
 ---
 
-### #S2-02 — Evidence-First Schema: Migração de Contratos (`claims[]` + `evidence[]`)
-**Labels:** `sprint-2` `backend` `frontend` `p0` `sp-5` · **Estimativa:** 5 SP · **HU Relacionadas:** HU13, HU14
+## 3. Especificação Completa das Issues (Gherkin & Rastreabilidade)
 
-**Contexto:**
-Vinculado ao ADR-006 (Decisão 2). O contrato da API passa a refletir a unidade central "Alegação + Evidências", descontinuando o score global de veracidade de 0 a 100.
+### [#32] [HU16] Provider Abstraction: Migração de OllamaProvider e RemoteLLMProvider
+- **Labels:** `epic:e3-ia-checagem`, `must-have`, `mvp:onda-1`
+- **Responsável:** @pedrohpsantos
+- **Story Points:** 5
 
-**Descrição Técnica:**
-- Atualizar `backend/app/schemas.py`: `AnalyzeResponse` com `analysisMode: "evidence_first"`, `claims: List[VerificationClaim]`, `evidence: List[EvidenceItem]`, `uncertainty: UncertaintyAlertData`, `reflectionQuestions: List[str]`.
-- Marcar `score` e `reliabilityScore` como deprecados / opcionais para transição segura.
-- Atualizar `shared/types/api.ts` e `shared/schemas/api-schema.json`.
-- Garantir a invariante central: ausência de evidência fática NUNCA é classificada como "falso" ou "contraditada" (retorna `unverifiable` / `insufficient_evidence`).
+#### Declaração de Valor
+> **Como** Equipe de Engenharia / Sistema  
+> **Pretendo** utilizar diferentes provedores de LLM por meio de uma interface comum  
+> **Para que** não dependa estruturalmente do Ollama local e possamos alternar entre inferência local e remota sem alterar código de negócio.
 
-**Critérios de Aceitação:**
-- [ ] Endpoint `/api/v1/analyze` retorna payload aderente ao schema evidence-first
-- [ ] Invariante de veredito fático validada por teste automatizado
-- [ ] Contratos TypeScript em `shared/types/api.ts` compilando sem erro no frontend
-- [ ] Testes de API em `backend/tests/test_api.py` atualizados e passando
+#### Rastreabilidade
+- **Épico:** `E3 — Análise e Checagem via IA`
+- **Feature:** `F1.2 — Motor de Checagem Factual e IA`
+- **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
+- **Requisitos Vinculados:** RF-14, RF-15, RNF-06, ADR-006 (Decisão 6)
 
----
+#### Critérios de Aceitação (Gherkin)
+```gherkin
+Funcionalidade: Provedor de IA independente
 
-### #S2-03 — Descongelamento Formal e Remoção do Score Global da UI
-**Labels:** `sprint-2` `frontend` `freeze` `p0` `sp-3` · **Estimativa:** 3 SP · **HU Relacionadas:** HU02, HU04
+  Cenário: Troca de provedor por configuração
+    Dado que a variável de ambiente LLM_PROVIDER é alterada de "ollama" para "remote"
+    Quando o serviço de backend intermediário é iniciado
+    Então as inferências de extração e reflexão devem ser direcionadas ao provedor remoto sem qualquer alteração no código de negócio
 
-**Contexto:**
-Vinculado ao critério de descongelamento formalizado em `.github/FREEZE.md`. Com o pipeline de dados validado, os componentes de UI legados do gauge/score devem ser removidos da interface para evitar que o usuário seja induzido a um julgamento algorítmico dogmático.
+  Cenário: Uso de Ollama local com Qwen 2.5-3B
+    Dado que LLM_PROVIDER está configurado como "ollama"
+    Quando o backend processa uma requisição de extração de alegações
+    Então a inferência deve ser executada localmente via OllamaProvider consumindo o modelo configurado
 
-**Descrição Técnica:**
-- Aplicar o label `unfreeze-approved` pelo Tech Lead no PR de alteração.
-- Atualizar `.github/FREEZE.md` e `.github/frozen-paths.txt` registrando o descongelamento definitivo.
-- Remover a importação e renderização de `<Gauge />` em `extension/src/panel/index.tsx`.
-- Desativar `extension/src/panel/components/Gauge.tsx` (marcado como legado).
-- Remover textos de "Veracidade", "Índice de Confiabilidade" e porcentagens globais da UI do painel.
+  Cenário: Bloqueio estrito de mock em produção
+    Dado que o sistema está em execução com ENV=production
+    Quando há qualquer tentativa de configurar LLM_PROVIDER=mock
+    Então o sistema deve abortar a inicialização imediatamente com código de erro e registrar evento no log de auditoria
+```
 
-**Critérios de Aceitação:**
-- [ ] PR passa pelo workflow `freeze-guard.yml` com autorização explícita
-- [ ] Painel da extensão não renderiza nenhum elemento de velocímetro ou nota de 0 a 100
-- [ ] Testes unitários do painel (`extension/src/panel/index.test.tsx`) atualizados e passando
-- [ ] Documentação de FREEZE atualizada com status `DESCONGELADO`
-
----
-
-### #S2-04 — Evidence Cards no Painel da Extensão
-**Labels:** `sprint-2` `frontend` `p0` `sp-5` · **Estimativa:** 5 SP · **HU Relacionada:** HU14
-
-**Contexto:**
-Vinculado ao Épico 4 e ADR-006. Apresenta ao usuário a relação direta entre cada afirmação feita no vídeo e as checagens jornalísticas brasileiras auditadas correspondentes.
-
-**Descrição Técnica:**
-- Criar o componente `extension/src/panel/components/EvidenceCard.tsx` integrado ao Design System do projeto.
-- Cada card apresenta: texto da alegação extraída, relação fática (`apoiada`, `contraditada`, `sem evidência`), título da matéria, veículo jornalístico (Lupa, Aos Fatos, Boatos.org, etc.), data de publicação e hiperlink direto com protocolo HTTPS.
-- Integração com `UncertaintyAlert.tsx` (HU09) para destacar alegações inconclusivas ou controversas.
-- Acessibilidade WCAG 2.1 AA: navegação por teclado (`Tab`, `Shift+Tab`, `Enter`), contraste 4.5:1 e leitor de tela (ARIA roles).
-
-**Critérios de Aceitação:**
-- [ ] Componente `EvidenceCard` renderiza corretamente todos os estados de evidência
-- [ ] Links externos abrem em nova aba com atributos `target="_blank"` e `rel="noopener noreferrer"`
-- [ ] Navegabilidade por teclado testada e funcional
-- [ ] Testes unitários em Vitest criados e passando com cobertura > 80%
+#### Checklist de Implementação
+- [ ] Conectar `FactCheckerService` ao `get_provider()` de `backend/app/services/providers/factory.py`
+- [ ] Implementar `OllamaProvider.extract_claims` e `OllamaProvider.generate_reflection` em `backend/app/services/providers/ollama.py`
+- [ ] Implementar `RemoteLLMProvider` em `backend/app/services/providers/remote.py` compatível com endpoints OpenAI/vLLM
+- [ ] Desacoplar `fact_checker.py` da importação direta de `ollama_service`
+- [ ] Validar que `test_provider_contract.py` passa 100% offline sem falhas
 
 ---
 
-### #S2-05 — Reflection Questions no Painel da Extensão (HU11, HU15)
-**Labels:** `sprint-2` `frontend` `backend` `p1` `sp-5` · **Estimativa:** 5 SP · **HU Relacionadas:** HU11, HU15
+### [#33] [HU13] Evidence-First Schema: Migração de Contratos e Eliminação do Score Global
+- **Labels:** `epic:e3-ia-checagem`, `must-have`, `mvp:onda-1`
+- **Responsáveis:** @pedrohpsantos, @mahiaara
+- **Story Points:** 5
 
-**Contexto:**
-Vinculado ao Épico 6 (Engajamento Reflexivo) e issue aberta #11. A LLM atua formulando perguntas reflexivas para estimular o pensamento crítico de quem assiste, sem ditar o que a pessoa deve pensar.
+#### Declaração de Valor
+> **Como** Amanda (Consumidora Crítica de Conteúdo)  
+> **Pretendo** visualizar as principais alegações verificáveis do vídeo separadamente com suas respectivas evidências  
+> **Para que** eu investigue cada uma delas sem ser influenciada por uma classificação global ou porcentagem artificial de veracidade.
 
-**Descrição Técnica:**
-- No backend: garantir que `generate_reflection(claims, evidence)` gere entre 2 e 4 perguntas instigantes e neutras.
-- No frontend: criar componente `ReflectionQuestions.tsx` no painel exibindo as perguntas geradas.
-- Mensagem acolhedora persona "Dona Lurdes" (HU02) sem jargões computacionais ou estatísticos.
+#### Rastreabilidade
+- **Épico:** `E3 — Análise e Checagem via IA`
+- **Feature:** `F1.2 — Motor de Checagem Factual e IA`
+- **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
+- **Requisitos Vinculados:** RF-06, RF-07, RNF-07, ADR-006 (Decisões 1 e 2)
 
-**Critérios de Aceitação:**
-- [ ] Painel exibe seção "Perguntas para Reflexão" com ≥ 3 perguntas abertas e neutras
-- [ ] Nenhuma pergunta afirma veredito dogmático
-- [ ] Testes unitários do componente cobrem casos com lista vazia e lista completa
-- [ ] Issue #11 vinculada e fechada pela entrega
+#### Critérios de Aceitação (Gherkin)
+```gherkin
+Funcionalidade: Investigação orientada por alegações e contratos evidence-first
 
----
+  Cenário: Resposta do backend sem score global
+    Dado que uma requisição POST para /analyze é enviada com a transcrição do vídeo
+    Quando o backend processa a checagem com sucesso
+    Então a resposta AnalyzeResponse deve conter a lista claims[] e o objeto reflection_questions
+    E os campos score e FactCheckingSource.reliabilityScore não devem ser emitidos
 
-### #S2-06 — Failure/Timeout Handling: Modo Evidence-Only e Eliminação de Mocks
-**Labels:** `sprint-2` `backend` `frontend` `p0` `sp-3` · **Estimativa:** 3 SP · **HU Relacionada:** HU16
+  Cenário: Relação explícita em cada evidência associada à alegação
+    Dado que uma alegação verificável foi identificada
+    Quando suas evidências são retornadas pelo backend
+    Então cada evidência deve possuir a relação explícita ("supports", "contradicts" ou "contextualizes")
+    E conter title, url, publisher e published_date válidos
 
-**Contexto:**
-Vinculado ao ADR-001 e IS-11. Elimina os fallbacks silenciosos mapeados na Sprint 1 e assegura tratamento resiliente de lentidão ou indisponibilidade da IA.
+  Cenário: Desserialização compatível no cliente TypeScript
+    Dado que a extensão recebe a resposta AnalyzeResponse atualizada
+    Quando os tipos em shared/types.ts são consumidos
+    Então nenhuma incompatibilidade de tipo deve ocorrer durante a compilação ou execução
+```
 
-**Descrição Técnica:**
-- Implementar hard timeout de 15s no Service Worker e 8s no backend.
-- Em caso de timeout ou indisponibilidade do provider LLM, ativar automaticamente o modo `analysisMode: "evidence_only"`, apresentando as evidências factuais recuperadas diretamente das bases curadas sem gerar alucinações.
-- Remover definitivamente do `backend/app/services/fact_checker.py`:
-  - Método `_mock_analysis`
-  - Heurísticas analíticas regex embutidas (`_extract_check_worthy_claims`)
-  - Injeção forçada de fontes estáticas ("src-01", "scielo.br")
-- Atualizar o teste `backend/tests/test_no_silent_mock_fallback.py` para passar como `PASSED` (removendo `@pytest.mark.xfail`).
-
-**Critérios de Aceitação:**
-- [ ] `test_no_silent_mock_fallback.py` passa sem decorator xfail
-- [ ] Falha ou timeout de LLM ativa modo "Evidence-Only" com indicador explícito ao usuário
-- [ ] `MockProvider` nunca é acionado quando `LLM_PROVIDER != mock`
-- [ ] Nenhum mock de dados é retornado silenciosamente em produção
-
----
-
-### #S2-07 — Testes de Latência e Performance (P90 ≤ 10s)
-**Labels:** `sprint-2` `backend` `p1` `sp-5` · **Estimativa:** 5 SP · **HU Relacionada:** HU03
-
-**Contexto:**
-Vinculado ao RNF-01 (Tempo de Resposta) e HU03. Validação contínua do SLA de performance do EvidencIA.
-
-**Descrição Técnica:**
-- Criar suíte de testes de latência automatizada (`backend/tests/test_latency.py`).
-- Executar benchmark de 20+ requisições concorrentes medindo P50, P90 e P99.
-- Critério de performance: P90 ≤ 5s para carregamento das primeiras evidências e P90 ≤ 10s para processamento completo com síntese reflexiva.
-- Adicionar verificação de tempo no workflow de CI.
-
-**Critérios de Aceitação:**
-- [ ] Script / teste de benchmark executável localmente e em CI
-- [ ] Métricas P50, P90 e P99 registradas em relatório de evidência
-- [ ] Alerta de falha se P90 > 10s no servidor
+#### Checklist de Implementação
+- [ ] Atualizar schema `backend/app/schemas/` para remover `score` e `reliabilityScore`
+- [ ] Estruturar `claims[]` com modelo `Claim` contendo `id`, `text`, `evidence[]`, e `category`
+- [ ] Atualizar `shared/types.ts` e `extension/` para os contratos estritos de `Evidence` e `Claim`
+- [ ] Atualizar testes em `backend/tests/` para refletir o schema evidence-first
 
 ---
 
-### #S2-08 — Atualização dos Testes E2E com Playwright
-**Labels:** `sprint-2` `frontend` `p1` `sp-5` · **Estimativa:** 5 SP · **HU Relacionadas:** HU01, HU03, HU06
+### [#34] [HU02] Descongelamento Formal e Remoção do Score Global da UI
+- **Labels:** `epic:e3-ia-checagem`, `must-have`, `mvp:onda-1`
+- **Responsável:** @MylenaTrindade
+- **Story Points:** 3
 
-**Contexto:**
-Garantir que a suíte completa de testes ponta a ponta (E2E) valide a nova experiência de usuário evidence-first no navegador Chromium com a extensão carregada.
+#### Declaração de Valor
+> **Como** Dona Lurdes (Consumidora de receitas e dicas caseiras de saúde)  
+> **Pretendo** visualizar uma síntese objetiva e clara sem indicadores confusos de porcentagem ou velocímetros  
+> **Para que** eu compreenda o que tem evidências e o que não tem sem risco de interpretar mal um número simplista.
 
-**Descrição Técnica:**
-- Atualizar `extension/e2e/hu03.spec.ts` e `extension/e2e/hu06.spec.ts`.
-- Validar asserção explícita de que nenhum elemento com classe ou id referente a `.gauge` ou `#score` existe na DOM renderizada.
-- Validar renderização dos Evidence Cards, do Uncertainty Alert e das Reflection Questions.
-- Validar fluxo de acionamento do botão no player do YouTube até o preenchimento do painel lateral.
+#### Rastreabilidade
+- **Épico:** `E3 — Análise e Checagem via IA`
+- **Feature:** `F2.3 — Síntese Visual e Acessibilidade WCAG`
+- **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
+- **Requisitos Vinculados:** RF-03, RF-06, RNF-07, ADR-006 (Decisão 1)
 
-**Critérios de Aceitação:**
-- [ ] Todos os testes E2E executando com 100% de sucesso via `npm run test:e2e`
-- [ ] Testes cobrem: listagem de alegações, cards de evidência, perguntas reflexivas e aviso de ausência de transcrição (HU10)
-- [ ] Nenhum erro de renderização ou violação de acessibilidade detectado
+#### Critérios de Aceitação (Gherkin)
+```gherkin
+Funcionalidade: Remoção de scores globais e velocímetros da interface
+
+  Cenário: Renderização do painel lateral sem score gráfico
+    Dado que o usuário aciona a verificação de um vídeo no YouTube
+    Quando o painel lateral é renderizado com os resultados
+    Então nenhum velocímetro gráfico (gauge), medidor numérico ou porcentagem global deve aparecer na tela
+    E a lista atômica de alegações deve ocupar o destaque principal
+
+  Cenário: Remoção segura dos arquivos de score congelados
+    Dado que a Sprint 2 formalizou a eliminação do score global
+    Quando os componentes legados são removidos
+    Então o build de produção da extensão deve compilar com zero erros de TypeScript e zero avisos de dependência órfã
+```
+
+#### Checklist de Implementação
+- [ ] Descongelar e remover componentes de score/gauge em `extension/src/components/`
+- [ ] Atualizar `extension/src/components/Panel.tsx` para renderizar direto a lista de alegações
+- [ ] Validar conformidade de contraste e acessibilidade WCAG 2.1 AA
+- [ ] Executar build da extensão sem warnings ou erros de linting
 
 ---
 
-### #S2-09 — Sprint Review Evidence & Documentação Final do Projeto
-**Labels:** `sprint-2` `docs` `p1` `sp-2` · **Estimativa:** 2 SP · **Entrega:** Conclusão do Projeto
+### [#35] [HU14] Evidence Cards no Painel da Extensão
+- **Labels:** `epic:e4-confianca-fontes`, `must-have`, `mvp:onda-1`
+- **Responsáveis:** @MylenaTrindade, @luizoryone
+- **Story Points:** 5
 
-**Contexto:**
-Consolidação dos artefatos finais de entrega do projeto para a Sprint Review e documentação oficial para a banca/avaliação.
+#### Declaração de Valor
+> **Como** Mayara (Jornalista investigativa e checadora de fatos)  
+> **Pretendo** ver quais fontes sustentam, contradizem ou contextualizam cada alegação em cartões dedicados  
+> **Para que** eu e qualquer espectador possamos auditar a origem das informações de forma autônoma e imediata.
 
-**Descrição Técnica:**
-- Preencher `documentation/docs/scrum/sprint-02/review.md` e `retrospective.md`.
-- Incluir capturas de tela finais da extensão operando no YouTube com Evidence Cards e Reflection Questions.
-- Atualizar o `README.md` principal do repositório com o status final, arquitetura e instruções de instalação da extensão MV3.
-- Homologar o fechamento formal dos Épicos #13–#18 e histórias associadas.
+#### Rastreabilidade
+- **Épico:** `E4 — Confiança e Fontes`
+- **Feature:** `F2.2 — Auditoria de Fontes e Transparência Editorial`
+- **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
+- **Requisitos Vinculados:** RF-04, RF-13, RNF-05, ADR-006 (Decisões 2 e 5)
 
-**Critérios de Aceitação:**
-- [ ] Relatório de Sprint Review publicado com links para todos os PRs entregues
-- [ ] Métricas finais de testes e cobertura documentadas (> 80% frontend e backend)
-- [ ] Instruções claras e testadas de execução local e empacotamento da extensão
-- [ ] Definição de Pronto (DoD) cumprida para 100% das entregas
+#### Critérios de Aceitação (Gherkin)
+```gherkin
+Funcionalidade: Evidence cards no painel da extensão
+
+  Cenário: Exibição completa de atributos de evidência
+    Dado que uma alegação possui evidências recuperadas de corpora verificados
+    Quando o usuário visualiza o cartão de evidência
+    Então título, URL, data de publicação, publisher e a relação factual devem estar explicitamente visíveis
+
+  Cenário: Destaque visual por tipo de relação
+    Dado que uma fonte contradiz a afirmação realizada no vídeo
+    Quando o cartão dessa evidência é apresentado
+    Então o indicador de relação "Contradiz" deve ser exibido com destaque e acompanhado do trecho factual correspondente
+
+  Cenário: Consulta à fonte externa em nova aba
+    Dado que o usuário clica no link da fonte jornalística
+    Quando a navegação é disparada
+    Então a página da fonte deve abrir em uma nova aba com rel="noopener noreferrer"
+    E a reprodução do vídeo do YouTube não deve ser interrompida
+```
+
+#### Checklist de Implementação
+- [ ] Criar componente `EvidenceCard` em `extension/src/components/EvidenceCard.tsx`
+- [ ] Exibir título, publisher, data de publicação, relação (`supports`, `contradicts`, `contextualizes`) e trecho
+- [ ] Garantir abertura segura com `target="_blank"` e `rel="noopener noreferrer"`
+- [ ] Adicionar suporte a estados expansíveis/colapsáveis por alegação com suporte a leitor de tela
+
+---
+
+### [#36] [HU15] Reflection Questions no Painel da Extensão
+- **Labels:** `epic:e6-engajamento`, `must-have`, `mvp:onda-1`
+- **Responsáveis:** @mahiaara, @MylenaTrindade
+- **Story Points:** 5
+
+#### Declaração de Valor
+> **Como** Helena (Professora do ensino médio)  
+> **Pretendo** receber perguntas que me ajudem a avaliar a alegação por conta própria antes de formar uma conclusão  
+> **Para que** eu estimule o pensamento crítico e a autonomia investigativa sem aceitar vereditos dogmáticos da IA.
+
+#### Rastreabilidade
+- **Épico:** `E6 — Engajamento Reflexivo (Promovido para MVP)`
+- **Feature:** `F3.1 — Estímulo ao Pensamento Crítico`
+- **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
+- **Requisitos Vinculados:** RF-05, RNF-07, ADR-006 (Decisão 7)
+
+#### Critérios de Aceitação (Gherkin)
+```gherkin
+Funcionalidade: Reflection questions no painel da extensão
+
+  Cenário: Formulação de no mínimo 3 perguntas reflexivas
+    Dado que a investigação de um vídeo foi concluída
+    Quando o componente de perguntas reflexivas é exibido
+    Então pelo menos 3 perguntas neutras orientadas à investigação pessoal devem ser apresentadas
+
+  Cenário: Garantia de neutralidade nas perguntas geradas
+    Dado que o assistente de IA formula as perguntas de reflexão
+    Quando o texto é gerado
+    Então nenhuma pergunta deve declarar se o vídeo está "certo" ou "errado", mantendo postura investigativa aberta
+
+  Cenário: Fechamento ou omissão do bloco sem bloqueio
+    Dado que o usuário não deseja interagir com as perguntas reflexivas
+    Quando ele recolhe ou ignora a seção
+    Então a navegação e a leitura das demais evidências devem seguir normalmente, sem bloqueios
+```
+
+#### Checklist de Implementação
+- [ ] Integrar geração de perguntas reflexivas no pipeline da LLM (`generate_reflection`)
+- [ ] Criar componente `ReflectionQuestions` no painel da extensão
+- [ ] Garantir neutralidade e ausência de viés ideológico nos prompts
+- [ ] Assegurar foco e navegabilidade por teclado (WCAG 2.1 AA)
+
+---
+
+### [#37] [HU16] Failure/Timeout Handling: Modo Evidence-Only e Eliminação de Mocks
+- **Labels:** `epic:e3-ia-checagem`, `must-have`, `mvp:onda-1`
+- **Responsáveis:** @pedrohpsantos, @lipestile
+- **Story Points:** 3
+
+#### Declaração de Valor
+> **Como** Dona Lurdes (Consumidora de Notícias) e Equipe de Engenharia  
+> **Pretendo** receber as evidências factuais recuperadas mesmo se o modelo de linguagem falhar ou demorar  
+> **Para que** eu nunca fique sem informação útil e o sistema nunca exiba dados simulados (mocks) em produção.
+
+#### Rastreabilidade
+- **Épico:** `E3 — Análise e Checagem via IA`
+- **Feature:** `F1.2 — Motor de Checagem Factual e IA`
+- **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
+- **Requisitos Vinculados:** RF-14, RNF-06, ADR-006 (Decisão 6)
+
+#### Critérios de Aceitação (Gherkin)
+```gherkin
+Funcionalidade: Degradação graciosa para modo Evidence-Only e eliminação de mocks
+
+  Cenário: Provedor de LLM com timeout ou indisponível
+    Dado que o provedor de LLM falha ou excede o timeout de 15 segundos
+    Quando a requisição /analyze é processada
+    Então o sistema deve retornar as evidências jornalísticas recuperadas no modo "evidence_only"
+    E a flag evidence_only=true deve ser enviada para a extensão
+
+  Cenário: Feedback visual claro no painel da extensão
+    Dado que a extensão recebe resposta com evidence_only=true
+    Quando o painel lateral é renderizado
+    Então um aviso amigável deve informar que a síntese de linguagem está temporariamente indisponível
+    E os cartões de evidências recuperados devem ser exibidos normalmente
+
+  Cenário: Tentativa de uso de mock em produção
+    Dado que o ambiente de execução é ENV=production
+    Quando há qualquer tentativa de carregar o MockLLMProvider ou dados simulados
+    Então a aplicação deve abortar imediatamente com erro e impedir a resposta com dados fictícios
+```
+
+#### Checklist de Implementação
+- [ ] Implementar timeout de 15s com fallback para `evidence_only=True` em `FactCheckerService`
+- [ ] Validar guard rail de bloqueio de mock em `backend/app/services/providers/factory.py` para `ENV=production`
+- [ ] Adicionar banner de aviso no painel Preact quando `evidence_only: true`
+- [ ] Testes unitários cobrindo timeout de LLM e retorno exclusivo de evidências
+
+---
+
+### [#38] [HU03] Testes de Latência e Performance (P90 <= 10s)
+- **Labels:** `epic:e5-performance-cache`, `must-have`, `mvp:onda-1`
+- **Responsável:** @lipestile
+- **Story Points:** 5
+
+#### Declaração de Valor
+> **Como** Carlos (Estudante universitário com conexão móvel)  
+> **Pretendo** que a checagem completa do vídeo seja concluída em menos de 10 segundos no percentil 90  
+> **Para que** eu não desista da checagem nem sofra com lentidão enquanto assisto a vídeos no YouTube.
+
+#### Rastreabilidade
+- **Épico:** `E5 — Performance e Cache`
+- **Feature:** `F1.3 — Cache Local e Otimização de SLA`
+- **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
+- **Requisitos Vinculados:** RF-09, RNF-01, RNF-02, ADR-003
+
+#### Critérios de Aceitação (Gherkin)
+```gherkin
+Funcionalidade: Garantia de SLA de latência e performance da checagem
+
+  Cenário: Checagem com recuperação via cache local
+    Dado que um vídeo já foi analisado previamente nas últimas 24 horas
+    Quando o usuário aciona a verificação
+    Então o resultado deve ser recuperado do chrome.storage.local em menos de 500ms
+    E nenhuma chamada de rede ao backend deve ser disparada
+
+  Cenário: Checagem a frio dentro do SLA de 10 segundos
+    Dado que o vídeo é analisado pela primeira vez
+    Quando a extração e busca vetorial são executadas
+    Então o tempo total de resposta no percentil 90 (P90) deve ser menor ou igual a 10 segundos
+    E o Total Blocking Time (TBT) na página do YouTube deve permanecer <= 50ms
+```
+
+#### Checklist de Implementação
+- [ ] Criar benchmark automatizado em `backend/tests/test_performance_sla.py`
+- [ ] Medir latência do embedding Qwen2.5 / Chroma local vs busca
+- [ ] Validar comportamento do cache `chrome.storage.local` com TTL de 24h
+- [ ] Documentar resultados de latência P50, P90 e P99 para a entrega final
+
+---
+
+### [#39] [QA-E2E] Testes E2E com Playwright para o Fluxo Evidence-First
+- **Labels:** `epic:e5-performance-cache`, `must-have`, `mvp:onda-1`
+- **Responsáveis:** @luizoryone, @lipestile
+- **Story Points:** 5
+
+#### Declaração de Valor
+> **Como** Equipe de Engenharia & Qualidade  
+> **Pretendo** validar o fluxo completo da extensão em um navegador Chromium real via Playwright  
+> **Para que** tenhamos garantia de que a injeção no player, captura de legendas, comunicação com backend e renderização do painel funcionam de ponta a ponta sem regressão.
+
+#### Rastreabilidade
+- **Épico:** `E5 — Performance e Cache`
+- **Feature:** `F1.1 / F1.3 — Ingestão, Interceptação e Validação Ponta a Ponta`
+- **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
+- **Requisitos Vinculados:** RF-01, RF-02, RF-03, RNF-01, RNF-05
+
+#### Critérios de Aceitação (Gherkin)
+```gherkin
+Funcionalidade: Teste E2E automatizado do fluxo Evidence-First
+
+  Cenário: Fluxo completo de checagem no YouTube via extensão
+    Dado que a extensão está carregada em uma instância headless do Chromium via Playwright
+    E uma página de vídeo do YouTube está aberta
+    Quando o script clica no botão de verificação injetado no player
+    Então a transcrição deve ser extraída com sucesso
+    E o painel lateral deve renderizar os cartões de alegações e evidências sem erros no console
+
+  Cenário: Vídeo sem legendas disponíveis no player
+    Dado que o vídeo carregado não possui faixa de legenda disponível
+    Quando o usuário aciona a verificação
+    Então o painel deve exibir em menos de 1s a mensagem informativa sobre ausência de transcrição
+```
+
+#### Checklist de Implementação
+- [ ] Atualizar suíte Playwright em `extension/tests/e2e/` ou `tests/e2e/`
+- [ ] Validar injeção do botão no DOM do YouTube sem interferir no player nativo
+- [ ] Testar renderização dos `EvidenceCard` e `ReflectionQuestions`
+- [ ] Integrar execução dos testes E2E no GitHub Actions CI
+
+---
+
+### [#40] [REL-01] Sprint Review Evidence & Documentação Final do Projeto
+- **Labels:** `epic:e6-engajamento`, `must-have`, `mvp:onda-1`
+- **Responsáveis:** @mahiaara, @pedrohpsantos
+- **Story Points:** 3
+
+#### Declaração de Valor
+> **Como** Toda a Equipe / Avaliadores e Stakeholders  
+> **Pretendo** consolidar todas as evidências de teste, métricas de qualidade, benchmarks e documentação do projeto  
+> **Para que** o projeto EvidencIA atinja o Definition of Done (DoD) completo e esteja pronto para release e apresentação final.
+
+#### Rastreabilidade
+- **Épico:** `E6 — Engajamento Reflexivo (Promovido para MVP)`
+- **Feature:** `F3.2 — Fechamento do Projeto, Auditoria e Documentação Final`
+- **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
+- **Requisitos Vinculados:** RNF-05, RNF-07, DoD do Projeto
+
+#### Critérios de Aceitação (Gherkin)
+```gherkin
+Funcionalidade: Evidências da Sprint Review e consolidação da entrega final
+
+  Cenário: Validação do Definition of Done (DoD) completo
+    Dado que todas as histórias da Sprint 1 e Sprint 2 foram desenvolvidas
+    Quando a esteira de validação final é executada
+    Então 100% dos testes unitários e de integração devem passar sem erros
+    E a cobertura de testes deve ser igual ou superior a 80%
+    E zero vulnerabilidades críticas ou altas devem ser apontadas pelo SAST
+
+  Cenário: Documentação e tag de release
+    Dado que os critérios de qualidade foram homologados
+    Quando a tag v1.0.0-mvp é gerada
+    Então o changelog, manual de instalação e matriz de rastreabilidade devem estar perfeitamente sincronizados
+```
+
+#### Checklist de Implementação
+- [ ] Atualizar catálogo de requisitos e matriz de rastreabilidade em `documentation/docs/`
+- [ ] Consolidar relatórios de cobertura de testes (>= 80%) e SAST (pip-audit / npm audit)
+- [ ] Documentar o fluxo de demonstração da Sprint Review e gravação do screencast
+- [ ] Gerar tag `v1.0.0-mvp` e release notes no repositório
+
+---
+
+## 4. Critérios Transversais e Guard Rails da Sprint 2
+
+1. **Evidence-First Estrito:**
+   - Nenhum score global (0-100), medidor gráfico (gauge) ou porcentagem de veracidade deve existir na extensão após a conclusão de #34 (HU02).
+   - Alegações sem evidências retornam neutras com a relação `contextualizes` ou `unverified`, nunca convertidas automaticamente em `falso` ou `contradicted`.
+
+2. **Blindagem de Produção (Anti-Mock Guard):**
+   - MockLLMProvider só é permitido em `ENV=development` ou `ENV=test`. Qualquer tentativa de execução com `ENV=production` deve abortar imediatamente.
+   - Degradação de rede ou timeout de LLM (>= 15s) entra em modo `evidence_only: true`.
+
+3. **Performance & SLAs:**
+   - Latência no P90 <= 10s para checagens a frio.
+   - Recuperação local via `chrome.storage.local` <= 500ms (TTL 24h).
+   - Total Blocking Time (TBT) no player <= 50ms.
+
+4. **Acessibilidade & Usabilidade:**
+   - Contraste e tipografia aderentes a WCAG 2.1 AA.
+   - Navegabilidade total por teclado e suporte a leitores de tela em todos os cartões de evidência e perguntas de reflexão.

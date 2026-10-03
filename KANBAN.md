@@ -65,17 +65,19 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 ---
 
 #### Sprint 2 (Semana 2: 05/10 a 09/10) — Hardening, Acessibilidade, SLAs & Release 1.0 (Entrega Final)
-*Objetivo: Blindagem de segurança, cache local instantâneo, acessibilidade WCAG 2.1 AA e testes E2E.*
+*Objetivo: Blindagem de segurança, pipeline evidence-first, descongelamento formal e eliminação de scores, acessibilidade WCAG 2.1 AA e testes E2E.*
 
 | Issue | Descrição da História / Tarefa | Responsável | Prazo | Status |
 |:---|:---|:---:|:---:|:---:|
-| [#10](https://github.com/evidencia-grupo/EvidencIA/issues/10) | **HU10:** Alerta rápido $< 1\text{s}$ para vídeos sem legendas | @luizoryone | 06/10 | Backlog |
-| [#9](https://github.com/evidencia-grupo/EvidencIA/issues/9) | **HU09:** Badge de incerteza analítica no topo do painel | @MylenaTrindade | 07/10 | Backlog |
-| [#6](https://github.com/evidencia-grupo/EvidencIA/issues/6) | **HU06:** Cache local `chrome.storage.local` (TTL 24h, lazy eviction) | @lipestile | 07/10 | In Review |
-| [#8](https://github.com/evidencia-grupo/EvidencIA/issues/8) | **HU08:** Metadados temporais e canal no cabeçalho | @mahiaara | 08/10 | Backlog |
-| `QA-E2E` | Testes Playwright em Chromium e validação TBT $\le 50\text{ ms}$ | @luizoryone, @lipestile | 08/10 | Backlog |
-| `A11Y` | Auditoria de acessibilidade WCAG 2.1 AA via `axe-core` | @MylenaTrindade | 08/10 | Backlog |
-| `REL-01` | Congelamento de código, Tag `v1.0.0-mvp`, artefatos e entrega | Toda a equipe | 09/10 | Backlog |
+| [#32](https://github.com/evidencia-grupo/EvidencIA/issues/32) | **HU16:** Provider Abstraction: Migração de OllamaProvider e RemoteLLMProvider | @pedrohpsantos | 06/10 | Backlog |
+| [#33](https://github.com/evidencia-grupo/EvidencIA/issues/33) | **HU13:** Evidence-First Schema: Migração de Contratos e Fim do Score Global | @pedrohpsantos, @mahiaara | 06/10 | Backlog |
+| [#34](https://github.com/evidencia-grupo/EvidencIA/issues/34) | **HU02:** Descongelamento Formal e Remoção do Score Global da UI | @MylenaTrindade | 07/10 | Backlog |
+| [#35](https://github.com/evidencia-grupo/EvidencIA/issues/35) | **HU14:** Evidence Cards no Painel da Extensão (Substituição do Gauge) | @MylenaTrindade, @luizoryone | 07/10 | Backlog |
+| [#36](https://github.com/evidencia-grupo/EvidencIA/issues/36) | **HU15:** Reflection Questions no Painel da Extensão (HU11 promovida) | @mahiaara, @MylenaTrindade | 08/10 | Backlog |
+| [#37](https://github.com/evidencia-grupo/EvidencIA/issues/37) | **HU16:** Failure/Timeout Handling: Modo Evidence-Only e Fim dos Mocks | @pedrohpsantos, @lipestile | 08/10 | Backlog |
+| [#38](https://github.com/evidencia-grupo/EvidencIA/issues/38) | **HU03:** Testes de Latência e Performance (SLA P90 $\le 10\text{s}$) | @lipestile | 08/10 | Backlog |
+| [#39](https://github.com/evidencia-grupo/EvidencIA/issues/39) | **QA-E2E:** Testes E2E com Playwright para o Fluxo Evidence-First | @luizoryone, @lipestile | 09/10 | Backlog |
+| [#40](https://github.com/evidencia-grupo/EvidencIA/issues/40) | **REL-01:** Sprint Review Evidence & Documentação Final do Projeto | @mahiaara, @pedrohpsantos | 09/10 | Backlog |
 
 ---
 
