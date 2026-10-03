@@ -1,0 +1,99 @@
+name: Freeze Guard
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  check-frozen-paths:
+    name: Freeze Guard / check-frozen-paths
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for unfreeze-approved label
+        id: check-label
+        env:
+          PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+        run: |
+          echo "PR labels: $PR_LABELS"
+          if echo "$PR_LABELS" | grep -q '"unfreeze-approved"'; then
+            echo "approved=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Label 'unfreeze-approved' encontrado. Freeze bypass autorizado."
+          else
+            echo "approved=false" >> "$GITHUB_OUTPUT"
+            echo "ℹ️  Label 'unfreeze-approved' ausente. Verificando caminhos congelados..."
+          fi
+
+      - name: Get changed files
+        id: changed-files
+        if: steps.check-label.outputs.approved == 'false'
+        run: |
+          # Lista arquivos alterados no PR em relação à branch base
+          CHANGED=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" 2>/dev/null || \
+                    git diff --name-only "origin/main...HEAD" 2>/dev/null || \
+                    echo "")
+          echo "Arquivos alterados:"
+          echo "$CHANGED"
+          # Escreve em arquivo temporário para processamento
+          echo "$CHANGED" > /tmp/changed_files.txt
+
+      - name: Check against frozen paths
+        if: steps.check-label.outputs.approved == 'false'
+        run: |
+          FROZEN_PATHS=".github/frozen-paths.txt"
+          CHANGED_FILE="/tmp/changed_files.txt"
+          VIOLATIONS=""
+
+          if [[ ! -f "$FROZEN_PATHS" ]]; then
+            echo "⚠️  Arquivo .github/frozen-paths.txt não encontrado. Pulando verificação."
+            exit 0
+          fi
+
+          # Lê caminhos congelados (ignora comentários e linhas vazias)
+          while IFS= read -r frozen_glob || [[ -n "$frozen_glob" ]]; do
+            # Remove espaços e ignora comentários/linhas vazias
+            frozen_glob="${frozen_glob%%#*}"
+            frozen_glob="${frozen_glob// /}"
+            [[ -z "$frozen_glob" ]] && continue
+
+            # Verifica se algum arquivo alterado corresponde ao glob
+            while IFS= read -r changed_file || [[ -n "$changed_file" ]]; do
+              [[ -z "$changed_file" ]] && continue
+              # Comparação direta de caminho
+              if [[ "$changed_file" == $frozen_glob ]]; then
+                VIOLATIONS="${VIOLATIONS}\n  🔴 ${changed_file}  (congelado por: ${frozen_glob})"
+              fi
+            done < "$CHANGED_FILE"
+          done < "$FROZEN_PATHS"
+
+          if [[ -n "$VIOLATIONS" ]]; then
+            echo ""
+            echo "❌ FREEZE GUARD: Este PR altera caminhos congelados!"
+            echo ""
+            echo "Caminhos violados:"
+            echo -e "$VIOLATIONS"
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "Estes caminhos estão congelados até a validação do"
+            echo "pipeline de dados (ADR-001 / Sprint 1 — IS-10)."
+            echo ""
+            echo "Consulte .github/FREEZE.md para:"
+            echo "  • O que está congelado e por quê"
+            echo "  • Critério de descongelamento"
+            echo "  • Como solicitar exceção (label 'unfreeze-approved')"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            exit 1
+          else
+            echo "✅ Nenhum caminho congelado foi alterado neste PR."
+          fi

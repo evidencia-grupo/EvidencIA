@@ -1,0 +1,17 @@
+# Caminhos congelados — EvidencIA Sprint 1
+# Cada linha é um glob comparado contra os arquivos alterados no PR.
+# O workflow freeze-guard falha se algum glob casar.
+# Para obter exceção: label "unfreeze-approved" no PR (aplicado pelo Tech Lead).
+# Referência: .github/FREEZE.md
+
+# --- Componentes de UI do gauge/score (extensão) ---
+extension/src/panel/components/Gauge.tsx
+extension/src/panel/index.tsx
+extension/src/panel/components/SourceList.tsx
+
+# --- Contratos compartilhados com score/reliabilityScore ---
+shared/types/api.ts
+shared/schemas/api-schema.json
+
+# --- Schema de backend com score e reliabilityScore ---
+backend/app/schemas.py
