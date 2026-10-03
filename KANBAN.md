@@ -64,20 +64,31 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 
 ---
 
-#### Sprint 2 (Semana 2: 05/10 a 09/10) — Hardening, Acessibilidade, SLAs & Release 1.0 (Entrega Final)
-*Objetivo: Blindagem de segurança, pipeline evidence-first, descongelamento formal e eliminação de scores, acessibilidade WCAG 2.1 AA e testes E2E.*
+#### Sprint 2 (Semana 2: 05/10 a 09/10) — Core Evidence-First, Descongelamento e Interface
+*Objetivo: Migração de provedores (LLMProvider), schema evidence-first estrito, descongelamento e remoção do gauge, Evidence Cards e Reflection Questions.*
 
 | Issue | Descrição da História / Tarefa | Responsável | Prazo | Status |
 |:---|:---|:---:|:---:|:---:|
+| [#10](https://github.com/evidencia-grupo/EvidencIA/issues/10) | **HU10:** Alerta rápido $< 1\text{s}$ para vídeos sem legendas | @luizoryone | 06/10 | Backlog |
 | [#32](https://github.com/evidencia-grupo/EvidencIA/issues/32) | **HU16:** Provider Abstraction: Migração de OllamaProvider e RemoteLLMProvider | @pedrohpsantos | 06/10 | Backlog |
-| [#33](https://github.com/evidencia-grupo/EvidencIA/issues/33) | **HU13:** Evidence-First Schema: Migração de Contratos e Fim do Score Global | @pedrohpsantos, @mahiaara | 06/10 | Backlog |
+| [#33](https://github.com/evidencia-grupo/EvidencIA/issues/33) | **HU13:** Evidence-First Schema: Migração de Contratos e Fim do Score Global | @pedrohpsantos, @mahiaara | 07/10 | Backlog |
 | [#34](https://github.com/evidencia-grupo/EvidencIA/issues/34) | **HU02:** Descongelamento Formal e Remoção do Score Global da UI | @MylenaTrindade | 07/10 | Backlog |
-| [#35](https://github.com/evidencia-grupo/EvidencIA/issues/35) | **HU14:** Evidence Cards no Painel da Extensão (Substituição do Gauge) | @MylenaTrindade, @luizoryone | 07/10 | Backlog |
+| [#35](https://github.com/evidencia-grupo/EvidencIA/issues/35) | **HU14:** Evidence Cards no Painel da Extensão (Substituição do Gauge) | @MylenaTrindade, @luizoryone | 08/10 | Backlog |
 | [#36](https://github.com/evidencia-grupo/EvidencIA/issues/36) | **HU15:** Reflection Questions no Painel da Extensão (HU11 promovida) | @mahiaara, @MylenaTrindade | 08/10 | Backlog |
-| [#37](https://github.com/evidencia-grupo/EvidencIA/issues/37) | **HU16:** Failure/Timeout Handling: Modo Evidence-Only e Fim dos Mocks | @pedrohpsantos, @lipestile | 08/10 | Backlog |
-| [#38](https://github.com/evidencia-grupo/EvidencIA/issues/38) | **HU03:** Testes de Latência e Performance (SLA P90 $\le 10\text{s}$) | @lipestile | 08/10 | Backlog |
-| [#39](https://github.com/evidencia-grupo/EvidencIA/issues/39) | **QA-E2E:** Testes E2E com Playwright para o Fluxo Evidence-First | @luizoryone, @lipestile | 09/10 | Backlog |
-| [#40](https://github.com/evidencia-grupo/EvidencIA/issues/40) | **REL-01:** Sprint Review Evidence & Documentação Final do Projeto | @mahiaara, @pedrohpsantos | 09/10 | Backlog |
+| [#37](https://github.com/evidencia-grupo/EvidencIA/issues/37) | **HU16:** Failure/Timeout Handling: Modo Evidence-Only e Fim dos Mocks | @pedrohpsantos, @lipestile | 09/10 | Backlog |
+
+---
+
+#### Sprint 3 (Semana 3: 12/10 a 16/10) — Hardening, SLAs, E2E, Release v1.0.0-mvp & Apresentação Final (16/10)
+*Objetivo: Blindagem de segurança, persistência em cache local (TTL 24h), validação de SLAs (P90 $\le 10\text{s}$), testes E2E com Playwright, auditoria WCAG 2.1 AA e Apresentação da Solução à Banca em 16/10.*
+
+| Issue | Descrição da História / Tarefa | Responsável | Prazo | Status |
+|:---|:---|:---:|:---:|:---:|
+| [#6](https://github.com/evidencia-grupo/EvidencIA/issues/6) | **HU06:** Cache local `chrome.storage.local` (TTL 24h, lazy eviction) | @lipestile | 13/10 | Backlog |
+| [#38](https://github.com/evidencia-grupo/EvidencIA/issues/38) | **HU03:** Testes de Latência e Performance (SLA P90 $\le 10\text{s}$) | @lipestile | 13/10 | Backlog |
+| [#39](https://github.com/evidencia-grupo/EvidencIA/issues/39) | **QA-E2E:** Testes E2E com Playwright para o Fluxo Evidence-First | @luizoryone, @lipestile | 14/10 | Backlog |
+| [#42](https://github.com/evidencia-grupo/EvidencIA/issues/42) | **A11Y-01:** Auditoria Completa de Acessibilidade WCAG 2.1 AA via `axe-core` | @MylenaTrindade | 15/10 | Backlog |
+| [#40](https://github.com/evidencia-grupo/EvidencIA/issues/40) | **REL-01:** Sprint Review Evidence, Release `v1.0.0-mvp` e **Apresentação Final (16/10)** | @mahiaara, @pedrohpsantos | 16/10 | Backlog |
 
 ---
 
@@ -109,13 +120,13 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
 - [x] **`DOC-03` — Threat Model & Acessibilidade:** STRIDE formal, mapeamento LGPD e design tokens WCAG AA.
 - [x] **`DOC-04` — Especificação de Contrato:** Schemas TypeScript e JSON para os endpoints `/analyze` e `/health`.
 - [x] **`SETUP-01` — Setup Inicial do Monorepo:** Extensão Preact MV3, Backend FastAPI, Schemas e CI.
-- [x] **`GH-ISSUES` — Cadastro e Distribuição no GitHub:** 18 Issues cadastradas com datas (28/09 a 09/10) e assignees.
+- [x] **`GH-ISSUES` — Cadastro e Distribuição no GitHub:** Issues cadastradas com datas e assignees.
 - [x] **`#2 (HU02)` — Síntese Estruturada sem Jargões:** Geração de síntese acessível para Dona Lurdes (RF-03) e separação visual de alegações no painel lateral Preact (RF-06).
 - [x] **`#4 (HU04)` — Categorização Estruturada de Alegações:** Extração atômica de alegações checáveis (ClaimPT) e integração RAG com Google Fact Check Tools API / ClaimReview sem vereditos dogmáticos (RF-06).
 
 ---
 
-## 4. Cronograma Regressivo de 2 Semanas (28/09 a 09/10)
+## 4. Cronograma Regressivo de 3 Semanas (28/09 a 16/10)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -130,13 +141,24 @@ Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
                                       │
                                       ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ SEMANA 2 (05/10 a 09/10): SPRINT 2 — "HARDENING, SLAS & ENTREGA FINAL"      │
+│ SEMANA 2 (05/10 a 09/10): SPRINT 2 — "CORE EVIDENCE-FIRST & DESCONGELAMENTO"│
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ • Seg 05/10: Cache local chrome.storage.local (Felipe) + Erros legendas (Luiz)│
-│ • Ter 06/10: Badge de incerteza analítica (Mylena) + Rate limiter (Pedro)   │
-│ • Qua 07/10: Auditoria WCAG 2.1 AA (Mylena) + Metadados temporais (Mayara)  │
-│ • Qui 08/10: Medição de TBT <= 50ms (Luiz) + Testes Playwright (Felipe)     │
-│ • Sex 09/10 (ENTREGA FINAL): Tag v1.0.0-mvp, build de produção e docs       │
+│ • Seg 05/10: Alerta legendas (Luiz #10) + Provider Abstraction (Pedro #32)  │
+│ • Ter 06/10: Evidence-First Schema (Pedro/Mayara #33)                        │
+│ • Qua 07/10: Descongelamento e Remoção do Gauge (Mylena #34)                │
+│ • Qui 08/10: Evidence Cards (Mylena/Luiz #35) + Reflection Questions (#36) │
+│ • Sex 09/10: Modo Evidence-Only e Eliminação de Mocks (Pedro/Felipe #37)    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ SEMANA 3 (12/10 a 16/10): SPRINT 3 — "HARDENING, SLAS & APRESENTAÇÃO FINAL" │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • Seg 12/10: Cache local chrome.storage.local (Felipe #6)                   │
+│ • Ter 13/10: Testes de Latência e Performance P90 <= 10s (Felipe #38)       │
+│ • Qua 14/10: Testes E2E com Playwright em Chromium (Luiz/Felipe #39)        │
+│ • Qui 15/10: Auditoria WCAG 2.1 AA via axe-core (Mylena #42)                │
+│ • Sex 16/10 (APRESENTAÇÃO FINAL): Tag v1.0.0-mvp, banca avaliadora & demo   │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 

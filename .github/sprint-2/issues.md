@@ -1,53 +1,71 @@
 # Sprint 2 — Checklist de Issues & Execução Operacional
 
 > **Milestone:** Sprint 2  
-> **Objetivo:** Converter os resultados da investigação da Sprint 1 em um pipeline de evidências e uma UX que preserve o pensamento crítico (Evidence-First), eliminando a dependência estrutural do Ollama local e removendo em definitivo o score global e velocímetros da extensão.  
-> **Total de Story Points:** 39 SP (9 issues oficiais)  
+> **Período de Execução:** 05/10/2026 a 09/10/2026 (5 dias úteis)  
+> **Data de Fechamento (Code Freeze Sprint 2):** 09 de Outubro de 2026  
+> **Objetivo da Sprint 2:** Converter os resultados da investigação da Sprint 1 em um pipeline de evidências e uma UX que preserve o pensamento crítico (Evidence-First), eliminando a dependência estrutural do Ollama local e removendo em definitivo o score global e velocímetros da extensão.  
+> **Total de Story Points:** 29 SP (7 issues oficiais)  
 > **Referência Arquitetural:** [ADR-006 (Evidence-First Architecture)](../../documentation/docs/tecnico/decisoes/ADR-006-evidence-first-architecture.md) · [KANBAN.md](../../KANBAN.md)
 
 ---
 
-## 1. Panorama de Progresso (Transição Sprint 1 → Sprint 2)
+## 1. Quadro de Responsabilidades e Prazos da Equipe (Sprint 2: 05/10 a 09/10)
 
-### Sprint 1 — Concluída e Integrada via PR #31 (`27c53e8`)
-- [x] **IS-01:** Guiding Questions publicadas e validadas (`documentation/docs/visao/guiding-questions.md`)
-- [x] **IS-02:** Alinhamento da Essential Question (`documentation/docs/visao/essential-question-alignment.md`)
-- [x] **IS-03:** Dataset registry versionado (`backend/ml/datasets/sources.yaml`)
-- [x] **IS-04:** Pipeline de ingestão por adapters (`backend/ml/datasets/adapters/`, `ingest.py`)
-- [x] **IS-05:** Schema canônico de evidência (`backend/ml/schemas/evidence.py`)
-- [x] **IS-06:** Índice Chroma e retrieval vetorial (`backend/ml/retrieval/index.py`, `search.py`)
-- [x] **IS-07:** Notebook EDA reprodutível com 17 seções (`notebooks/eda_datasets.ipynb`)
-- [x] **IS-08:** Baseline de retrieval (BM25/TF-IDF) validado
-- [x] **IS-09:** Proveniência e manifest de dados (`backend/data/manifest.json`, `manifest.py`)
-- [x] **IS-10:** Congelamento da UI do gauge ativo (`.github/FREEZE.md`, `.github/workflows/freeze-guard.yml`)
-- [x] **IS-11:** Interface LLMProvider e guard anti-mock (`backend/app/services/providers/`)
-- [x] **Clean-up:** Diretório `scripts/` removido com sucesso.
+| Issue | HU / ID | Título da História / Atividade | Épico | Responsável Principal | Co-responsável | Prazo de Entrega | Prioridade MoSCoW | SP |
+|:---:|:---:|:---|:---|:---:|:---:|:---:|:---:|:---:|
+| [#10](https://github.com/evidencia-grupo/EvidencIA/issues/10) | **HU10** | Notificação Rápida de Ausência de Transcrição | `epic:e2-transcricao` | @luizoryone | — | **06/10/2026** | `must-have` / `mvp:onda-1` | 3 |
+| [#32](https://github.com/evidencia-grupo/EvidencIA/issues/32) | **HU16** | Provider Abstraction: Migração de OllamaProvider e RemoteLLMProvider | `epic:e3-ia-checagem` | @pedrohpsantos | — | **06/10/2026** | `must-have` / `mvp:onda-1` | 5 |
+| [#33](https://github.com/evidencia-grupo/EvidencIA/issues/33) | **HU13** | Evidence-First Schema: Migração de Contratos e Eliminação do Score Global | `epic:e3-ia-checagem` | @pedrohpsantos | @mahiaara | **07/10/2026** | `must-have` / `mvp:onda-1` | 5 |
+| [#34](https://github.com/evidencia-grupo/EvidencIA/issues/34) | **HU02** | Descongelamento Formal e Remoção do Score Global da UI | `epic:e3-ia-checagem` | @MylenaTrindade | — | **07/10/2026** | `must-have` / `mvp:onda-1` | 3 |
+| [#35](https://github.com/evidencia-grupo/EvidencIA/issues/35) | **HU14** | Evidence Cards no Painel da Extensão | `epic:e4-confianca-fontes` | @MylenaTrindade | @luizoryone | **08/10/2026** | `must-have` / `mvp:onda-1` | 5 |
+| [#36](https://github.com/evidencia-grupo/EvidencIA/issues/36) | **HU15** | Reflection Questions no Painel da Extensão | `epic:e6-engajamento` | @mahiaara | @MylenaTrindade | **08/10/2026** | `must-have` / `mvp:onda-1` | 5 |
+| [#37](https://github.com/evidencia-grupo/EvidencIA/issues/37) | **HU16** | Failure/Timeout Handling: Modo Evidence-Only e Eliminação de Mocks | `epic:e3-ia-checagem` | @pedrohpsantos | @lipestile | **09/10/2026** | `must-have` / `mvp:onda-1` | 3 |
+| **Total** | | | | | | | | **29 SP** |
 
 ---
 
-## 2. Matriz de Atribuição da Equipe na Sprint 2 (Alinhada ao Kanban)
+## 2. Detalhamento das Issues da Sprint 2
 
-| Issue | HU / ID | Título da História / Atividade | Épico | Responsável Principal | Co-responsável | Prioridade MoSCoW | SP |
-|:---:|:---:|:---|:---|:---:|:---:|:---:|:---:|
-| [#32](https://github.com/evidencia-grupo/EvidencIA/issues/32) | **HU16** | Provider Abstraction: Migração de OllamaProvider e RemoteLLMProvider | `epic:e3-ia-checagem` | @pedrohpsantos | — | `must-have` / `mvp:onda-1` | 5 |
-| [#33](https://github.com/evidencia-grupo/EvidencIA/issues/33) | **HU13** | Evidence-First Schema: Migração de Contratos e Eliminação do Score Global | `epic:e3-ia-checagem` | @pedrohpsantos | @mahiaara | `must-have` / `mvp:onda-1` | 5 |
-| [#34](https://github.com/evidencia-grupo/EvidencIA/issues/34) | **HU02** | Descongelamento Formal e Remoção do Score Global da UI | `epic:e3-ia-checagem` | @MylenaTrindade | — | `must-have` / `mvp:onda-1` | 3 |
-| [#35](https://github.com/evidencia-grupo/EvidencIA/issues/35) | **HU14** | Evidence Cards no Painel da Extensão | `epic:e4-confianca-fontes` | @MylenaTrindade | @luizoryone | `must-have` / `mvp:onda-1` | 5 |
-| [#36](https://github.com/evidencia-grupo/EvidencIA/issues/36) | **HU15** | Reflection Questions no Painel da Extensão | `epic:e6-engajamento` | @mahiaara | @MylenaTrindade | `must-have` / `mvp:onda-1` | 5 |
-| [#37](https://github.com/evidencia-grupo/EvidencIA/issues/37) | **HU16** | Failure/Timeout Handling: Modo Evidence-Only e Eliminação de Mocks | `epic:e3-ia-checagem` | @pedrohpsantos | @lipestile | `must-have` / `mvp:onda-1` | 3 |
-| [#38](https://github.com/evidencia-grupo/EvidencIA/issues/38) | **HU03** | Testes de Latência e Performance (P90 <= 10s) | `epic:e5-performance-cache` | @lipestile | — | `must-have` / `mvp:onda-1` | 5 |
-| [#39](https://github.com/evidencia-grupo/EvidencIA/issues/39) | **QA-E2E** | Testes E2E com Playwright para o Fluxo Evidence-First | `epic:e5-performance-cache` | @luizoryone | @lipestile | `must-have` / `mvp:onda-1` | 5 |
-| [#40](https://github.com/evidencia-grupo/EvidencIA/issues/40) | **REL-01** | Sprint Review Evidence & Documentação Final do Projeto | `epic:e6-engajamento` | @mahiaara | @pedrohpsantos | `must-have` / `mvp:onda-1` | 3 |
-| **Total** | | | | | | | **39 SP** |
+### [#10] [HU10] Notificação Rápida de Ausência de Transcrição · 3 SP
+- **Labels:** `epic:e2-transcricao`, `must-have`, `mvp:onda-1`
+- **Responsável:** @luizoryone
+- **Prazo de Entrega:** 06/10/2026
+
+#### Declaração de Valor
+> **Como** Mariana (Consumidora de vídeos no YouTube)  
+> **Pretendo** ser notificada imediatamente caso o vídeo assistido não possua legendas  
+> **Para que** eu não perca tempo aguardando um resultado que não pode ser gerado.
+
+#### Rastreabilidade
+- **Épico:** `E2 — Extração de Transcrição`
+- **Feature:** `F1.1 — Extração e Higienização de Transcrições`
+- **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
+- **Sprint:** `Sprint 2 (05/10/2026 a 09/10/2026)`
+- **Prazo de Entrega:** `06/10/2026`
+- **Requisitos Vinculados:** RF-08, RNF-01, RNF-06, RNF-07
+
+#### Critérios de Aceitação (Gherkin)
+```gherkin
+Funcionalidade: Notificação rápida de ausência de transcrição
+
+  Cenário: Vídeo sem legendas
+    Dado que Mariana aciona a checagem de um vídeo sem transcrição disponível
+    Quando o sistema valida a disponibilidade da transcrição
+    Então um alerta orientador deve ser exibido em até 1 segundo
+    E o carregamento deve ser interrompido com segurança, sem bloquear a aba
+
+  Cenário: Falha temporária da API do YouTube
+    Dado que ocorre um erro temporário ao consultar as legendas
+    Quando o sistema detecta a falha
+    Então um botão de nova tentativa deve ser disponibilizado no painel
+```
 
 ---
 
-## 3. Especificação Completa das Issues (Gherkin & Rastreabilidade)
-
-### [#32] [HU16] Provider Abstraction: Migração de OllamaProvider e RemoteLLMProvider
+### [#32] [HU16] Provider Abstraction: Migração de OllamaProvider e RemoteLLMProvider · 5 SP
 - **Labels:** `epic:e3-ia-checagem`, `must-have`, `mvp:onda-1`
 - **Responsável:** @pedrohpsantos
-- **Story Points:** 5
+- **Prazo de Entrega:** 06/10/2026
 
 #### Declaração de Valor
 > **Como** Equipe de Engenharia / Sistema  
@@ -58,6 +76,8 @@
 - **Épico:** `E3 — Análise e Checagem via IA`
 - **Feature:** `F1.2 — Motor de Checagem Factual e IA`
 - **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
+- **Sprint:** `Sprint 2 (05/10/2026 a 09/10/2026)`
+- **Prazo de Entrega:** `06/10/2026`
 - **Requisitos Vinculados:** RF-14, RF-15, RNF-06, ADR-006 (Decisão 6)
 
 #### Critérios de Aceitação (Gherkin)
@@ -89,10 +109,10 @@ Funcionalidade: Provedor de IA independente
 
 ---
 
-### [#33] [HU13] Evidence-First Schema: Migração de Contratos e Eliminação do Score Global
+### [#33] [HU13] Evidence-First Schema: Migração de Contratos e Eliminação do Score Global · 5 SP
 - **Labels:** `epic:e3-ia-checagem`, `must-have`, `mvp:onda-1`
 - **Responsáveis:** @pedrohpsantos, @mahiaara
-- **Story Points:** 5
+- **Prazo de Entrega:** 07/10/2026
 
 #### Declaração de Valor
 > **Como** Amanda (Consumidora Crítica de Conteúdo)  
@@ -103,6 +123,8 @@ Funcionalidade: Provedor de IA independente
 - **Épico:** `E3 — Análise e Checagem via IA`
 - **Feature:** `F1.2 — Motor de Checagem Factual e IA`
 - **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
+- **Sprint:** `Sprint 2 (05/10/2026 a 09/10/2026)`
+- **Prazo de Entrega:** `07/10/2026`
 - **Requisitos Vinculados:** RF-06, RF-07, RNF-07, ADR-006 (Decisões 1 e 2)
 
 #### Critérios de Aceitação (Gherkin)
@@ -135,10 +157,10 @@ Funcionalidade: Investigação orientada por alegações e contratos evidence-fi
 
 ---
 
-### [#34] [HU02] Descongelamento Formal e Remoção do Score Global da UI
+### [#34] [HU02] Descongelamento Formal e Remoção do Score Global da UI · 3 SP
 - **Labels:** `epic:e3-ia-checagem`, `must-have`, `mvp:onda-1`
 - **Responsável:** @MylenaTrindade
-- **Story Points:** 3
+- **Prazo de Entrega:** 07/10/2026
 
 #### Declaração de Valor
 > **Como** Dona Lurdes (Consumidora de receitas e dicas caseiras de saúde)  
@@ -149,6 +171,8 @@ Funcionalidade: Investigação orientada por alegações e contratos evidence-fi
 - **Épico:** `E3 — Análise e Checagem via IA`
 - **Feature:** `F2.3 — Síntese Visual e Acessibilidade WCAG`
 - **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
+- **Sprint:** `Sprint 2 (05/10/2026 a 09/10/2026)`
+- **Prazo de Entrega:** `07/10/2026`
 - **Requisitos Vinculados:** RF-03, RF-06, RNF-07, ADR-006 (Decisão 1)
 
 #### Critérios de Aceitação (Gherkin)
@@ -175,10 +199,10 @@ Funcionalidade: Remoção de scores globais e velocímetros da interface
 
 ---
 
-### [#35] [HU14] Evidence Cards no Painel da Extensão
+### [#35] [HU14] Evidence Cards no Painel da Extensão · 5 SP
 - **Labels:** `epic:e4-confianca-fontes`, `must-have`, `mvp:onda-1`
 - **Responsáveis:** @MylenaTrindade, @luizoryone
-- **Story Points:** 5
+- **Prazo de Entrega:** 08/10/2026
 
 #### Declaração de Valor
 > **Como** Mayara (Jornalista investigativa e checadora de fatos)  
@@ -189,6 +213,8 @@ Funcionalidade: Remoção de scores globais e velocímetros da interface
 - **Épico:** `E4 — Confiança e Fontes`
 - **Feature:** `F2.2 — Auditoria de Fontes e Transparência Editorial`
 - **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
+- **Sprint:** `Sprint 2 (05/10/2026 a 09/10/2026)`
+- **Prazo de Entrega:** `08/10/2026`
 - **Requisitos Vinculados:** RF-04, RF-13, RNF-05, ADR-006 (Decisões 2 e 5)
 
 #### Critérios de Aceitação (Gherkin)
@@ -220,10 +246,10 @@ Funcionalidade: Evidence cards no painel da extensão
 
 ---
 
-### [#36] [HU15] Reflection Questions no Painel da Extensão
+### [#36] [HU15] Reflection Questions no Painel da Extensão · 5 SP
 - **Labels:** `epic:e6-engajamento`, `must-have`, `mvp:onda-1`
 - **Responsáveis:** @mahiaara, @MylenaTrindade
-- **Story Points:** 5
+- **Prazo de Entrega:** 08/10/2026
 
 #### Declaração de Valor
 > **Como** Helena (Professora do ensino médio)  
@@ -234,6 +260,8 @@ Funcionalidade: Evidence cards no painel da extensão
 - **Épico:** `E6 — Engajamento Reflexivo (Promovido para MVP)`
 - **Feature:** `F3.1 — Estímulo ao Pensamento Crítico`
 - **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
+- **Sprint:** `Sprint 2 (05/10/2026 a 09/10/2026)`
+- **Prazo de Entrega:** `08/10/2026`
 - **Requisitos Vinculados:** RF-05, RNF-07, ADR-006 (Decisão 7)
 
 #### Critérios de Aceitação (Gherkin)
@@ -264,10 +292,10 @@ Funcionalidade: Reflection questions no painel da extensão
 
 ---
 
-### [#37] [HU16] Failure/Timeout Handling: Modo Evidence-Only e Eliminação de Mocks
+### [#37] [HU16] Failure/Timeout Handling: Modo Evidence-Only e Eliminação de Mocks · 3 SP
 - **Labels:** `epic:e3-ia-checagem`, `must-have`, `mvp:onda-1`
 - **Responsáveis:** @pedrohpsantos, @lipestile
-- **Story Points:** 3
+- **Prazo de Entrega:** 09/10/2026
 
 #### Declaração de Valor
 > **Como** Dona Lurdes (Consumidora de Notícias) e Equipe de Engenharia  
@@ -278,6 +306,8 @@ Funcionalidade: Reflection questions no painel da extensão
 - **Épico:** `E3 — Análise e Checagem via IA`
 - **Feature:** `F1.2 — Motor de Checagem Factual e IA`
 - **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
+- **Sprint:** `Sprint 2 (05/10/2026 a 09/10/2026)`
+- **Prazo de Entrega:** `09/10/2026`
 - **Requisitos Vinculados:** RF-14, RNF-06, ADR-006 (Decisão 6)
 
 #### Critérios de Aceitação (Gherkin)
@@ -307,147 +337,3 @@ Funcionalidade: Degradação graciosa para modo Evidence-Only e eliminação de 
 - [ ] Validar guard rail de bloqueio de mock em `backend/app/services/providers/factory.py` para `ENV=production`
 - [ ] Adicionar banner de aviso no painel Preact quando `evidence_only: true`
 - [ ] Testes unitários cobrindo timeout de LLM e retorno exclusivo de evidências
-
----
-
-### [#38] [HU03] Testes de Latência e Performance (P90 <= 10s)
-- **Labels:** `epic:e5-performance-cache`, `must-have`, `mvp:onda-1`
-- **Responsável:** @lipestile
-- **Story Points:** 5
-
-#### Declaração de Valor
-> **Como** Carlos (Estudante universitário com conexão móvel)  
-> **Pretendo** que a checagem completa do vídeo seja concluída em menos de 10 segundos no percentil 90  
-> **Para que** eu não desista da checagem nem sofra com lentidão enquanto assisto a vídeos no YouTube.
-
-#### Rastreabilidade
-- **Épico:** `E5 — Performance e Cache`
-- **Feature:** `F1.3 — Cache Local e Otimização de SLA`
-- **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
-- **Requisitos Vinculados:** RF-09, RNF-01, RNF-02, ADR-003
-
-#### Critérios de Aceitação (Gherkin)
-```gherkin
-Funcionalidade: Garantia de SLA de latência e performance da checagem
-
-  Cenário: Checagem com recuperação via cache local
-    Dado que um vídeo já foi analisado previamente nas últimas 24 horas
-    Quando o usuário aciona a verificação
-    Então o resultado deve ser recuperado do chrome.storage.local em menos de 500ms
-    E nenhuma chamada de rede ao backend deve ser disparada
-
-  Cenário: Checagem a frio dentro do SLA de 10 segundos
-    Dado que o vídeo é analisado pela primeira vez
-    Quando a extração e busca vetorial são executadas
-    Então o tempo total de resposta no percentil 90 (P90) deve ser menor ou igual a 10 segundos
-    E o Total Blocking Time (TBT) na página do YouTube deve permanecer <= 50ms
-```
-
-#### Checklist de Implementação
-- [ ] Criar benchmark automatizado em `backend/tests/test_performance_sla.py`
-- [ ] Medir latência do embedding Qwen2.5 / Chroma local vs busca
-- [ ] Validar comportamento do cache `chrome.storage.local` com TTL de 24h
-- [ ] Documentar resultados de latência P50, P90 e P99 para a entrega final
-
----
-
-### [#39] [QA-E2E] Testes E2E com Playwright para o Fluxo Evidence-First
-- **Labels:** `epic:e5-performance-cache`, `must-have`, `mvp:onda-1`
-- **Responsáveis:** @luizoryone, @lipestile
-- **Story Points:** 5
-
-#### Declaração de Valor
-> **Como** Equipe de Engenharia & Qualidade  
-> **Pretendo** validar o fluxo completo da extensão em um navegador Chromium real via Playwright  
-> **Para que** tenhamos garantia de que a injeção no player, captura de legendas, comunicação com backend e renderização do painel funcionam de ponta a ponta sem regressão.
-
-#### Rastreabilidade
-- **Épico:** `E5 — Performance e Cache`
-- **Feature:** `F1.1 / F1.3 — Ingestão, Interceptação e Validação Ponta a Ponta`
-- **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
-- **Requisitos Vinculados:** RF-01, RF-02, RF-03, RNF-01, RNF-05
-
-#### Critérios de Aceitação (Gherkin)
-```gherkin
-Funcionalidade: Teste E2E automatizado do fluxo Evidence-First
-
-  Cenário: Fluxo completo de checagem no YouTube via extensão
-    Dado que a extensão está carregada em uma instância headless do Chromium via Playwright
-    E uma página de vídeo do YouTube está aberta
-    Quando o script clica no botão de verificação injetado no player
-    Então a transcrição deve ser extraída com sucesso
-    E o painel lateral deve renderizar os cartões de alegações e evidências sem erros no console
-
-  Cenário: Vídeo sem legendas disponíveis no player
-    Dado que o vídeo carregado não possui faixa de legenda disponível
-    Quando o usuário aciona a verificação
-    Então o painel deve exibir em menos de 1s a mensagem informativa sobre ausência de transcrição
-```
-
-#### Checklist de Implementação
-- [ ] Atualizar suíte Playwright em `extension/tests/e2e/` ou `tests/e2e/`
-- [ ] Validar injeção do botão no DOM do YouTube sem interferir no player nativo
-- [ ] Testar renderização dos `EvidenceCard` e `ReflectionQuestions`
-- [ ] Integrar execução dos testes E2E no GitHub Actions CI
-
----
-
-### [#40] [REL-01] Sprint Review Evidence & Documentação Final do Projeto
-- **Labels:** `epic:e6-engajamento`, `must-have`, `mvp:onda-1`
-- **Responsáveis:** @mahiaara, @pedrohpsantos
-- **Story Points:** 3
-
-#### Declaração de Valor
-> **Como** Toda a Equipe / Avaliadores e Stakeholders  
-> **Pretendo** consolidar todas as evidências de teste, métricas de qualidade, benchmarks e documentação do projeto  
-> **Para que** o projeto EvidencIA atinja o Definition of Done (DoD) completo e esteja pronto para release e apresentação final.
-
-#### Rastreabilidade
-- **Épico:** `E6 — Engajamento Reflexivo (Promovido para MVP)`
-- **Feature:** `F3.2 — Fechamento do Projeto, Auditoria e Documentação Final`
-- **Prioridade MoSCoW:** `Must Have` (Onda 1 - MVP)
-- **Requisitos Vinculados:** RNF-05, RNF-07, DoD do Projeto
-
-#### Critérios de Aceitação (Gherkin)
-```gherkin
-Funcionalidade: Evidências da Sprint Review e consolidação da entrega final
-
-  Cenário: Validação do Definition of Done (DoD) completo
-    Dado que todas as histórias da Sprint 1 e Sprint 2 foram desenvolvidas
-    Quando a esteira de validação final é executada
-    Então 100% dos testes unitários e de integração devem passar sem erros
-    E a cobertura de testes deve ser igual ou superior a 80%
-    E zero vulnerabilidades críticas ou altas devem ser apontadas pelo SAST
-
-  Cenário: Documentação e tag de release
-    Dado que os critérios de qualidade foram homologados
-    Quando a tag v1.0.0-mvp é gerada
-    Então o changelog, manual de instalação e matriz de rastreabilidade devem estar perfeitamente sincronizados
-```
-
-#### Checklist de Implementação
-- [ ] Atualizar catálogo de requisitos e matriz de rastreabilidade em `documentation/docs/`
-- [ ] Consolidar relatórios de cobertura de testes (>= 80%) e SAST (pip-audit / npm audit)
-- [ ] Documentar o fluxo de demonstração da Sprint Review e gravação do screencast
-- [ ] Gerar tag `v1.0.0-mvp` e release notes no repositório
-
----
-
-## 4. Critérios Transversais e Guard Rails da Sprint 2
-
-1. **Evidence-First Estrito:**
-   - Nenhum score global (0-100), medidor gráfico (gauge) ou porcentagem de veracidade deve existir na extensão após a conclusão de #34 (HU02).
-   - Alegações sem evidências retornam neutras com a relação `contextualizes` ou `unverified`, nunca convertidas automaticamente em `falso` ou `contradicted`.
-
-2. **Blindagem de Produção (Anti-Mock Guard):**
-   - MockLLMProvider só é permitido em `ENV=development` ou `ENV=test`. Qualquer tentativa de execução com `ENV=production` deve abortar imediatamente.
-   - Degradação de rede ou timeout de LLM (>= 15s) entra em modo `evidence_only: true`.
-
-3. **Performance & SLAs:**
-   - Latência no P90 <= 10s para checagens a frio.
-   - Recuperação local via `chrome.storage.local` <= 500ms (TTL 24h).
-   - Total Blocking Time (TBT) no player <= 50ms.
-
-4. **Acessibilidade & Usabilidade:**
-   - Contraste e tipografia aderentes a WCAG 2.1 AA.
-   - Navegabilidade total por teclado e suporte a leitores de tela em todos os cartões de evidência e perguntas de reflexão.
