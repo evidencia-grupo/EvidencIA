@@ -57,7 +57,6 @@ def build_index(
         ) from exc
 
     from ml.embeddings.encoder import EmbeddingEncoder
-    from ml.schemas.evidence import EvidenceRecord, VerdictNormalized
 
     if not os.path.isdir(silver_dir):
         raise FileNotFoundError(f"Diretório silver não encontrado: {silver_dir!r}")

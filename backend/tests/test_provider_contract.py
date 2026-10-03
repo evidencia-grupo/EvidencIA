@@ -9,7 +9,6 @@ Refs: ADR-001, IS-11.
 """
 
 import inspect
-import pytest
 
 from app.services.providers.base import LLMProvider
 from app.services.providers.mock import MockProvider

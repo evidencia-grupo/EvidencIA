@@ -11,7 +11,6 @@ Refs: ADR-001, IS-04.
 from __future__ import annotations
 
 import csv
-import hashlib
 import json
 import logging
 import os
@@ -209,8 +208,6 @@ class FactChecksBrAdapter(DatasetAdapter):
                     break
                 except ValueError:
                     continue
-
-        content_hash = "sha256:" + hashlib.sha256(claim_text.encode("utf-8")).hexdigest()
 
         return EvidenceRecord(
             evidence_id=f"factchecksbr:{source_file}:{idx:06d}",

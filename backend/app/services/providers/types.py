@@ -8,8 +8,7 @@ Refs: ADR-001, IS-11.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Optional, Union
+from typing import Optional, Union
 from pydantic import BaseModel, Field
 
 from ml.schemas.evidence import EvidenceRecord

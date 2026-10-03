@@ -13,15 +13,12 @@ import os
 import shutil
 import tempfile
 import yaml
-import pytest
 
 from ml.datasets.adapters.fakebr import FakeBrAdapter
 from ml.datasets.adapters.factchecksbr import FactChecksBrAdapter
 from ml.datasets.ingest import run_ingestion
 from ml.datasets.manifest import (
-    compute_file_sha256,
     load_manifest,
-    save_manifest,
     update_manifest,
     verify_manifest,
 )

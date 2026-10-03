@@ -20,7 +20,7 @@ from ml.schemas.evidence import (
     VerdictNormalized,
     normalize_verdict,
 )
-from ml.datasets.normalize import normalize_text, normalize_evidence_record, normalize_news_record
+from ml.datasets.normalize import normalize_text, normalize_news_record
 
 
 def test_normalize_text_deterministic():

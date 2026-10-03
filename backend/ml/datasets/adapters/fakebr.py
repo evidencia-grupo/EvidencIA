@@ -11,10 +11,8 @@ Refs: ADR-001, IS-04.
 from __future__ import annotations
 
 import csv
-import hashlib
 import logging
 import os
-from datetime import timezone
 from typing import Iterator
 
 from ml.datasets.adapters.base import DatasetAdapter, register_adapter
@@ -120,9 +118,6 @@ class FakeBrAdapter(DatasetAdapter):
         if label is None:
             logger.warning("Label desconhecido %r na linha %d — ignorando", raw_label, idx)
             return None
-
-        # Gera content_hash a partir do texto
-        content_hash = "sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest()
 
         return NewsRecord(
             evidence_id=f"fakebr:{source_file}:{idx:06d}",
