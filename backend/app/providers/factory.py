@@ -19,13 +19,21 @@ from __future__ import annotations
 import os
 from typing import Optional
 
-from app.services.providers.base import LLMProvider
-from app.services.providers.mock import MockProvider
-from app.services.providers.ollama import OllamaProvider
-from app.services.providers.remote import RemoteLLMProvider
-from app.services.providers.types import MockInProductionError
+from app.providers.base import LLMProvider
+from app.providers.mock import MockProvider
+from app.providers.ollama import OllamaProvider
+from app.providers.remote import RemoteLLMProvider
+from app.providers.types import MockInProductionError, ProviderUnavailableError, ProviderError
 
 VALID_PROVIDERS = ("ollama", "remote", "mock")
+
+__all__ = [
+    "get_provider",
+    "VALID_PROVIDERS",
+    "MockInProductionError",
+    "ProviderUnavailableError",
+    "ProviderError",
+]
 
 
 def get_provider(
@@ -38,7 +46,7 @@ def get_provider(
         provider_name: Nome do provedor ('ollama', 'remote', 'mock').
                        Se omitido, lê da variável de ambiente `LLM_PROVIDER` (padrão: 'ollama').
         app_env: Ambiente de execução ('development', 'staging', 'production').
-                 Se omitido, lê de `APP_ENV` (ou `ENVIRONMENT`, padrão: 'development').
+                 Se omitido, lê de `ENV`, `NODE_ENV`, `APP_ENV` ou `ENVIRONMENT`.
 
     Returns:
         Instância que satisfaz o protocolo LLMProvider.
@@ -50,10 +58,16 @@ def get_provider(
     raw_provider = provider_name or os.getenv("LLM_PROVIDER", "ollama")
     normalized_provider = raw_provider.strip().lower()
 
-    raw_env = app_env or os.getenv("APP_ENV") or os.getenv("ENVIRONMENT", "development")
+    raw_env = (
+        app_env
+        or os.getenv("ENV")
+        or os.getenv("NODE_ENV")
+        or os.getenv("APP_ENV")
+        or os.getenv("ENVIRONMENT", "development")
+    )
     normalized_env = raw_env.strip().lower()
 
-    # Guarda anti-mock estrita em produção (ADR-001)
+    # Guarda anti-mock estrita em produção (ADR-001 / ADR-006 / RF-15)
     is_production = normalized_env in ("production", "prod")
 
     if normalized_provider == "mock":

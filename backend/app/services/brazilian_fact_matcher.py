@@ -1,7 +1,7 @@
 import re
 from typing import Dict, List, Optional
 from ml.datasets.dataset_downloader import load_local_sample_dataset
-from app.schemas import FactCheckingSource
+from app.schemas import Evidence, EvidenceProvenance, EvidenceRelation
 
 
 class BrazilianFactMatcher:
@@ -50,19 +50,35 @@ class BrazilianFactMatcher:
                 best_match = entry
 
         if best_match:
-            source = FactCheckingSource(
-                id=f"src-br-{best_match['id']}",
-                title=f"{best_match['publisher']}: {best_match['claim']}",
+            raw_status = (best_match.get("status") or "").lower()
+            if "contraditada" in raw_status or "falso" in raw_status or "falsa" in raw_status:
+                relation: EvidenceRelation = "contradicts"
+            elif "apoiada" in raw_status or "verdadeiro" in raw_status or "verdadeira" in raw_status:
+                relation: EvidenceRelation = "supports"
+            else:
+                relation: EvidenceRelation = "contextualizes"
+
+            evidence = Evidence(
+                sourceId=f"src-br-{best_match['id']}",
+                relation=relation,
+                title=f"{best_match.get('publisher', 'Agência')}: {best_match.get('claim', '')}",
                 url=best_match.get("review_url", "https://lupa.uol.com.br"),
-                domain=best_match.get("domain", "agenciachecagem.org"),
-                reliabilityScore=0.96,
+                publishedAt=best_match.get("published_at", "2026-01-01T00:00:00Z"),
+                publisher=best_match.get("publisher", "Agência de Fact-Checking"),
+                snippet=best_match.get("evidence_summary", ""),
+                provenance=EvidenceProvenance(
+                    dataset="factchecksbr",
+                    indexedAt="2026-08-01T10:00:00Z",
+                    contentHash=f"sha256:{best_match['id']}",
+                ),
             )
             return {
                 "claim": best_match["claim"],
                 "status": best_match["status"],
-                "rating_text": best_match["rating_text"],
-                "evidence_summary": best_match["evidence_summary"],
-                "source": source,
+                "rating_text": best_match.get("rating_text", ""),
+                "evidence_summary": best_match.get("evidence_summary", ""),
+                "evidence": evidence,
+                "relation": relation,
                 "confidence": min(0.98, 0.85 + (best_score * 0.15)),
             }
 

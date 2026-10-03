@@ -1,10 +1,19 @@
 import logging
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 import httpx
-
+from pydantic import BaseModel
 from app.config import settings
-from app.schemas import ClaimVerificationStatus, FactCheckingSource
+
+ClaimVerificationStatus = Literal["apoiada", "contraditada", "inconclusiva"]
+
+
+class FactCheckingSource(BaseModel):
+    id: str
+    title: str
+    url: str
+    domain: str
+    publishedAt: Optional[str] = None
 
 logger = logging.getLogger(__name__)
 

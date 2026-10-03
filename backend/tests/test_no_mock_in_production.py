@@ -14,9 +14,9 @@ import ast
 import os
 import pytest
 
-from app.services.providers.factory import get_provider
-from app.services.providers.types import MockInProductionError
-from app.services.providers.mock import MockProvider
+from app.providers.factory import get_provider
+from app.providers.types import MockInProductionError
+from app.providers.mock import MockProvider
 
 
 def test_factory_raises_mock_in_production():
@@ -52,6 +52,9 @@ def test_no_direct_imports_of_mock_in_app():
 
     # Arquivos permitidos a referenciar o mock
     allowed_files = {
+        os.path.normpath(os.path.join(app_root, "providers", "mock.py")),
+        os.path.normpath(os.path.join(app_root, "providers", "factory.py")),
+        os.path.normpath(os.path.join(app_root, "providers", "__init__.py")),
         os.path.normpath(os.path.join(app_root, "services", "providers", "mock.py")),
         os.path.normpath(os.path.join(app_root, "services", "providers", "factory.py")),
         os.path.normpath(os.path.join(app_root, "services", "providers", "__init__.py")),

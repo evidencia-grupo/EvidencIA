@@ -1,11 +1,14 @@
-"""Pacote de abstração de provedores LLM (LLMProvider) com isolamento de mocks.
+"""Módulo de compatibilidade para app.services.providers -> app.providers.
 
-Refs: ADR-001, ADR-006, IS-11.
+Mantém interoperabilidade com ferramentas de auditoria e referências legadas
+enquanto centraliza a implementação em app.providers (ADR-004 / Arquitetura oficial).
 """
 
 from app.providers.base import LLMProvider
 from app.providers.factory import get_provider
 from app.providers.mock import MockProvider, ANALYSIS_MODE
+from app.providers.ollama import OllamaProvider
+from app.providers.remote import RemoteLLMProvider
 from app.providers.types import (
     Claim,
     Evidence,
@@ -20,6 +23,8 @@ __all__ = [
     "get_provider",
     "MockProvider",
     "ANALYSIS_MODE",
+    "OllamaProvider",
+    "RemoteLLMProvider",
     "Claim",
     "Evidence",
     "EvidenceRef",

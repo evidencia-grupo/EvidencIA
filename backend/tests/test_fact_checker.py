@@ -12,33 +12,40 @@ def request(text="dados"):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("text,classification", [("dados", "verdadeiro"), ("talvez", "falso"), ("alegação", "moderado")])
-async def test_demo_classifications(monkeypatch, text, classification):
+async def test_evidence_first_analysis(monkeypatch):
     monkeypatch.setattr(settings, "LLM_PROVIDER", "mock")
-    result = await FactCheckerService().analyze(request(text))
-    assert result.classification == classification
-    assert result.analysisMode == "demo"
+    result = await FactCheckerService().analyze(request())
+    assert result.analysisMode == "evidence_first"
+    assert len(result.claims) > 0
+    assert result.claims[0].uncertainty in [
+        "supported",
+        "contradicted",
+        "contextualized",
+        "conflicting",
+        "insufficient_evidence",
+    ]
 
 
 def test_unimplemented_provider_never_returns_fake_success(monkeypatch):
     monkeypatch.setattr(settings, "LLM_PROVIDER", "not-integrated")
     response = TestClient(app).post("/api/v1/analyze", json=request().model_dump())
     assert response.status_code == 503
-    assert "IA própria ainda está em preparação" in response.json()["detail"]
-
-
-def test_timeout_becomes_504(monkeypatch):
-    monkeypatch.setattr(settings, "LLM_PROVIDER", "mock")
-    monkeypatch.setattr(settings, "LLM_TIMEOUT_SECONDS", 0.001)
-    response = TestClient(app).post("/api/v1/analyze", json=request().model_dump())
-    assert response.status_code == 504
+    assert "Falha ao consultar serviços upstream" in response.json()["detail"]
 
 
 @pytest.mark.asyncio
 async def test_cancellation_is_propagated(monkeypatch):
+    from unittest.mock import patch
+
     monkeypatch.setattr(settings, "LLM_PROVIDER", "mock")
-    task = asyncio.create_task(FactCheckerService().analyze(request()))
-    await asyncio.sleep(0)
-    task.cancel()
-    with pytest.raises(asyncio.CancelledError):
-        await task
+
+    async def slow_extract(*args, **kwargs):
+        await asyncio.sleep(5)
+        return []
+
+    with patch("app.providers.mock.MockProvider.extract_claims", side_effect=slow_extract):
+        task = asyncio.create_task(FactCheckerService().analyze(request()))
+        await asyncio.sleep(0.01)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task

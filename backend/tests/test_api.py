@@ -40,24 +40,21 @@ def test_analyze_video_success():
     response = client.post("/api/v1/analyze", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert data["analysisMode"] == "demo"
+    assert data["analysisMode"] == "evidence_first"
     assert data["videoId"] == "test-vid-123"
     assert data["videoTitle"] == payload["videoTitle"]
     assert data["channelName"] == payload["channelName"]
-    assert data["uploadDate"] == payload["uploadDate"]
-    assert data["temporalContext"] == {
-        "publicationYear": current_year,
-        "isOldContent": False,
-        "message": f"As alegações foram apresentadas em {current_year}; mudanças posteriores não tornam falsa uma afirmação correta à época.",
-    }
-    assert 0 <= data["score"] <= 100
-    assert data["classification"] in ["verdadeiro", "moderado", "falso", "inconclusivo"]
+    assert data["publishedAt"] == payload["uploadDate"]
+    assert "score" not in data
+    assert "classification" not in data
     assert len(data["claims"]) > 0
-    assert len(data["sources"]) > 0
-    source_ids = {source["id"] for source in data["sources"]}
     for claim in data["claims"]:
-        assert claim["sourceIds"]
-        assert set(claim["sourceIds"]).issubset(source_ids)
+        assert "id" in claim
+        assert "text" in claim
+        assert "uncertainty" in claim
+        assert "evidence" in claim
+        assert "temporalContext" in claim
+        assert claim["temporalContext"]["videoPublishedAt"] == payload["uploadDate"]
     assert data["processingTimeMs"] >= 0
 
 
@@ -72,11 +69,9 @@ def test_temporal_context_does_not_change_verdict():
     current = client.post("/api/v1/analyze", json={**base_payload, "uploadDate": "2026-04-15T00:00:00Z"}).json()
     historical = client.post("/api/v1/analyze", json={**base_payload, "uploadDate": "2021-04-15T00:00:00Z"}).json()
 
-    assert historical["temporalContext"]["publicationYear"] == 2021
-    assert historical["temporalContext"]["isOldContent"] is True
-    assert historical["classification"] == current["classification"] == "verdadeiro"
-    assert historical["score"] == current["score"]
-    assert [claim["status"] for claim in historical["claims"]] == [claim["status"] for claim in current["claims"]]
+    assert historical["claims"][0]["temporalContext"]["videoPublishedAt"] == "2021-04-15T00:00:00Z"
+    assert "score" not in historical
+    assert historical["claims"][0]["uncertainty"] == current["claims"][0]["uncertainty"]
 
 
 def test_analyze_video_short_transcript():

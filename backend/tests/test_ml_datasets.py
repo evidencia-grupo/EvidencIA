@@ -24,8 +24,8 @@ def test_brazilian_fact_matcher_direct_match():
 
     assert match is not None
     assert match["status"] == "contraditada"
-    assert "Agência Lupa" in match["source"].title
-    assert match["source"].domain == "lupa.uol.com.br"
+    assert "Agência Lupa" in match["evidence"].title
+    assert "lupa.uol.com.br" in match["evidence"].url
     assert match["confidence"] >= 0.85
 
 

@@ -12,7 +12,7 @@ Refs: ADR-001, IS-11.
 from __future__ import annotations
 
 from typing import List
-from app.services.providers.types import Claim, Evidence
+from app.providers.types import Claim, Evidence
 
 ANALYSIS_MODE = "mock"
 

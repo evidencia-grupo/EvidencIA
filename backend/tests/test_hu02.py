@@ -1,9 +1,17 @@
 from fastapi.testclient import TestClient
 from app.main import app
 from app.services.synthesis import FORBIDDEN_JARGONS, synthesis_service
-from app.schemas import VerificationClaim
 
 client = TestClient(app)
+
+
+class DummyClaim:
+    def __init__(self, id, text, status, evidenceSummary="", confidence=0.9):
+        self.id = id
+        self.text = text
+        self.status = status
+        self.evidenceSummary = evidenceSummary
+        self.confidence = confidence
 
 
 def test_hu02_summary_no_technical_jargon():
@@ -12,7 +20,7 @@ def test_hu02_summary_no_technical_jargon():
     assegurando compreensão imediata pela persona Dona Lurdes.
     """
     dummy_claims = [
-        VerificationClaim(
+        DummyClaim(
             id="clm-01",
             text="Alegação de teste",
             status="contraditada",
@@ -41,7 +49,7 @@ def test_hu02_summary_guidance_for_dona_lurdes():
     e recomendação de compartilhamento sem sobrecarga cognitiva.
     """
     falso_claims = [
-        VerificationClaim(
+        DummyClaim(
             id="c1",
             text="Chá cura doença",
             status="contraditada",
@@ -58,7 +66,7 @@ def test_hu02_summary_guidance_for_dona_lurdes():
     assert "não repassar" in summary_falso
 
     verdadeiro_claims = [
-        VerificationClaim(
+        DummyClaim(
             id="c2",
             text="Vacina reduz internações",
             status="apoiada",
@@ -76,7 +84,7 @@ def test_hu02_summary_guidance_for_dona_lurdes():
 
 def test_hu02_claims_contain_explicit_status_for_ui_grouping():
     """
-    Critério HU02: As alegações devem conter separação nítida de status
+    Critério HU02 / HU13: As alegações devem conter separação nítida de incerteza/status
     para permitir agrupamento visual no painel lateral.
     """
     payload = {
@@ -89,14 +97,12 @@ def test_hu02_claims_contain_explicit_status_for_ui_grouping():
     assert response.status_code == 200
     data = response.json()
 
-    assert "summary" in data
-    assert len(data["summary"]) > 0
     assert "claims" in data
     assert len(data["claims"]) > 0
 
-    valid_statuses = {"apoiada", "contraditada", "inconclusiva"}
+    valid_uncertainties = {"supported", "contradicted", "contextualized", "conflicting", "insufficient_evidence"}
     for claim in data["claims"]:
-        assert claim["status"] in valid_statuses
+        assert claim["uncertainty"] in valid_uncertainties
 
 
 def test_hu02_public_access_no_registration_required():

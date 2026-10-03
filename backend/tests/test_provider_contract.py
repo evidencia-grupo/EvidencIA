@@ -10,11 +10,11 @@ Refs: ADR-001, IS-11.
 
 import inspect
 
-from app.services.providers.base import LLMProvider
-from app.services.providers.mock import MockProvider
-from app.services.providers.ollama import OllamaProvider
-from app.services.providers.remote import RemoteLLMProvider
-from app.services.providers.types import Claim
+from app.providers.base import LLMProvider
+from app.providers.mock import MockProvider
+from app.providers.ollama import OllamaProvider
+from app.providers.remote import RemoteLLMProvider
+from app.providers.types import Claim
 
 
 def test_mock_provider_implements_llm_provider():

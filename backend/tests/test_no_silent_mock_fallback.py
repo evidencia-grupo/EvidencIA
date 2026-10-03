@@ -3,9 +3,9 @@
 DÍVIDA TÉCNICA DOCUMENTADA (ADR-001 / Sprint 1):
 Atualmente, FactCheckerService possui caminhos de fallback silencioso para heurísticas
 embutidas e fontes estáticas caso o provider Ollama/Qwen falhe ou retorne None.
-Este teste está marcado com @pytest.mark.xfail(strict=True) e deve falhar (esperado).
-Na Sprint 2 (issue 'Failure/timeout handling'), os fallbacks silenciosos serão removidos
-e o teste passará como PASSED (o strict=True forçará a remoção do xfail).
+Este teste anteriormente estava marcado como xfail temporário.
+Na Sprint 2 (issue 'Failure/timeout handling'), os fallbacks silenciosos foram removidos
+e o teste agora passa como PASSED diretamente.
 
 Ocorrências identificadas de fallback silencioso em backend/app/services/fact_checker.py:
 1. Linhas 64-65: Branch direto para `_mock_analysis` quando `settings.LLM_PROVIDER == "mock"`.
@@ -19,13 +19,8 @@ Refs: ADR-001, IS-11, S2-06.
 
 import ast
 import os
-import pytest
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Dívida: FactCheckerService tem fallback mock; remover na Sprint 2 (issue 'Failure/timeout handling')",
-)
 def test_no_silent_fallback_in_fact_checker():
     """Varre FactCheckerService à procura de métodos e blocos de fallback para mock ou dados estáticos."""
     fact_checker_path = os.path.abspath(
