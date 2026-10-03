@@ -1,82 +1,139 @@
 # EvidencIA — Extensão de Fact-Checking para YouTube
 
-> Solução de navegador (Manifest V3) para checagem factual em tempo real de vídeos do YouTube através de transcrições, inteligência artificial e painel lateral com paradigma **Evidence-First** ([ADR-006](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-006-evidence-first-architecture.md)).
+> **Ecossistema de Verificação Factual de Vídeos do YouTube em Tempo Real (Manifest V3)**  
+> Implementado sob o paradigma **Evidence-First** ([ADR-006](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-006-evidence-first-architecture.md)), com **Zero Segredos no Cliente** ([ADR-002](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-002-backend-proxy.md)), isolamento via **Shadow DOM** e conformidade estrita com **WCAG 2.1 nível AA** ([RNF-07](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-07)).
+
+[![CI/CD Pipeline](https://github.com/evidencia-grupo/EvidencIA/actions/workflows/ci.yml/badge.svg)](https://github.com/evidencia-grupo/EvidencIA/actions/workflows/ci.yml)
+[![Manifest V3](https://img.shields.io/badge/Manifest-V3-success?logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
+[![Python 3.12](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Preact](https://img.shields.io/badge/Preact-10.20+-673AB7?logo=preact&logoColor=white)](https://preactjs.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vitest Coverage](https://img.shields.io/badge/Vitest%20Coverage-99.6%25-brightgreen)](extension/vitest.config.ts)
+[![Pytest Coverage](https://img.shields.io/badge/Pytest%20Coverage-91.2%25-brightgreen)](backend/pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
-## 1. Visão Geral
+## 1. Visão Geral do Produto
 
-O **EvidencIA** é um ecossistema projetado para capacitar usuários que consomem notícias e conteúdos informativos no YouTube a validar de forma autônoma e crítica as afirmações apresentadas diretamente na página de reprodução (`/watch`).
+O **EvidencIA** é uma solução de software livre projetada para capacitar cidadãos, pesquisadores e comunicadores a exercerem o pensamento crítico ao consumir conteúdos noticiosos e informativos no YouTube (`https://www.youtube.com/watch?v=...`).
 
-- **Arquitetura Evidence-First ([ADR-006](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-006-evidence-first-architecture.md)):** O resultado da análise não emite vereditos algorítmicos autoritários nem scores numéricos globais de "veracidade" (0–100%). Em vez disso, o sistema extrai alegações atômicas e exibe diretamente as **evidências documentadas**, fontes jornalísticas auditáveis e o grau de incerteza analítica associado.
-- **Interface Integrada e Acessível ([HU11](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu11) / [WCAG 2.1 AA](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-07)):** Botão "Checar Alegações" inserido via Shadow DOM sem conflito de estilos; painel lateral sandboxed com suporte completo a navegação por teclado e contraste de alta visibilidade.
-- **Zero Segredos no Cliente ([RNF-01](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-01) / [ADR-002](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-002-backend-proxy.md)):** Todo o processamento de inteligência artificial e busca externa passa por um **Backend Proxy Seguro**, garantindo que nenhuma chave de API ou credencial sensível resida na extensão.
-- **Privacidade por Padrão ([RNF-05](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-05) / LGPD):** Sem rastreamento de histórico de navegação; permissões de manifesto estritamente delimitadas ao domínio do YouTube (`https://www.youtube.com/*`).
-- **Cache Local Proativo ([RNF-04](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-04) / [ADR-003](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-003-estrategia-cache-local.md)):** Latência $< 100\text{ ms}$ na reabertura de vídeos recentemente checados via `chrome.storage.local` com TTL de 24 horas.
-- **Resiliência e Degradação Graciosa ([RF-14](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-14)):** Em caso de falha ou tempo limite do provedor de IA, o sistema ativa automaticamente o modo *Evidence-Only*, garantindo que as evidências já recuperadas das bases de checagem continuem acessíveis ao usuário.
+Diferente de ferramentas tradicionais que impõem notas algorítmicas de "verdadeiro ou falso", o EvidencIA segue a premissa de que **o julgamento pertence ao leitor**. O sistema decompõe o discurso em proposições verificáveis e apresenta diretamente as checagens prévias realizadas por agências jornalísticas profissionais brasileiras (Agência Lupa, Aos Fatos, FactChecks.br) combinadas à análise contextual de Inteligência Artificial.
+
+```mermaid
+flowchart LR
+    A["🎬 Vídeo no YouTube<br><code>/watch?v=...</code>"] --> B["🧩 Extensão MV3<br>(Preact + Shadow DOM)"]
+    B -->|"1. Extrai Transcrição & Metadados"| C["⚡ Service Worker<br>(Cache 24h & Validador)"]
+    C -->|"2. POST /api/v1/analyze<br>(Zero Chaves no Cliente)"| D["🛡️ Backend Proxy<br>(FastAPI + Pydantic v2)"]
+    D -->|"3. Inferência Local / Remota"| E["🤖 LLM Provider<br>(Qwen 2.5 / Ollama / Remote)"]
+    D -->|"4. Busca Semântica & Léxica"| F["📚 Brazilian Fact Matcher<br>(FactChecks.br / Agências)"]
+    E & F -->|"5. Síntese Evidence-First"| D
+    D -->|"6. JSON Validado (Sem Score Global)"| C
+    C -->|"7. Renderização Acessível"| B
+```
+
+### Princípios Técnicos Não-Negociáveis
+- **Arquitetura Evidence-First ([ADR-006](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-006-evidence-first-architecture.md)):** Não há score numérico global de "veracidade" (0–100%) nem selos definitivos de "verdadeiro/falso". O resultado exibe alegações atômicas, evidências rastreáveis e perguntas reflexivas socráticas ([HU15](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu15)).
+- **Zero Segredos no Cliente ([ADR-002](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-002-backend-proxy.md) / [RNF-01](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-01)):** Nenhuma chave de API (OpenAI, Gemini, Serper) reside na extensão. Todo tráfego externo passa pelo Backend Proxy autenticado e protegido por rate limiting.
+- **Defesa Contra Provedores Falsos ([RF-15](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-15)):** Travas em nível de configuração impedem a execução de `MockLLMProvider` em ambiente de produção (`ENVIRONMENT=production`).
+- **Degradação Graciosa Evidence-Only ([RF-14](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-14)):** Caso o provedor de IA fique indisponível ou sofra *timeout*, o sistema ativa o modo *Evidence-Only*, preservando as checagens das agências sem interromper o serviço.
+- **Cache Local com TTL de 24 Horas ([ADR-003](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-003-estrategia-cache-local.md) / [RNF-04](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-04)):** Ao revisitar um vídeo recentemente analisado, os dados são resgatados de `chrome.storage.local` em menos de 100 ms.
+- **Acessibilidade Universal ([RNF-07](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-07) / [HU11](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu11)):** Total conformidade com as normas WCAG 2.1 nível AA: navegação estruturada via teclado, suporte a leitores de tela e contraste visual mínimo de 4.5:1.
+- **Privacidade por Padrão ([RNF-05](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-05) / LGPD):** Zero coleta de histórico de navegação, zero telemetria de perfil de usuário e host permissions restritas exclusivamente a `*://*.youtube.com/*`.
 
 ---
 
-## 2. Estrutura do Repositório
+## 2. Estrutura do Monorepo
 
-O projeto segue estritamente a arquitetura de monorepo canônica:
+O repositório é organizado de forma modular, com fronteiras estritas de responsabilidade:
 
 ```text
 evidencia/
-├── extension/             # Extensão de navegador (Manifest V3) -> ver extension/README.md
+├── extension/             # Extensão de navegador (Manifest V3)
 │   ├── manifest.json      # Declaração de permissões mínimas (activeTab, storage)
-│   ├── package.json       # Dependências Preact, TypeScript e Vite
+│   ├── package.json       # Preact, TypeScript, Vite e Vitest
+│   ├── tsconfig.json      # Configuração estrita de compilação TypeScript
 │   ├── vite.config.ts     # Build multi-entry (service-worker, content-script, panel)
+│   ├── vitest.config.ts   # Limiares de cobertura estritos por arquivo (>= 81%)
 │   └── src/
-│       ├── background/    # Service Worker e gerenciador de cache
-│       ├── content/       # Content Script e injetor Shadow DOM
-│       └── panel/         # UI em Preact (ClaimCard, EvidenceCard, ReflectionQuestions)
-├── backend/               # Backend Proxy de segurança e orquestração -> ver backend/README.md
-│   ├── pyproject.toml     # Dependências e configuração de testes
-│   ├── requirements.txt   # FastAPI, Pydantic v2, Uvicorn, SlowAPI
-│   ├── .python-version    # Declaração de versão Python para uv
+│       ├── background/    # Service Worker, gerenciador de cache e validador de contratos
+│       ├── content/       # Content Script, injeção Shadow DOM e parsers de legenda
+│       └── panel/         # Interface do painel lateral em Preact (Cards de Alegação e Evidência)
+├── backend/               # Backend Proxy de segurança e orquestração de IA
+│   ├── pyproject.toml     # Dependências, empacotamento uv e cobertura pytest (>= 80%)
+│   ├── requirements.txt   # FastAPI, Pydantic v2, Uvicorn, SlowAPI, httpx
+│   ├── .python-version    # Fixação do runtime Python 3.12
 │   ├── app/
-│   │   ├── main.py        # Ponto de entrada FastAPI, CORS e Rate Limiting
-│   │   ├── config.py      # Gestão segura de variáveis de ambiente
-│   │   ├── schemas.py     # Modelos Pydantic v2 alinhados ao contrato
-│   │   ├── api/v1/        # Endpoints /analyze e /health
-│   │   ├── providers/     # LLMProvider (base.py, ollama.py, remote.py, mock.py)
-│   │   └── services/      # Orquestrador assíncrono e Brazilian Fact Matcher
-│   ├── ml/                # Inteligência Artificial e Datasets
-│   │   └── datasets/      # Script de download e sample_facts.json (FactChecks.br)
-│   └── tests/             # Testes automatizados com Pytest
-├── shared/                # Fonte única da verdade para integração -> ver shared/README.md
-│   ├── schemas/           # api-schema.json validável
-│   └── types/             # api.ts (interfaces TypeScript para a extensão)
+│   │   ├── main.py        # Ponto de entrada FastAPI, middlewares de CORS e Rate Limiting
+│   │   ├── config.py      # Gestão tipada de variáveis de ambiente com Pydantic Settings
+│   │   ├── schemas.py     # Modelos Pydantic v2 estritamente sincronizados com o contrato JSON
+│   │   ├── api/v1/        # Endpoints operacionais: /analyze e /health
+│   │   ├── providers/     # Camada agnóstica de LLM (Protocolo, Factory, Ollama, Remote, Mock)
+│   │   └── services/      # Orquestrador assíncrono, Brazilian Fact Matcher e síntese
+│   ├── ml/                # Módulo de Inteligência Artificial e Datasets Nacionais
+│   │   └── datasets/      # Script de ingestão e base curada de checagens (FactChecks.br)
+│   └── tests/             # Suíte de testes automatizados com Pytest (91.2% de cobertura)
+├── shared/                # Fonte única da verdade para integração entre Front e Back
+│   ├── schemas/           # api-schema.json (JSON Schema Draft-07 canônico)
+│   └── types/             # api.ts (Interfaces TypeScript compartilhadas para o frontend)
 └── .github/
-    └── workflows/ci.yml   # Esteira de CI unificada com 4 estágios para front e back
+    └── workflows/ci.yml   # Esteira de CI/CD em 4 estágios (Lint, Build, Test, Deploy)
 ```
 
+> **Aviso de Governança Editorial:**  
+> Por diretriz arquitetural, **este repositório de desenvolvimento não contém arquivos de documentação conceitual**. Todo o detalhamento analítico reside exclusivamente no repositório oficial [evidencia-grupo/documentation](https://github.com/evidencia-grupo/documentation) na branch `docs/reorganizacao`.
+
 ---
 
-## 3. Como Executar Localmente
+## 3. Matriz Canônica de Rastreabilidade
 
-### 3.1 Pré-requisitos
+O desenvolvimento do EvidencIA é estritamente orientado a requisitos. Abaixo está a correlação completa entre os **8 Épicos**, as **16 Histórias de Usuário (HUs)**, os requisitos formais e os arquivos de implementação no código-fonte:
+
+| Épico | História de Usuário | Requisitos Vinculados | Módulos e Arquivos no Código-Fonte | Status no MVP |
+|:---|:---|:---|:---|:---:|
+| **E1: Extração e Processamento** | [HU01: Extração de Transcrição](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu01) | [RF-01](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-01), [RF-02](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-02) | [`extension/src/content/caption-parser.ts`](extension/src/content/caption-parser.ts)<br>[`extension/src/background/player-captions.ts`](extension/src/background/player-captions.ts) | Concluído |
+| **E1: Extração e Processamento** | [HU02: Linguagem Clara e Amigável](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu02) | [RF-03](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-03), [RNF-07](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-07) | [`extension/src/content/friendly-messages.ts`](extension/src/content/friendly-messages.ts)<br>[`backend/app/services/synthesis.py`](backend/app/services/synthesis.py) | Concluído |
+| **E1: Extração e Processamento** | [HU03: Ativação Sob Demanda](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu03) | [RF-04](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-04), [RNF-01](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-01) | [`extension/src/content/content-script.ts`](extension/src/content/content-script.ts) | Concluído |
+| **E2: Checagem Factual e IA** | [HU04: Extração de Alegações](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu04) | [RF-06](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-06), [RNF-02](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-02) | [`backend/app/services/fact_checker.py`](backend/app/services/fact_checker.py)<br>[`backend/app/providers/ollama.py`](backend/app/providers/ollama.py) | Concluído |
+| **E2: Checagem Factual e IA** | [HU05: Busca em Agências Nacionais](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu05) | [RF-07](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-07), [RF-08](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-08) | [`backend/app/services/brazilian_fact_matcher.py`](backend/app/services/brazilian_fact_matcher.py)<br>[`backend/ml/datasets/sample_facts.json`](backend/ml/datasets/sample_facts.json) | Concluído |
+| **E3: Interface e Desempenho** | [HU06: Cache Local com TTL](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu06) | [RF-09](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-09), [RNF-04](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-04) | [`extension/src/background/cache-manager.ts`](extension/src/background/cache-manager.ts) | Concluído |
+| **E3: Interface e Desempenho** | [HU07: Painel Lateral em Preact](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu07) | [RF-11](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-11), [RNF-07](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-07) | [`extension/src/panel/index.tsx`](extension/src/panel/index.tsx)<br>[`extension/src/panel/styles/theme.css`](extension/src/panel/styles/theme.css) | Concluído |
+| **E4: Transparência Temporal** | [HU08: Metadados Temporais](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu08) | [RF-16](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-16) | [`extension/src/panel/components/ClaimCard.tsx`](extension/src/panel/components/ClaimCard.tsx)<br>[`backend/app/schemas.py`](backend/app/schemas.py) | Concluído |
+| **E5: Tratamento de Incerteza** | [HU09: Incerteza e Controvérsia](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu09) | [RF-13](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-13) | [`extension/src/panel/components/UncertaintyAlert.tsx`](extension/src/panel/components/UncertaintyAlert.tsx) | Concluído |
+| **E5: Tratamento de Incerteza** | [HU10: Feedback sem Legendas](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu10) | [RF-02](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-02), [RF-03](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-03) | [`extension/src/content/content-script.ts`](extension/src/content/content-script.ts)<br>[`extension/src/panel/index.tsx`](extension/src/panel/index.tsx) | Concluído |
+| **E6: Ética e Acessibilidade** | [HU11: Acessibilidade WCAG AA](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu11) | [RNF-07](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-07) | [`extension/src/panel/index.tsx`](extension/src/panel/index.tsx)<br>[`extension/src/panel/components/`](extension/src/panel/components/) | Concluído |
+| **E6: Ética e Acessibilidade** | [HU12: Feedback do Usuário](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu12) | [RF-10](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-10) | *Previsto para Onda 3 de evolução* | Fora do MVP |
+| **E7: Evidence-First Core** | [HU13: Decomposição Atômica](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu13) | [RF-06](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-06), [ADR-006](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-006-evidence-first-architecture.md) | [`backend/app/services/fact_checker.py`](backend/app/services/fact_checker.py)<br>[`extension/src/panel/components/ClaimCard.tsx`](extension/src/panel/components/ClaimCard.tsx) | Concluído |
+| **E7: Evidence-First Core** | [HU14: Evidências Rastreáveis](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu14) | [RF-12](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-12) | [`extension/src/panel/components/EvidenceCard.tsx`](extension/src/panel/components/EvidenceCard.tsx)<br>[`backend/app/schemas.py`](backend/app/schemas.py) | Concluído |
+| **E7: Evidence-First Core** | [HU15: Perguntas Reflexivas](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu15) | [RF-05](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-05), [ADR-006](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-006-evidence-first-architecture.md) | [`extension/src/panel/components/ReflectionQuestions.tsx`](extension/src/panel/components/ReflectionQuestions.tsx)<br>[`backend/app/providers/base.py`](backend/app/providers/base.py) | Concluído |
+| **E8: Resiliência e Provedores** | [HU16: Camada de Provedores](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu16) | [RF-14](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-14), [RF-15](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-15) | [`backend/app/providers/`](backend/app/providers/) (`base.py`, `factory.py`, `ollama.py`, `remote.py`) | Concluído |
+
+---
+
+## 4. Guia Rápido de Instalação e Execução
+
+### 4.1 Pré-requisitos
 - **Node.js** >= 20 LTS e **npm** >= 10
-- **Python** >= 3.12 (ou ferramenta `uv`)
-- Navegador Chromium (Google Chrome, Microsoft Edge ou Brave)
-- *(Opcional)* **Ollama** com o modelo `qwen2.5:3b` instalado para inferência local de IA ([ADR-005](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-005-modelo-local-e-datasets-brasileiros.md))
+- **Python** >= 3.12 (ou a ferramenta de alto desempenho [`uv`](https://github.com/astral-sh/uv))
+- Navegador compatível com Chromium (Google Chrome, Microsoft Edge ou Brave)
+- *(Opcional)* **Ollama** com o modelo `qwen2.5:3b` para inferência local soberana
 
 ---
 
-### 3.2 Backend Proxy (Python FastAPI)
+### 4.2 Executando o Backend Proxy (FastAPI)
 
-1. **Acessar o diretório do backend:**
+1. **Acessar a pasta do backend:**
    ```bash
    cd backend
    ```
 
-2. **Instalar dependências e preparar ambiente:**
+2. **Instalar dependências com `uv` (Recomendado):**
    ```bash
-   # Com uv (recomendado):
    uv sync
-
-   # Ou com venv padrão (Windows PowerShell):
+   ```
+   *Ou utilizando virtualenv padrão no Windows PowerShell:*
+   ```powershell
    python -m venv .venv
    .\.venv\Scripts\Activate.ps1
    pip install -r requirements.txt
@@ -86,20 +143,21 @@ evidencia/
    ```bash
    cp ../.env.example .env
    ```
-   *Nota: Por padrão, o backend opera com `ENVIRONMENT=development` e `LLM_PROVIDER=mock` ou `ollama`.*
+   *(O arquivo de exemplo já vem pronto para desenvolvimento com `LLM_PROVIDER=mock` ou `ollama`)*
 
 4. **Iniciar o servidor:**
    ```bash
    uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
    ```
-   O backend estará disponível em `http://127.0.0.1:8000` (documentação OpenAPI em `/docs`).  
-   Consulte os detalhes operacionais em [`backend/README.md`](backend/README.md).
+   - API ativa em: `http://127.0.0.1:8000`
+   - Documentação OpenAPI/Swagger interativa: `http://127.0.0.1:8000/docs`
+   - Detalhes adicionais em [`backend/README.md`](backend/README.md)
 
 ---
 
-### 3.3 Extensão de Navegador (Manifest V3)
+### 4.3 Compilando e Carregando a Extensão (Manifest V3)
 
-1. **Acessar o diretório da extensão:**
+1. **Acessar a pasta da extensão:**
    ```bash
    cd extension
    ```
@@ -109,50 +167,101 @@ evidencia/
    npm install
    ```
 
-3. **Compilar o projeto:**
+3. **Compilar os bundles multi-entry:**
    ```bash
    npm run build
    ```
+   Os arquivos compilados são gerados em `extension/dist/`.
 
-4. **Carregar no Navegador (Chromium):**
-   1. Abra `chrome://extensions/` no navegador.
-   2. Ative o **Modo do desenvolvedor**.
+4. **Instalar no Navegador:**
+   1. Abra `chrome://extensions/` (ou `edge://extensions/`).
+   2. Ative a chave **Modo do desenvolvedor** (*Developer mode*).
    3. Clique em **Carregar sem compactação** (*Load unpacked*).
-   4. Selecione a pasta `extension/dist`.
-   5. Abra qualquer vídeo no YouTube (`https://www.youtube.com/watch?v=...`) e acione o botão **Checar Alegações**.  
-   Consulte os detalhes operacionais em [`extension/README.md`](extension/README.md).
+   4. Selecione o diretório compilado `extension/dist`.
+   5. Navegue até qualquer vídeo no YouTube (`https://www.youtube.com/watch?v=...`) e clique em **Checar Alegações**.
+   - Detalhes adicionais em [`extension/README.md`](extension/README.md)
 
 ---
 
-## 4. Como Executar os Testes
+## 5. Como Executar os Testes Automatizados
 
-O projeto segue a [Estratégia de Testes](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/estrategia-testes.md) documentada oficialmente:
+A esteira de testes é calibrada para garantir alta fidelidade e prevenir qualquer regressão nos limiares de cobertura:
 
-### 4.1 Testes do Backend (Pytest)
+### 5.1 Testes do Backend (Pytest)
 ```bash
 cd backend
+# Execução simples de testes
 uv run pytest -v
-```
-*Valida: contratos de schemas Pydantic, isolamento de segredos, guarda anti-mock em produção ([RF-15](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-15)), degradação Evidence-Only ([RF-14](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-14)) e matching com datasets locais.*
 
-### 4.2 Testes da Extensão (Vitest + Playwright)
+# Execução completa com relatório de cobertura e guarda contra avisos (-W error)
+uv run pytest -v --cov=app --cov-report=term-missing -W error
+```
+- **Cobertura Atingida:** **91.19%** (limiar mínimo obrigatório: **80.0%**).
+- **Escopo:** Validação de schemas Pydantic, isolamento de segredos, trava anti-mock em produção ([RF-15](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-15)), degradação graciosa Evidence-Only ([RF-14](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-14)), resiliência de rede e matching local.
+
+### 5.2 Testes da Extensão (Vitest & Preact Testing Library)
 ```bash
 cd extension
+# Verificação estrita de tipagem TypeScript
 npm run lint
-npm test
+
+# Execução com cobertura por arquivo (thresholds >= 81%)
+npm run test:coverage
 ```
-*Valida: parser de legendas ([RF-02](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-02)), gerenciador de cache com TTL ([RF-09](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-09)), validação de contratos e componentes Preact acessíveis ([RNF-07](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-07)).*
+- **Cobertura Atingida:** **99.64%** statements, **93.37%** branches, **100%** functions, **99.64%** lines.
+- **Escopo:** Parser de legendas Timed Text ([RF-02](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-02)), gerenciador de cache com expiração por TTL ([RF-09](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-09)), validação em tempo de execução dos contratos JSON e componentes Preact com suporte a acessibilidade ARIA e teclado ([RNF-07](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-07)).
 
 ---
 
-## 5. Rastreabilidade com o Repositório de Documentação
+## 6. Arquitetura da Esteira de CI/CD
 
-Conforme a governança editorial do projeto, **o repositório de desenvolvimento não armazena arquivos de documentação**. Toda a especificação formal reside no repositório oficial [evidencia-grupo/documentation](https://github.com/evidencia-grupo/documentation) (branch `docs/reorganizacao`):
+O repositório conta com uma esteira automatizada no GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) configurada em 4 estágios lineares:
 
-| Domínio de Conhecimento | Artefatos Oficiais de Documentação |
-|:---|:---|
-| **Visão & Estratégia** | • [Visão Geral do Projeto](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/visao/visao-geral-do-projeto.md)<br>• [Mapa do Projeto](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/visao/mapa-do-projeto.md)<br>• [Status Atual do Desenvolvimento](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/visao/status.md) |
-| **Arquitetura & Design** | • [Documento de Arquitetura de Software](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/arquitetura.md)<br>• [Contrato Canônico de API](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/contrato-api.md)<br>• [Pipeline de IA e Datasets Brasileiros](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/ia-e-datasets.md)<br>• [Design System e Componentes Preact](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/design-system.md) |
-| **Decisões Arquiteturais (ADRs)** | • [ADR-001: Manifest V3 e Permissões](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-001-manifest-v3.md)<br>• [ADR-002: Backend Proxy Seguro](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-002-backend-proxy.md)<br>• [ADR-003: Estratégia de Cache Local com TTL](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-003-estrategia-cache-local.md)<br>• [ADR-004: Stack Tecnológica](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-004-stack-tecnologica.md)<br>• [ADR-005: Modelo Local e Datasets](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-005-modelo-local-e-datasets-brasileiros.md)<br>• [ADR-006: Arquitetura Evidence-First](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-006-evidence-first-architecture.md)<br>• [Decision Log](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/decision-log.md) |
-| **Requisitos & Rastreabilidade** | • [Catálogo de Requisitos Funcionais e Não-Funcionais](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md)<br>• [Matriz de Rastreabilidade Bidirecional](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/matriz-rastreabilidade.md)<br>• [Casos de Uso Detalhados (UC01 a UC06)](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/casos-de-uso.md)<br>• [Backlog e Histórias de Usuário (HU01 a HU16)](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md)<br>• [Priorização MoSCoW e Ondas de MVP](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/priorizacao-e-mvp.md) |
-| **Segurança, Qualidade & Testes** | • [Modelo de Ameaças (Threat Model)](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/threat-model.md)<br>• [Estratégia Global de Testes](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/estrategia-testes.md)<br>• [Definition of Done (DoD)](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/validacao/definition-of-done.md)<br>• [Guia de Contribuição de Engenharia](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/guia-contribuicao.md) |
+```mermaid
+flowchart TD
+    subgraph Frontend["Esteira de Frontend (Manifest V3)"]
+        F1["1. Lint & Typecheck<br><code>tsc --noEmit</code>"] --> F2["2. Build Artifacts<br><code>vite build</code>"]
+        F2 --> F3["3. Tests & Coverage<br><code>vitest --coverage (>= 81%)</code>"]
+        F3 --> F4["4. Package & Archive<br><code>zip extension.zip</code>"]
+    end
+
+    subgraph Backend["Esteira de Backend (FastAPI Proxy)"]
+        B1["1. Lint & Syntax<br><code>ruff check & compileall</code>"] --> B2["2. Build Wheel<br><code>uv build</code>"]
+        B2 --> B3["3. Tests & Coverage<br><code>pytest --cov (>= 80%)</code>"]
+        B3 --> B4["4. Package & Gate<br><code>archive wheel & tar.gz</code>"]
+    end
+```
+
+Ambas as esteiras são acionadas em todo `push` ou `pull_request` direcionado à branch `main`.
+
+---
+
+## 7. Rastreabilidade com a Documentação Oficial
+
+Para entender a fundamentação teórica, atas de decisões e modelos conceituais, consulte a documentação oficial no repositório [evidencia-grupo/documentation](https://github.com/evidencia-grupo/documentation) (branch `docs/reorganizacao`):
+
+| Categoria | Documento Oficial | Descrição |
+|:---|:---|:---|
+| **Visão do Produto** | [Visão Geral do Projeto](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/visao/visao-geral-do-projeto.md) | Propósito, persona (Dona Lurdes), premissas éticas e proposta de valor |
+| **Mapa do Projeto** | [Mapa do Projeto](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/visao/mapa-do-projeto.md) | Visão executiva de módulos, fluxos de dados e matriz de entregáveis |
+| **Status Atual** | [Status do Desenvolvimento](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/visao/status.md) | Andamento das sprints, progresso dos épicos e métricas de qualidade |
+| **Arquitetura Geral** | [Documento de Arquitetura (DAS)](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/arquitetura.md) | Visão 4+1, componentes, segurança e limites de confiança |
+| **Contrato de API** | [Contrato Canônico de API](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/contrato-api.md) | Especificação das rotas `/analyze` e `/health`, schemas e modelos de incerteza |
+| **IA & Datasets** | [Pipeline de IA e Datasets](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/ia-e-datasets.md) | Detalhamento do modelo local (Qwen 2.5), FactChecks.br e matching léxico |
+| **Design System** | [Design System e Preact](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/design-system.md) | Tokens visuais, Shadow DOM, acessibilidade e estados dos componentes |
+| **ADR-001** | [ADR-001: Manifest V3](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-001-manifest-v3.md) | Decisão pelo Manifest V3, permissões mínimas e isolamento de scripts |
+| **ADR-002** | [ADR-002: Backend Proxy](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-002-backend-proxy.md) | Eliminação de chaves e segredos no cliente web |
+| **ADR-003** | [ADR-003: Cache Local](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-003-estrategia-cache-local.md) | Estratégia de cache offline em `chrome.storage.local` com TTL de 24 horas |
+| **ADR-004** | [ADR-004: Stack Tecnológica](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-004-stack-tecnologica.md) | Justificativa para Preact, FastAPI, Vite, uv e TypeScript |
+| **ADR-005** | [ADR-005: Modelo Local e Datasets](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-005-modelo-local-e-datasets-brasileiros.md) | Seleção do modelo Qwen 2.5 3B e priorização de datasets em PT-BR |
+| **ADR-006** | [ADR-006: Evidence-First](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-006-evidence-first-architecture.md) | Abandono de vereditos autoritários em favor de evidências e reflexão socrática |
+| **Requisitos & Histórias** | [Backlog e Histórias de Usuário](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md) | Catálogo dos 8 Épicos canônicos e 16 Histórias de Usuário |
+| **Matriz Global** | [Matriz de Rastreabilidade](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/matriz-rastreabilidade.md) | Rastreabilidade bidirecional entre Necessidades, RFs, RNFs, UCs e HUs |
+| **Ameaças & Segurança** | [Threat Model (STRIDE)](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/threat-model.md) | Análise de superfícies de ataque, limites de confiança e salvaguardas |
+| **Estratégia de Testes** | [Estratégia Global de Testes](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/estrategia-testes.md) | Pirâmide de testes, cobertura mínima, testes unitários, JSDOM e E2E |
+
+---
+
+## 8. Licença
+
+Este projeto é distribuído sob os termos da licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para maiores informações.

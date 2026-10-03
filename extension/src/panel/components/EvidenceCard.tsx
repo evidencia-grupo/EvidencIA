@@ -31,6 +31,9 @@ export function EvidenceCard({ evidence }: EvidenceCardProps) {
   const formattedDate = (() => {
     try {
       const d = new Date(evidence.publishedAt);
+      if (isNaN(d.getTime())) {
+        return evidence.publishedAt;
+      }
       return d.toLocaleDateString("pt-BR", {
         year: "numeric",
         month: "short",
