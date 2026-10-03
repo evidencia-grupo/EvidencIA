@@ -1,0 +1,5 @@
+# CBL Act Experiment Data and Output Protection
+# Real participant data must NEVER be committed to Git.
+data/
+out/*
+!out/.gitkeep
