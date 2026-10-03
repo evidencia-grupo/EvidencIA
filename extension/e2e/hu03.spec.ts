@@ -232,7 +232,7 @@ test("HU03: navegação SPA invalida resposta e funciona ao chegar da home", asy
     window.dispatchEvent(new Event("yt-navigate-finish"));
   });
   await expect(page.getByRole("button", { name: "Checar Alegações" })).toBeVisible();
-  await expect(panel.getByText("Checagem Factual")).toHaveCount(0);
+  await expect(panel.getByText(/Alegações Analisadas/)).toHaveCount(0);
 });
 
 test("HU03: WCAG nos estados de carregamento, falha e classificações", async ({ extension }, info) => {

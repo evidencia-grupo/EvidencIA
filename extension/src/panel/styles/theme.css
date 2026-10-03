@@ -107,13 +107,15 @@ body {
   gap: 6px;
 }
 
-.source-link {
+.source-link,
+.evidence-link {
   color: #A8D8FF;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
-.source-link:hover {
+.source-link:hover,
+.evidence-link:hover {
   color: #FFFFFF;
 }
 
