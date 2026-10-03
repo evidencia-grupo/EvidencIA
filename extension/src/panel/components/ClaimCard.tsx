@@ -21,7 +21,7 @@ const UNCERTAINTY_BADGES: Record<
     label: "Contraditada por fatos",
     className: "uncertainty-contradicted",
     bg: "rgba(229, 57, 53, 0.2)",
-    color: "#E57373",
+    color: "#FFCDD2",
     border: "1px solid #E53935",
   },
   contextualized: {

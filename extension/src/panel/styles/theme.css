@@ -207,7 +207,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid #FBC02D; outline-offs
 
 .relation-contradicts {
   background: rgba(229, 57, 53, 0.2);
-  color: #E57373;
+  color: #FFCDD2;
   border: 1px solid var(--color-evidencia-contradita);
 }
 
