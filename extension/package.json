@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite build --watch --mode development",
-    "build": "tsc && vite build && cp manifest.json dist/manifest.json",
+    "build": "tsc && vite build && node -e \"require('fs').copyFileSync('manifest.json', 'dist/manifest.json')\"",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "test": "vitest run",

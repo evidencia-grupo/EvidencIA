@@ -7,11 +7,11 @@
   --color-text-primary: #FFFFFF;
   --color-text-secondary: #AAAAAA;
 
-  /* Cores Semânticas de Veracidade */
-  --color-veracidade-apoiada: #2BA640;
-  --color-veracidade-moderada: #FBC02D;
-  --color-veracidade-falsa: #FF7571;
-  --color-veracidade-inconclusiva: #FF9800;
+  /* Cores Semânticas de Evidências */
+  --color-evidencia-apoiada: #2BA640;
+  --color-evidencia-contexto: #FBC02D;
+  --color-evidencia-contradita: #FF7571;
+  --color-evidencia-insuficiente: #FF9800;
 
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
@@ -119,7 +119,7 @@ body {
 
 .alert-box {
   background: rgba(229, 57, 53, 0.15);
-  border: 1px solid var(--color-veracidade-falsa);
+  border: 1px solid var(--color-evidencia-contradita);
   border-radius: 8px;
   padding: 12px;
   color: #FFCDD2;
@@ -127,7 +127,7 @@ body {
 
 .warning-badge {
   background: rgba(251, 192, 45, 0.2);
-  border: 1px solid var(--color-veracidade-moderada);
+  border: 1px solid var(--color-evidencia-contexto);
   color: #FFEE58;
   padding: 6px 10px;
   border-radius: 6px;
@@ -144,7 +144,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid #FBC02D; outline-offs
 /* Alerta de Incerteza Analítica (HU09 / RF-07) */
 .uncertainty-alert {
   background: rgba(255, 152, 0, 0.15);
-  border: 1px solid var(--color-veracidade-inconclusiva);
+  border: 1px solid var(--color-evidencia-insuficiente);
   border-left-width: 4px;
   border-radius: 8px;
   padding: 12px;
@@ -168,7 +168,115 @@ button:focus-visible, a:focus-visible { outline: 3px solid #FBC02D; outline-offs
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-  fill: var(--color-veracidade-inconclusiva);
+  fill: var(--color-evidencia-insuficiente);
+}
+
+/* Evidence Card (HU14 / UX-01) */
+.evidence-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 6px;
+}
+
+.evidence-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.relation-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.relation-supports {
+  background: rgba(43, 166, 64, 0.2);
+  color: #81C784;
+  border: 1px solid var(--color-evidencia-apoiada);
+}
+
+.relation-contradicts {
+  background: rgba(229, 57, 53, 0.2);
+  color: #E57373;
+  border: 1px solid var(--color-evidencia-contradita);
+}
+
+.relation-contextualizes {
+  background: rgba(33, 150, 243, 0.2);
+  color: #90CAF9;
+  border: 1px solid #2196F3;
+}
+
+.evidence-publisher {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.evidence-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.evidence-snippet {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  border-left: 2px solid var(--color-border-subtle);
+  padding-left: 8px;
+  margin: 6px 0;
+  font-style: italic;
+}
+
+.evidence-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-top: 6px;
+}
+
+/* Reflection Questions (HU15) */
+.reflection-section {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--color-border-subtle);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 10px;
+}
+
+.reflection-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #FFB74D;
+  margin-bottom: 4px;
+}
+
+.reflection-subtitle {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.reflection-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.reflection-item {
+  font-size: 12px;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+  display: flex;
+  gap: 6px;
 }
 
 .uncertainty-sides {

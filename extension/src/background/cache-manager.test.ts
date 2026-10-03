@@ -7,39 +7,32 @@ vi.stubGlobal("chrome", { storage: { local: storage } });
 const { CACHE_TTL_MS, isValidCacheEntry, getCachedResult, saveCachedResult } = await import("./cache-manager");
 
 const mockAnalysis: AnalyzeResponse = {
-  analysisMode: "demo",
+  analysisMode: "evidence_first",
   videoId: "video-test",
   videoTitle: "Título do Vídeo de Teste",
   channelName: "Canal de Teste",
-  uploadDate: "2026-01-15T00:00:00Z",
-  temporalContext: {
-    publicationYear: 2026,
-    isOldContent: false,
-    message: "As alegações foram apresentadas em 2026.",
-  },
-  analyzedAt: "2026-09-30T10:00:00Z",
-  score: 88,
-  classification: "verdadeiro",
-  summary: "Síntese factual confirmada por estudos.",
+  publishedAt: "2026-01-15T00:00:00Z",
+  processingTimeMs: 250,
+  limitations: [],
   claims: [
     {
       id: "claim-1",
       text: "Alegação verificada",
-      status: "apoiada",
-      evidenceSummary: "Evidência comprovada",
-      confidence: 0.95,
+      temporalContext: { videoPublishedAt: "2026-01-15T00:00:00Z" },
+      uncertainty: "supported",
+      evidence: [
+        {
+          sourceId: "src-1",
+          relation: "supports",
+          title: "Fonte Oficial",
+          url: "https://fiocruz.br/estudo",
+          publisher: "Fiocruz",
+          publishedAt: "2026-01-15T00:00:00Z",
+          provenance: { dataset: "factchecksbr", indexedAt: "2026-01-15T00:00:00Z" },
+        },
+      ],
     },
   ],
-  sources: [
-    {
-      id: "src-1",
-      title: "Fonte Oficial",
-      url: "https://fiocruz.br/estudo",
-      domain: "fiocruz.br",
-      reliabilityScore: 0.98,
-    },
-  ],
-  processingTimeMs: 250,
 };
 
 describe("cache-manager", () => {
@@ -131,19 +124,19 @@ describe("cache-manager", () => {
       expect(isValidCacheEntry("string-entry", "video-test", FIXED_NOW)).toBe(false);
       expect(isValidCacheEntry(42, "video-test", FIXED_NOW)).toBe(false);
 
-      // Sem resumo
+      // Sem título do vídeo
       expect(
         isValidCacheEntry(
-          { ...mockAnalysis, summary: "", timestamp: FIXED_NOW - 100, ttl: CACHE_TTL_MS },
+          { ...mockAnalysis, videoTitle: "", timestamp: FIXED_NOW - 100, ttl: CACHE_TTL_MS },
           "video-test",
           FIXED_NOW
         )
       ).toBe(false);
 
-      // Score inválido
+      // processingTimeMs inválido
       expect(
         isValidCacheEntry(
-          { ...mockAnalysis, score: 150, timestamp: FIXED_NOW - 100, ttl: CACHE_TTL_MS },
+          { ...mockAnalysis, processingTimeMs: -1, timestamp: FIXED_NOW - 100, ttl: CACHE_TTL_MS },
           "video-test",
           FIXED_NOW
         )
@@ -281,7 +274,7 @@ describe("cache-manager", () => {
     });
 
     it("não persiste resposta que não atenda ao contrato ou com videoId divergente", async () => {
-      const invalidData = { ...mockAnalysis, score: -1 };
+      const invalidData = { ...mockAnalysis, processingTimeMs: -1 };
       await saveCachedResult(invalidData as any, "video-test", FIXED_NOW);
       expect(storage.set).not.toHaveBeenCalled();
 

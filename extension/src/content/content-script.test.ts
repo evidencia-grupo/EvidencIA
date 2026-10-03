@@ -21,7 +21,7 @@ beforeEach(() => {
   vi.spyOn(window, "addEventListener").mockImplementation((type, listener, options) => { listeners.push([type, listener]); realAdd(type, listener, options); });
   history.replaceState({}, "", "/watch?v=video");
   document.body.innerHTML = '<h1 class="ytd-watch-metadata">Título</h1><div id="channel-name">Canal</div><div id="above-the-fold"></div>';
-  sendMessage.mockReset().mockResolvedValue({ success: true, data: { score: 85 } });
+  sendMessage.mockReset().mockResolvedValue({ success: true, data: { claims: [] } });
   vi.mocked(extractCaptionsFromPage).mockReset().mockResolvedValue({ videoId: "video", transcript: "texto", language: "pt", videoTitle: "Título", channelName: "Canal", uploadDate: "2021-04-15T00:00:00Z", durationSeconds: 120 });
   vi.stubGlobal("chrome", { runtime: { getURL: (path: string) => `https://extension.test/${path}`, sendMessage } });
 });
@@ -42,7 +42,7 @@ it("confirma de forma síncrona e evita requisições repetidas", async () => {
   expect(button().getAttribute("aria-disabled")).toBe("true");
   button().dispatchEvent(new MouseEvent("click"));
   await flush();
-  expect(button().textContent).toContain("85%");
+  expect(button().textContent).toContain("Checagem concluída");
   expect(extractCaptionsFromPage).not.toHaveBeenCalled();
   expect(sendMessage).toHaveBeenCalledTimes(1);
 });
@@ -54,7 +54,7 @@ it("entrega estado pendente quando o iframe fica pronto e valida remetente", asy
   panelMessage("PANEL_READY", "https://extension.test", null);
   expect(post).not.toHaveBeenCalled();
   panelMessage("PANEL_READY");
-  expect(post).toHaveBeenCalledWith({ type: "ANALYSIS_SUCCESS", data: { score: 85 } }, "https://extension.test");
+  expect(post).toHaveBeenCalledWith({ type: "ANALYSIS_SUCCESS", data: { claims: [] } }, "https://extension.test");
   panelMessage("UNKNOWN");
   panelMessage("CLOSE_PANEL");
   expect(frame().style.display).toBe("none");
@@ -67,9 +67,9 @@ it("entrega estado pendente quando o iframe fica pronto e valida remetente", asy
 });
 it("propaga orçamento total no cache miss", async () => {
   await import("./content-script"); panelMessage("PANEL_READY");
-  sendMessage.mockResolvedValueOnce({ success: true, data: null }).mockResolvedValueOnce({ success: true, data: { score: 70 } });
+  sendMessage.mockResolvedValueOnce({ success: true, data: null }).mockResolvedValueOnce({ success: true, data: { claims: [] } });
   const start = Date.now(); button().click(); await flush();
-  expect(button().textContent).toContain("70%");
+  expect(button().textContent).toContain("Checagem concluída");
   expect(sendMessage.mock.calls[1][0]).toMatchObject({ deadline: start + 9500, payload: { videoTitle: "Título", channelName: "Canal", uploadDate: "2021-04-15T00:00:00Z", durationSeconds: 120 } });
 });
 it.each([undefined, { success: false, error: "Falhou" }])("erro do worker permite nova tentativa %s", async reply => {
@@ -98,7 +98,7 @@ it("timeout aborta a extração e rejeita resposta tardia", async () => {
     { type: "ANALYSIS_ERROR", error: "A checagem demorou mais do que o esperado. Tente de novo em instantes." },
     "https://extension.test",
   );
-  resolve({ success: true, data: { score: 99 } }); await flush();
+  resolve({ success: true, data: { claims: [] } }); await flush();
   expect(button().textContent).not.toContain("99%");
 });
 it("navegação invalida análise antiga e remove o botão fora do watch", async () => {
@@ -106,8 +106,8 @@ it("navegação invalida análise antiga e remove o botão fora do watch", async
   let resolve!: (value: unknown) => void;
   sendMessage.mockReturnValueOnce(new Promise(r => { resolve = r; }));
   button().click(); navigate("/watch?v=next");
-  resolve({ success: true, data: { score: 99 } }); await flush();
-  expect(button().textContent).toContain("Verificar");
+  resolve({ success: true, data: { claims: [] } }); await flush();
+  expect(button().textContent).toContain("Checar Alegações");
   navigate("/"); expect(document.querySelector("#evidencia-badge-host")).toBeNull();
   navigate("/watch"); expect(document.querySelector("#evidencia-badge-host")).toBeNull();
 });

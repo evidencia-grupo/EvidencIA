@@ -145,7 +145,7 @@ function injectTriggerBadge() {
   button.className = "evidencia-btn";
   button.innerHTML = `
     <svg aria-hidden="true" class="evidencia-icon" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-    <span>Verificar Veracidade</span>
+    <span>Checar Alegações</span>
   `;
 
   // Impede que atalhos globais do player também consumam Enter/Espaço.
@@ -208,7 +208,7 @@ function injectTriggerBadge() {
       ]);
       if (!active()) return;
       publish(data ? { type: "ANALYSIS_SUCCESS", data } : { type: "NO_CAPTIONS_AVAILABLE" });
-      button.querySelector("span")!.textContent = data ? `Veracidade: ${data.score}%` : "Sem legendas — tentar novamente";
+      button.querySelector("span")!.textContent = data ? "Checagem concluída" : "Sem legendas — tentar novamente";
       status.textContent = data ? "Checagem concluída" : "Legendas indisponíveis";
     } catch (error) {
       if (!active()) return;
