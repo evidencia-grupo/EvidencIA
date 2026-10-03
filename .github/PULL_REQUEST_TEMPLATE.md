@@ -37,3 +37,12 @@ Marque os itens validados antes de submeter o PR para revisao:
 - [ ] Em componentes de interface: contraste e acessibilidade compativeis com WCAG 2.1 AA.
 - [ ] Nenhuma degradacao de performance que viole o SLA de latencia de 10s ou sobrecarga de TBT de 50ms.
 - [ ] Mensagens de commit seguem a convencao Conventional Commits.
+
+---
+
+## Caminhos Congelados (Sprint 1 — ADR-001)
+
+- [ ] **Este PR toca caminhos congelados?** (ver [.github/FREEZE.md](.github/FREEZE.md))
+  - Se **SIM**: o label `unfreeze-approved` foi aplicado pelo Tech Lead neste PR?
+  - Se **NÃO**: marque e siga adiante.
+
