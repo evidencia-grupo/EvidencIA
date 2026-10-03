@@ -1,0 +1,346 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evidencia-grupo.dev/schemas/telemetry-event.schema.json",
+  "title": "EvidencIATelemetryEvent",
+  "description": "Strict JSON Schema for CBL Act behavioral telemetry events. Fail-closed, zero PII, zero URLs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "pid",
+    "sid",
+    "cond",
+    "phase",
+    "item_id",
+    "event",
+    "seq",
+    "t_ms",
+    "props"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "pid": {
+      "type": "string",
+      "pattern": "^P-[0-9]{4}$"
+    },
+    "sid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "cond": {
+      "type": "string",
+      "enum": ["A", "B"]
+    },
+    "phase": {
+      "type": "string",
+      "enum": ["baseline", "assisted", "transfer"]
+    },
+    "item_id": {
+      "type": "string",
+      "pattern": "^IT-[0-9]{3}$"
+    },
+    "event": {
+      "type": "string",
+      "enum": [
+        "session_started",
+        "item_presented",
+        "claims_viewed",
+        "claim_selected",
+        "evidence_expanded",
+        "source_opened",
+        "uncertainty_viewed",
+        "reflection_viewed",
+        "reflection_interacted",
+        "global_verdict_viewed",
+        "decision_submitted",
+        "post_task_questionnaire",
+        "session_ended"
+      ]
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "t_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "synthetic": {
+      "type": "boolean"
+    },
+    "props": {
+      "type": "object"
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "event": { "const": "session_started" },
+        "props": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["build"],
+          "properties": {
+            "build": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{7,12}$"
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "event": { "const": "item_presented" },
+        "props": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["n_claims"],
+          "properties": {
+            "n_claims": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "event": { "const": "claims_viewed" },
+        "props": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["n_claims_visible"],
+          "properties": {
+            "n_claims_visible": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "event": { "const": "claim_selected" },
+        "props": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["claim_ordinal"],
+          "properties": {
+            "claim_ordinal": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "event": { "const": "evidence_expanded" },
+        "props": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["claim_ordinal", "evidence_ordinal", "relation"],
+          "properties": {
+            "claim_ordinal": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            },
+            "evidence_ordinal": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            },
+            "relation": {
+              "type": "string",
+              "enum": ["supports", "contradicts", "contextualizes", "unspecified"]
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "event": { "const": "source_opened" },
+        "props": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["claim_ordinal", "evidence_ordinal"],
+          "properties": {
+            "claim_ordinal": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            },
+            "evidence_ordinal": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "event": { "const": "uncertainty_viewed" },
+        "props": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["claim_ordinal", "kind"],
+          "properties": {
+            "claim_ordinal": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            },
+            "kind": {
+              "type": "string",
+              "enum": ["insufficient_evidence", "conflicting", "dated"]
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "event": { "const": "reflection_viewed" },
+        "props": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["claim_ordinal", "question_ordinal"],
+          "properties": {
+            "claim_ordinal": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            },
+            "question_ordinal": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "event": { "const": "reflection_interacted" },
+        "props": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["claim_ordinal", "question_ordinal", "interaction"],
+          "properties": {
+            "claim_ordinal": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            },
+            "question_ordinal": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            },
+            "interaction": {
+              "type": "string",
+              "enum": ["expanded", "answered", "dismissed"]
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "event": { "const": "global_verdict_viewed" },
+        "props": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {}
+        }
+      }
+    },
+    {
+      "properties": {
+        "event": { "const": "decision_submitted" },
+        "props": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["claim_ordinal", "stage", "decision", "confidence"],
+          "properties": {
+            "claim_ordinal": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            },
+            "stage": {
+              "type": "string",
+              "enum": ["pre_evidence", "final"]
+            },
+            "decision": {
+              "type": "string",
+              "enum": ["supported", "contradicted", "misleading", "insufficient", "cannot_determine"]
+            },
+            "confidence": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "event": { "const": "post_task_questionnaire" },
+        "props": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["effort_seq", "verification_steps"],
+          "properties": {
+            "effort_seq": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 7
+            },
+            "verification_steps": {
+              "type": "array",
+              "uniqueItems": true,
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "enum": ["source", "date", "independent_evidence", "context", "none"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "event": { "const": "session_ended" },
+        "props": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reason"],
+          "properties": {
+            "reason": {
+              "type": "string",
+              "enum": ["completed", "abandoned", "timeout"]
+            }
+          }
+        }
+      }
+    }
+  ]
+}

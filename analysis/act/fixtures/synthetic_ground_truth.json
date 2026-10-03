@@ -1,0 +1,25 @@
+{
+  "synthetic": true,
+  "description": "Ground truth mapping for synthetic test sessions in CBL Act evaluation",
+  "schema_version": "1.0.0",
+  "items": {
+    "IT-001": {
+      "claims": {
+        "1": "contradicted",
+        "2": "supported"
+      }
+    },
+    "IT-002": {
+      "claims": {
+        "1": "misleading",
+        "2": "insufficient"
+      }
+    },
+    "IT-003": {
+      "claims": {
+        "1": "supported",
+        "2": "contradicted"
+      }
+    }
+  }
+}
