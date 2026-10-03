@@ -1,3 +1,0 @@
-# Caminhos congelados — EvidencIA
-# Status: DESCONGELADO em Sprint 2 (Issues #33, #34 — Arquitetura Evidence-First)
-# Componentes legados de score/gauge foram formalmente expurgados.

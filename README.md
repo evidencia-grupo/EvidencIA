@@ -19,35 +19,37 @@ O **EvidencIA** é um ecossistema projetado para capacitar usuários que consome
 
 ## 2. Estrutura do Repositório
 
-O projeto é estruturado como um monorepo modular:
+O projeto segue estritamente a arquitetura de monorepo canônica:
 
 ```text
-EvidencIA/
-├── backend/                  # Backend Proxy Seguro (FastAPI + Python 3.12+)
-│   ├── app/                  # Núcleo da aplicação FastAPI
-│   │   ├── api/v1/           # Rotas da API (/analyze, /health)
-│   │   ├── providers/        # Abstração de LLMs (Ollama, Remote, Mock)
-│   │   ├── services/         # Recuperação de fatos (FactChecks.br) e orquestração
-│   │   └── schemas.py        # Modelos Pydantic v2 do contrato Evidence-First
-│   ├── ml/                   # Datasets (FactChecks.br, Fake.br) e schemas de ML
-│   └── tests/                # Suíte de testes unitários e de integração (Pytest)
-├── extension/                # Extensão de navegador Chromium (Manifest V3 + Preact)
-│   ├── src/
-│   │   ├── background/       # Service Worker, gerenciamento de cache e validação
-│   │   ├── content/          # Extração de legendas e injeção do botão no YouTube
-│   │   ├── panel/            # Interface Preact (EvidenceCard, ReflectionQuestions, etc.)
-│   │   └── telemetry/        # Telemetria local sanitizada (sem emissão de rede)
-│   ├── e2e/                  # Testes ponta a ponta (Playwright)
-│   └── manifest.json         # Manifesto da extensão Chromium MV3
-├── shared/                   # Contratos canônicos compartilhados entre cliente e servidor
-│   ├── schemas/              # JSON Schemas formais (api-schema.json)
-│   └── types/                # Definições de tipos TypeScript (api.ts)
-├── docs/                     # Documentação de engenharia e desenvolvimento
-│   └── RASTREABILIDADE.md    # Matriz completa de rastreabilidade (RF, RNF, HU, UC)
-├── scripts/                  # Scripts de automação e auditoria contínua de completude
-├── DIVERGENCIAS.md           # Registro formal de divergências entre docs e código
-├── .env.example              # Modelo documentado de variáveis de ambiente do backend
-└── README.md                 # Este guia
+evidencia/
+├── extension/             # Extensao de navegador (Manifest V3)
+│   ├── manifest.json      # Declaracao de permissoes minimas (activeTab, storage)
+│   ├── package.json       # Dependencias Preact, TypeScript e Vite
+│   ├── vite.config.ts     # Build multi-entry (service-worker, content-script, panel)
+│   └── src/
+│       ├── background/    # Service Worker e gerenciador de cache
+│       ├── content/       # Content Script e injetor Shadow DOM
+│       └── panel/         # UI em Preact (ClaimCard, EvidenceCard, ReflectionQuestions)
+├── backend/               # Backend Proxy de seguranca e orquestracao
+│   ├── pyproject.toml     # Dependencias e configuracao de testes
+│   ├── requirements.txt   # FastAPI, Pydantic v2, Uvicorn, SlowAPI
+│   ├── .python-version    # Declaracao de versao Python para uv
+│   ├── app/
+│   │   ├── main.py        # Ponto de entrada FastAPI, CORS e Rate Limiting
+│   │   ├── config.py      # Gestao segura de variaveis de ambiente
+│   │   ├── schemas.py     # Modelos Pydantic v2 alinhados ao contrato
+│   │   ├── api/v1/        # Endpoints /analyze e /health
+│   │   ├── providers/     # LLMProvider (base.py, ollama.py, remote.py, mock.py)
+│   │   └── services/      # Orquestrador assincrono e Brazilian Fact Matcher
+│   ├── ml/                # Inteligência Artificial e Datasets
+│   │   └── datasets/      # Script de download e sample_facts.json (FactChecks.br)
+│   └── tests/             # Testes automatizados com Pytest
+├── shared/                # Fonte unica da verdade para integracao
+│   ├── schemas/           # api-schema.json validavel
+│   └── types/             # api.ts (interfaces TypeScript para a extensao)
+└── .github/
+    └── workflows/ci.yml   # Esteira de CI unificada com 4 estagios para front e back
 ```
 
 ---
@@ -56,7 +58,7 @@ EvidencIA/
 
 ### 3.1 Pré-requisitos
 - **Node.js** >= 20 LTS e **npm** >= 10
-- **Python** >= 3.12
+- **Python** >= 3.12 (ou ferramenta `uv`)
 - Navegador Chromium (Google Chrome, Microsoft Edge ou Brave)
 - *(Opcional)* **Ollama** com o modelo `qwen2.5:3b` instalado para inferência local de IA
 
@@ -69,34 +71,29 @@ EvidencIA/
    cd backend
    ```
 
-2. **Criar e ativar o ambiente virtual:**
+2. **Criar e ativar o ambiente virtual (ou usar `uv`):**
    ```bash
-   # Windows (PowerShell)
+   # Com uv (recomendado):
+   uv sync
+
+   # Ou com venv padrão (Windows PowerShell):
    python -m venv .venv
    .\.venv\Scripts\Activate.ps1
-
-   # Linux / macOS
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
-
-3. **Instalar dependências:**
-   ```bash
    pip install -r requirements.txt
    ```
 
-4. **Configurar variáveis de ambiente:**
+3. **Configurar variáveis de ambiente:**
    ```bash
    # Copie o arquivo de exemplo
    cp ../.env.example .env
    ```
    *Nota: Por padrão, o backend roda com `ENVIRONMENT=development` e `LLM_PROVIDER=mock` ou `ollama`.*
 
-5. **Iniciar o servidor de desenvolvimento:**
+4. **Iniciar o servidor de desenvolvimento:**
    ```bash
-   uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+   uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
    ```
-   O backend estará disponível em `http://127.0.0.1:8000` (documentação Swagger interativa em `/docs`).
+   O backend estará disponível em `http://127.0.0.1:8000` (documentação OpenAPI em `/docs`).
 
 ---
 
@@ -137,7 +134,7 @@ O projeto conta com baterias automatizadas de testes unitários, contratuais e d
 ### 4.1 Testes do Backend (Pytest)
 ```bash
 cd backend
-.\.venv\Scripts\pytest -v
+uv run pytest -v
 ```
 *Cobertura: contratos de schemas Pydantic, guarda anti-mock em produção (`test_no_mock_in_production.py`), modo Evidence-Only sob falha (`test_provider_failure.py`), orquestrador de checagem e integração com datasets.*
 
@@ -145,20 +142,18 @@ cd backend
 ```bash
 cd extension
 
-# Checagem estática de tipos
-npm run typecheck
+# Checagem estática de tipos e linter
+npm run lint
 
-# Suíte de testes unitários
+# Suíte de testes unitários e de componentes
 npm test
 ```
-*Cobertura: parsers de legendas do YouTube, gerenciamento e TTL do cache local, sanitização de telemetria sem rede, validação de contrato e renderização dos componentes Preact (`ClaimCard`, `EvidenceCard`, `ReflectionQuestions`, `UncertaintyAlert`).*
+*Cobertura: parsers de legendas do YouTube, gerenciamento e TTL do cache local, validação de contrato e renderização dos componentes Preact (`ClaimCard`, `EvidenceCard`, `ReflectionQuestions`, `UncertaintyAlert`).*
 
 ---
 
-## 5. Rastreabilidade e Governança
+## 5. Fonte de Verdade e Documentação
 
-Para manter transparência total sobre o estado do projeto e sua conformidade com a engenharia de requisitos:
+Conforme a governança do projeto, **o repositório de desenvolvimento não contém arquivos de documentação**. Toda a documentação oficial (requisitos RF/RNF, casos de uso UC, histórias HU, decisões de arquitetura ADRs, modelo de ameaças e matriz de rastreabilidade) reside exclusivamente no repositório dedicado:
 
-- **[Matriz de Rastreabilidade (docs/RASTREABILIDADE.md)](./docs/RASTREABILIDADE.md):** Mapeia cada Requisito Funcional (RF-01 a RF-14), Requisito Não Funcional (RNF-01 a RNF-07), História de Usuário (HU01 a HU16) e Caso de Uso (UC01 a UC06) até seus módulos e arquivos de implementação correspondentes.
-- **[Registro de Divergências (DIVERGENCIAS.md)](./DIVERGENCIAS.md):** Documenta formalmente todas as discrepâncias pontuais entre o repositório de documentação e o código (ex.: descarte do RF-05/RF-10 no MVP, permissão `scripting` justificada pelo player do YouTube, etc.).
-- **[Repositório Oficial de Documentação](https://github.com/evidencia-grupo/documentation):** Fonte primária de verdade com arquitetura de referência, histórico de decisões arquiteturais (ADRs), guia do usuário e modelos de ameaça.
+- **Repositório Oficial de Documentação:** [github.com/evidencia-grupo/documentation](https://github.com/evidencia-grupo/documentation)

@@ -77,39 +77,6 @@ backend/ml/datasets/processed/
 playwright-report/
 test-results/
 
-# =============================================================================
-# Pipeline de dados ML (Sprint 1 — ADR-001)
-# NUNCA commitar datasets brutos, silver, gold, embeddings ou índices
-# =============================================================================
-
-# Dados brutos (bronze) — nunca commitados
-backend/data/bronze/*
-!backend/data/bronze/.gitkeep
-
-# Dados normalizados (silver) — nunca commitados
-backend/data/silver/*
-!backend/data/silver/.gitkeep
-
-# Dados finais (gold) — nunca commitados
-backend/data/gold/*
-!backend/data/gold/.gitkeep
-
-# Formatos de dados de ML
-*.parquet
-*.arrow
-*.feather
-
-# Índice Chroma e SQLite
-backend/data/chroma/
-chroma/
-*.sqlite3
-*.db
-
-# Notebooks — outputs e checkpoints (não commitar células executadas com dados)
-.ipynb_checkpoints/
-notebooks/.ipynb_checkpoints/
-
 # Caches de modelos Hugging Face / sentence-transformers
 ~/.cache/huggingface/
 backend/.cache/
-

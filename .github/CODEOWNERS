@@ -13,33 +13,5 @@
 # Contratos Compartilhados (API Schemas e TypeScript Types)
 /shared/ @pedrohpsantos @MylenaTrindade @lipestile @luizoryone @mahiaara
 
-# Governanca, Documentacao e Auditoria Editorial
-/docs/ @mahiaara
-/*.md @mahiaara
-/BACKLOG.md @mahiaara @pedrohpsantos
-/KANBAN.md @mahiaara @pedrohpsantos
-
 # CI/CD e Workflows
 /.github/workflows/ @pedrohpsantos @lipestile
-
-# =============================================================================
-# CAMINHOS CONGELADOS (Sprint 1 — ADR-001 / evidence-first)
-# Requerem aprovação do Tech Lead (@TECH_LEAD_HANDLE — substituir pelo handle real)
-# Ver .github/FREEZE.md para critério de descongelamento.
-# PLACEHOLDER: substituir @TECH_LEAD_HANDLE pelo handle GitHub do Tech Lead antes do merge.
-# =============================================================================
-
-# Painel da extensão (Evidence-First)
-/extension/src/panel/index.tsx @TECH_LEAD_HANDLE @MylenaTrindade @lipestile @luizoryone
-
-# Contratos compartilhados com score/reliabilityScore
-/shared/types/api.ts @TECH_LEAD_HANDLE @pedrohpsantos @MylenaTrindade @lipestile @luizoryone @mahiaara
-/shared/schemas/api-schema.json @TECH_LEAD_HANDLE @pedrohpsantos @MylenaTrindade @lipestile @luizoryone @mahiaara
-
-# Schema de backend com score e reliabilityScore
-/backend/app/schemas.py @TECH_LEAD_HANDLE @pedrohpsantos
-
-# Documentação de congelamento (qualquer alteração requer Tech Lead)
-/.github/FREEZE.md @TECH_LEAD_HANDLE @pedrohpsantos
-/.github/frozen-paths.txt @TECH_LEAD_HANDLE @pedrohpsantos
-/.github/workflows/freeze-guard.yml @TECH_LEAD_HANDLE @pedrohpsantos @lipestile
