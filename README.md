@@ -1,193 +1,164 @@
 # EvidencIA — Extensão de Fact-Checking para YouTube
 
-> Solução de navegador (Manifest V3) para checagem factual em tempo real de vídeos do YouTube através de transcrições, inteligência artificial e painel lateral com tema escuro.
+> Solução de navegador (Manifest V3) para checagem factual em tempo real de vídeos do YouTube através de transcrições, inteligência artificial e painel lateral com paradigma **Evidence-First** (ADR-006).
 
 ---
 
 ## 1. Visão Geral
 
-O **EvidencIA** é um ecossistema projetado para capacitar usuários que consomem notícias e conteúdos informativos no YouTube a validar de forma autônoma a veracidade das afirmações apresentadas diretamente na página de reprodução (`/watch`).
+O **EvidencIA** é um ecossistema projetado para capacitar usuários que consomem notícias e conteúdos informativos no YouTube a validar de forma autônoma e crítica as afirmações apresentadas diretamente na página de reprodução (`/watch`).
 
-- **Interface no Player:** Botão de veracidade discreto injetado via Shadow DOM.
-- **Painel Lateral Sandboxed:** Exibe velocímetro tricolor (0-100%), síntese factual sem jargões e fontes auditáveis em nova aba.
-- **Zero Segredos no Cliente:** Intermediação integral via **Backend Proxy Seguro** ([ADR-002](../documentation/docs/tecnico/decisoes/ADR-002-backend-proxy.md)).
-- **Privacidade por Padrão (LGPD):** Sem retenção de histórico geral de navegação; permissão restrita a `activeTab` ([RNF-05](../documentation/docs/requisitos/catalogo-requisitos.md#rnf-05)).
-- **Cache Local Proativo:** Latência < 100ms em vídeos reincidentes via `chrome.storage.local` com TTL de 24h ([ADR-003](../documentation/docs/tecnico/decisoes/ADR-003-estrategia-cache-local.md)).
+- **Arquitetura Evidence-First (ADR-006):** O resultado da análise não emite vereditos algorítmicos autoritários nem scores numéricos globais de "veracidade" (0–100%). Em vez disso, o sistema extrai alegações atômicas e exibe diretamente as **evidências documentadas**, fontes jornalísticas auditáveis e o grau de incerteza analítica associado.
+- **Interface Integrada e Acessível (HU11 / WCAG 2.1 AA):** Botão "Checar Alegações" inserido via Shadow DOM sem conflito de estilos; painel lateral sandboxed com suporte completo a navegação por teclado e contraste de alta visibilidade.
+- **Zero Segredos no Cliente (RNF-01 / ADR-002):** Todo o processamento de inteligência artificial e busca externa passa por um **Backend Proxy Seguro**, garantindo que nenhuma chave de API ou credencial sensível resida na extensão.
+- **Privacidade por Padrão (RNF-05 / LGPD):** Sem rastreamento de histórico de navegação; permissões de manifesto estritamente delimitadas ao domínio do YouTube (`https://www.youtube.com/*`).
+- **Cache Local Proativo (RNF-04 / ADR-003):** Latência $< 100\text{ ms}$ na reabertura de vídeos recentemente checados via `chrome.storage.local` com TTL de 24 horas.
+- **Resiliência e Degradação Graciosa (RF-14 / Issue #37):** Em caso de falha ou tempo limite do provedor de IA, o sistema ativa automaticamente o modo *Evidence-Only*, garantindo que as evidências já recuperadas das bases de checagem continuem acessíveis ao usuário.
 
 ---
 
-## 2. Arquitetura e Stack Tecnológica
+## 2. Estrutura do Repositório
 
-O repositório é organizado em formato **Monorepo**:
+O projeto é estruturado como um monorepo modular:
 
+```text
+EvidencIA/
+├── backend/                  # Backend Proxy Seguro (FastAPI + Python 3.12+)
+│   ├── app/                  # Núcleo da aplicação FastAPI
+│   │   ├── api/v1/           # Rotas da API (/analyze, /health)
+│   │   ├── providers/        # Abstração de LLMs (Ollama, Remote, Mock)
+│   │   ├── services/         # Recuperação de fatos (FactChecks.br) e orquestração
+│   │   └── schemas.py        # Modelos Pydantic v2 do contrato Evidence-First
+│   ├── ml/                   # Datasets (FactChecks.br, Fake.br) e schemas de ML
+│   └── tests/                # Suíte de testes unitários e de integração (Pytest)
+├── extension/                # Extensão de navegador Chromium (Manifest V3 + Preact)
+│   ├── src/
+│   │   ├── background/       # Service Worker, gerenciamento de cache e validação
+│   │   ├── content/          # Extração de legendas e injeção do botão no YouTube
+│   │   ├── panel/            # Interface Preact (EvidenceCard, ReflectionQuestions, etc.)
+│   │   └── telemetry/        # Telemetria local sanitizada (sem emissão de rede)
+│   ├── e2e/                  # Testes ponta a ponta (Playwright)
+│   └── manifest.json         # Manifesto da extensão Chromium MV3
+├── shared/                   # Contratos canônicos compartilhados entre cliente e servidor
+│   ├── schemas/              # JSON Schemas formais (api-schema.json)
+│   └── types/                # Definições de tipos TypeScript (api.ts)
+├── docs/                     # Documentação de engenharia e desenvolvimento
+│   └── RASTREABILIDADE.md    # Matriz completa de rastreabilidade (RF, RNF, HU, UC)
+├── scripts/                  # Scripts de automação e auditoria contínua de completude
+├── DIVERGENCIAS.md           # Registro formal de divergências entre docs e código
+├── .env.example              # Modelo documentado de variáveis de ambiente do backend
+└── README.md                 # Este guia
 ```
-evidencia/
-├── extension/          # Extensão de navegador Chromium (Manifest V3 + Preact + TypeScript)
-├── backend/            # Backend Proxy Seguro (FastAPI + Pydantic v2 + Python 3.12+)
-├── shared/             # Contratos de API, tipos TypeScript e Schemas JSON
-├── KANBAN.md           # Painel de acompanhamento ágil (Épicos, Features e Sprints)
-├── BACKLOG.md          # Backlog refinado com histórias em formato Gherkin
-└── README.md           # Guia mestre do projeto
-```
-
-### Decisões Técnicas Homologadas
-
-| Camada | Tecnologia | Motivação Técnica |
-|:---|:---|:---|
-| **Extensão** | **Preact + TypeScript + Vite** | Overhead mínimo: bundle ~3 KB, garantindo impacto de TBT $\le 50\text{ ms}$ (RNF-02). |
-| **Isolamento de DOM** | **Shadow DOM + iFrame Sandbox** | Previne conflitos com o CSS/JS do YouTube e impede vazamento de dados. |
-| **Backend Proxy** | **FastAPI (Python 3.12+)** | Validação estrita via Pydantic, processamento assíncrono para orquestrar LLMs em $\le 8\text{ s}$. |
-| **Cache Local** | **`chrome.storage.local` (TTL 24h)** | Armazenamento local rápido e compatível com o ciclo de vida do Service Worker MV3. |
-| **Testes** | **Vitest + Playwright + Pytest** | Testes unitários rápidos e testes E2E reais no Chromium em páginas do YouTube. |
 
 ---
 
-## 3. Gestão do Projeto e Backlog
+## 3. Como Executar Localmente
 
-Consulte os artefatos de governança ágil diretamente no repositório:
-
-- [Quadro Kanban do Projeto (Épicos e Sprints)](./KANBAN.md)
-- [Backlog do Produto e Histórias de Usuário (Critérios Gherkin)](./BACKLOG.md)
-- [Portal de Documentação Completo (MkDocs)](../documentation/docs/index.md)
-
----
-
-## 4. Como Executar Localmente
-
-### 4.1 Pré-requisitos
+### 3.1 Pré-requisitos
 - **Node.js** >= 20 LTS e **npm** >= 10
 - **Python** >= 3.12
 - Navegador Chromium (Google Chrome, Microsoft Edge ou Brave)
+- *(Opcional)* **Ollama** com o modelo `qwen2.5:3b` instalado para inferência local de IA
 
 ---
 
-### 4.2 Backend Proxy (Python FastAPI)
+### 3.2 Backend Proxy (Python FastAPI)
 
-#### Opção A (Recomendada): Usando uv
-```bash
-cd backend
-
-# Sincronizar ambiente virtual e dependências
-uv sync
-
-# Configurar variáveis de ambiente
-cp .env.example .env
-
-# Iniciar servidor local
-uv run uvicorn app.main:app --reload --port 8000
-```
-
-#### Opção B: Usando pip tradicional
-```bash
-cd backend
-
-# Criar e ativar ambiente virtual
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Instalar dependências
-pip install -r requirements.txt
-
-# Configurar variáveis de ambiente
-cp .env.example .env
-
-# Iniciar servidor local
-uvicorn app.main:app --reload --port 8000
-```
-O backend estará disponível em `http://127.0.0.1:8000` (documentação interativa em `/docs`).
-
-#### 4.2.1 Execução com Ollama Local (Qwen 2.5-3B) e Datasets Brasileiros
-
-O EvidencIA prioriza inferência local sem custos de nuvem e alinhamento com dados de checagem do Brasil:
-
-1. **Instalar e Iniciar o Ollama com o Qwen 2.5-3B:**
-   ```bash
-   # Baixar e executar o modelo localmente (requer apenas ~2.2 GB de RAM)
-   ollama run qwen2.5:3b
-   ```
-2. **Datasets Brasileiros (FactChecks.br & Fake.br):**
-   O backend já inclui uma base de checagens brasileiras curadas (`ml/datasets/sample_facts.json`) para testes offline rápidos e CI/CD. Para baixar ou inspecionar os datasets completos do Hugging Face:
+1. **Acessar o diretório do backend:**
    ```bash
    cd backend
-   # Inspecionar / baixar FactChecks.br (~10k+ checagens da Lupa, Aos Fatos, Boatos.org)
-   python ml/datasets/dataset_downloader.py --dataset factchecks --output-dir ml/datasets/data
    ```
-3. **Degradação Graciosa:** Caso o daemon do Ollama não esteja ativo, o backend não falha nem trava: ele degrada suavemente para a base curada brasileira local (`sample_facts.json`) ou oráculo externo (Google Fact Check Tools API).
+
+2. **Criar e ativar o ambiente virtual:**
+   ```bash
+   # Windows (PowerShell)
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+
+   # Linux / macOS
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+
+3. **Instalar dependências:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Configurar variáveis de ambiente:**
+   ```bash
+   # Copie o arquivo de exemplo
+   cp ../.env.example .env
+   ```
+   *Nota: Por padrão, o backend roda com `ENVIRONMENT=development` e `LLM_PROVIDER=mock` ou `ollama`.*
+
+5. **Iniciar o servidor de desenvolvimento:**
+   ```bash
+   uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+   ```
+   O backend estará disponível em `http://127.0.0.1:8000` (documentação Swagger interativa em `/docs`).
 
 ---
 
-### 4.3 Extensão de Navegador (Manifest V3)
+### 3.3 Extensão de Navegador (Manifest V3)
 
+1. **Acessar o diretório da extensão:**
+   ```bash
+   cd extension
+   ```
+
+2. **Instalar dependências:**
+   ```bash
+   npm install
+   ```
+
+3. **Compilar o projeto:**
+   ```bash
+   # Para compilação de produção (gera a pasta dist/)
+   npm run build
+
+   # Ou modo desenvolvimento com hot reload
+   npm run dev
+   ```
+
+4. **Carregar no Navegador (Google Chrome / Brave / Edge):**
+   1. Abra `chrome://extensions/` no seu navegador.
+   2. Ative a opção **Modo do desenvolvedor** (canto superior direito).
+   3. Clique em **Carregar sem compactação** (*Load unpacked*).
+   4. Selecione a pasta `extension/dist` gerada no build.
+   5. Navegue até qualquer vídeo no YouTube (`https://www.youtube.com/watch?v=...`) e localize o botão **Checar Alegações** abaixo do player.
+
+---
+
+## 4. Como Executar os Testes
+
+O projeto conta com baterias automatizadas de testes unitários, contratuais e de integração em ambas as camadas:
+
+### 4.1 Testes do Backend (Pytest)
+```bash
+cd backend
+.\.venv\Scripts\pytest -v
+```
+*Cobertura: contratos de schemas Pydantic, guarda anti-mock em produção (`test_no_mock_in_production.py`), modo Evidence-Only sob falha (`test_provider_failure.py`), orquestrador de checagem e integração com datasets.*
+
+### 4.2 Testes da Extensão (Vitest + TypeScript)
 ```bash
 cd extension
 
-# Instalar dependências
-npm install
+# Checagem estática de tipos
+npm run typecheck
 
-# Compilar em modo desenvolvimento com observação de arquivos
-npm run dev
-
-# Ou compilar o bundle de produção para /dist
-npm run build
+# Suíte de testes unitários
+npm test
 ```
-
-#### Carregar no Google Chrome / Brave / Edge:
-1. Abra `chrome://extensions/` no navegador.
-2. Ative a chave **Modo do desenvolvedor** no canto superior direito.
-3. Clique em **Carregar sem compactação** (*Load unpacked*).
-4. Selecione a pasta `evidencia/extension/dist`.
-5. Acesse qualquer vídeo em `https://www.youtube.com/watch?v=...` para testar.
+*Cobertura: parsers de legendas do YouTube, gerenciamento e TTL do cache local, sanitização de telemetria sem rede, validação de contrato e renderização dos componentes Preact (`ClaimCard`, `EvidenceCard`, `ReflectionQuestions`, `UncertaintyAlert`).*
 
 ---
 
-## 5. Estratégia de Testes e CI/CD
+## 5. Rastreabilidade e Governança
 
-```bash
-# Testes unitários da extensão
-cd extension && npm run test
+Para manter transparência total sobre o estado do projeto e sua conformidade com a engenharia de requisitos:
 
-# Testes automatizados do backend proxy (via uv)
-cd backend && uv run pytest
-
-# Ou via pytest tradicional (com ambiente ativado)
-cd backend && pytest
-```
-
-### 5.1 Pipeline de Integração e Entrega Contínua (CI/CD)
-
-A esteira do GitHub Actions (`.github/workflows/ci.yml`) orquestra duas trilhas simultâneas com quatro estágios sequenciais rigorosos:
-
-- **Trilha Frontend (Extensão MV3):**  
-  `lint front` &rarr; `build front` &rarr; `test front` &rarr; `deploy front`
-  - *Lint:* Verificação estática de tipos via TypeScript (`tsc --noEmit`).
-  - *Build:* Compilação multi-entry via Vite e empacotamento em `dist/`.
-  - *Test:* Suíte unitária em Vitest para os parsers de legenda e Shadow DOM.
-  - *Deploy:* Geração e arquivamento do bundle zip para publicação na Chrome Web Store.
-
-- **Trilha Backend (Proxy FastAPI):**  
-  `lint back` &rarr; `build back` &rarr; `test back` &rarr; `deploy back`
-  - *Lint:* Análise estática com Ruff e compilação de bytecode (`py_compile`).
-  - *Build:* Resolução de dependências Pydantic v2 e validação de inicialização do app.
-  - *Test:* Suíte assíncrona de integração via Pytest e TestClient.
-  - *Deploy:* Homologação de artefatos pronta para contêiner e nuvem.
-
----
-
-## 6. Segurança e Governança
-
-- Nenhuma chave de API ou credencial sensível deve ser adicionada à pasta `extension/`.
-- Todos os endpoints externos são protegidos por Rate Limiting e validação de origem.
-- Em caso de dúvidas de conformidade, consulte o [Threat Model (STRIDE)](https://evidencia-grupo.github.io/documentation/tecnico/threat-model/).
-
----
-
-## 7. Documentação Técnica e Evidências
-
-Toda a documentação técnica, especificações de requisitos, decisões arquiteturais (ADRs) e relatórios de evidência de teste estão centralizados no repositório dedicado [`documentation`](https://github.com/evidencia-grupo/documentation) e publicados no portal:
-
-* **Portal de Documentação:** [https://evidencia-grupo.github.io/documentation/](https://evidencia-grupo.github.io/documentation/)
-* **Arquitetura do Sistema:** [Arquitetura e Engenharia](https://evidencia-grupo.github.io/documentation/tecnico/arquitetura/)
-* **Pipeline de IA e Datasets:** [Pipeline IA & Datasets](https://evidencia-grupo.github.io/documentation/tecnico/ia-e-datasets/)
-* **Evidências de Validação (HU03):** [Relatório de Homologação HU03](https://evidencia-grupo.github.io/documentation/tecnico/evidencias/hu03-checagem-rapida/)
-* **Evidências de Validação (HU06 — Cache Local):** [Relatório de Homologação HU06](https://evidencia-grupo.github.io/documentation/tecnico/evidencias/hu06-cache-local/)
-* **Backlog de Histórias de Usuário:** [Backlog e Critérios Gherkin](https://evidencia-grupo.github.io/documentation/requisitos/backlog-e-historias/)
+- **[Matriz de Rastreabilidade (docs/RASTREABILIDADE.md)](./docs/RASTREABILIDADE.md):** Mapeia cada Requisito Funcional (RF-01 a RF-14), Requisito Não Funcional (RNF-01 a RNF-07), História de Usuário (HU01 a HU16) e Caso de Uso (UC01 a UC06) até seus módulos e arquivos de implementação correspondentes.
+- **[Registro de Divergências (DIVERGENCIAS.md)](./DIVERGENCIAS.md):** Documenta formalmente todas as discrepâncias pontuais entre o repositório de documentação e o código (ex.: descarte do RF-05/RF-10 no MVP, permissão `scripting` justificada pelo player do YouTube, etc.).
+- **[Repositório Oficial de Documentação](https://github.com/evidencia-grupo/documentation):** Fonte primária de verdade com arquitetura de referência, histórico de decisões arquiteturais (ADRs), guia do usuário e modelos de ameaça.

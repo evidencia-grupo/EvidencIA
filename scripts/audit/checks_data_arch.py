@@ -265,6 +265,8 @@ def check_data_05(repo: RepoAccess) -> CheckResult:
 
 def check_arc_01(repo: RepoAccess) -> CheckResult:
     candidates = [
+        "backend/app/providers/base.py",
+        "app/providers/base.py",
         "backend/app/services/providers/base.py",
         "app/services/providers/base.py",
         "providers/base.py",
@@ -305,7 +307,12 @@ def check_arc_01(repo: RepoAccess) -> CheckResult:
 
 
 def check_arc_02(repo: RepoAccess, run_tests: bool = False) -> CheckResult:
-    factory_content = repo.read_code("backend/app/services/providers/factory.py") or repo.read_code("app/services/providers/factory.py")
+    factory_content = (
+        repo.read_code("backend/app/providers/factory.py")
+        or repo.read_code("app/providers/factory.py")
+        or repo.read_code("backend/app/services/providers/factory.py")
+        or repo.read_code("app/services/providers/factory.py")
+    )
     test_path = "backend/tests/test_no_mock_in_production.py"
     has_test = repo.code_exists(test_path) or repo.code_exists("tests/test_no_mock_in_production.py")
 
