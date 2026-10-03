@@ -130,7 +130,7 @@ export function App() {
           {data.limitations && data.limitations.length > 0 && (
             <aside class="limitations-container" aria-label="Ressalvas metodológicas" style={{ fontSize: "11px", color: "var(--color-text-secondary)", background: "rgba(255, 255, 255, 0.03)", padding: "6px 10px", borderRadius: "4px" }}>
               {data.limitations.map((lim, idx) => (
-                <p key={idx} style={{ margin: "2px 0" }}>ℹ️ {lim}</p>
+                <p key={idx} style={{ margin: "2px 0" }}>* {lim}</p>
               ))}
             </aside>
           )}
