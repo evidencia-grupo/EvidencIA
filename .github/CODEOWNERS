@@ -29,10 +29,8 @@
 # PLACEHOLDER: substituir @TECH_LEAD_HANDLE pelo handle GitHub do Tech Lead antes do merge.
 # =============================================================================
 
-# Gauge e componentes de score (extensão)
-/extension/src/panel/components/Gauge.tsx @TECH_LEAD_HANDLE @MylenaTrindade @lipestile @luizoryone
+# Painel da extensão (Evidence-First)
 /extension/src/panel/index.tsx @TECH_LEAD_HANDLE @MylenaTrindade @lipestile @luizoryone
-/extension/src/panel/components/SourceList.tsx @TECH_LEAD_HANDLE @MylenaTrindade @lipestile @luizoryone
 
 # Contratos compartilhados com score/reliabilityScore
 /shared/types/api.ts @TECH_LEAD_HANDLE @pedrohpsantos @MylenaTrindade @lipestile @luizoryone @mahiaara

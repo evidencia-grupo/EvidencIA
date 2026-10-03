@@ -8,10 +8,10 @@
 
 - [Épico 1 — Gatilho e Ativação](#epico-1--gatilho-e-ativacao) (HU01, HU03)
 - [Épico 2 — Extração de Transcrição](#epico-2--extracao-de-transcricao) (HU05, HU10)
-- [Épico 3 — Análise e Checagem via IA](#epico-3--analise-e-checagem-via-ia) (HU02, HU04, HU09)
+- [Épico 3 — Análise e Checagem via IA / Evidence-First](#epico-3--analise-e-checagem-via-ia) (HU02, HU04, HU09, HU13, HU14, HU16)
 - [Épico 4 — Confiança e Fontes](#epico-4--confianca-e-fontes) (HU07, HU08)
 - [Épico 5 — Performance e Cache](#epico-5--performance-e-cache) (HU06)
-- [Épico 6 — Engajamento Reflexivo (Fora do MVP)](#epico-6--engajamento-reflexivo-fora-do-mvp) (HU11, HU12)
+- [Épico 6 — Engajamento Reflexivo (MVP)](#epico-6--engajamento-reflexivo-promovido-para-o-mvp-na-sprint-2) (HU15; HU12 cancelada)
 
 ---
 
@@ -372,19 +372,20 @@ Funcionalidade: Consulta imediata via cache local
 
 ---
 
-## Épico 6 — Engajamento Reflexivo (Fora do MVP)
+## Épico 6 — Engajamento Reflexivo (Promovido para o MVP na Sprint 2)
 
-> **Objetivo:** Estimular o pensamento crítico do usuário e coletar avaliações de qualidade de forma anônima.
+> **Objetivo:** Estimular o pensamento crítico do usuário através de perguntas epistemológicas não-intrusivas, sem juízos dogmáticos.
 
-### Feature F3.1: Estímulo ao Pensamento Crítico & Feature F3.2: Avaliação e Feedback
+### Feature F3.1: Estímulo ao Pensamento Crítico (Evidence-First)
 
 ---
 
-### HU11 — Perguntas Orientadoras para Reflexão Crítica
-- **Prioridade:** Could Have | OUT (Pós-MVP / Onda 3)
+### HU15 (Antiga HU11 Promovida) — Perguntas Orientadoras para Reflexão Crítica
+- **Prioridade:** Must Have | IN (Onda 1 / Sprint 2)
 - **Persona:** Helena (Professora do ensino médio)
 - **Pontos de História:** 5
-- **Rastreabilidade:** Cenário 05, UC-05, RF-05
+- **Rastreabilidade:** Cenário 05, UC-05, RF-05 (passivo), HU15 (ADR-006)
+- **Componente:** `ReflectionQuestions.tsx`
 
 **Declaração de Valor:**
 > *Como Helena, pretendo receber perguntas reflexivas sobre os pontos controversos do vídeo para orientar a minha própria checagem sem que a IA imponha conclusões fechadas.*
@@ -393,38 +394,83 @@ Funcionalidade: Consulta imediata via cache local
 Funcionalidade: Perguntas orientadoras para reflexão crítica
 
   Cenário: Exibição de pergunta reflexiva neutra
-    Dado que a síntese de um vídeo com temática controversa foi apresentada
-    Quando o painel exibe o bloco de reflexão
+    Dado que as evidências de um vídeo com temática controversa foram apresentadas
+    Quando o painel exibe o bloco de reflexão em cada card de alegação
     Então a pergunta não deve emitir juízo ideológico nem impor conclusão
+    E a interface não deve exigir formulário ou coleta de dados do usuário
 
   Cenário: Ignorar a interação
     Dado que Helena não deseja interagir com a seção reflexiva
-    Quando ela fecha ou ignora o bloco
-    Então a navegação deve seguir normalmente, sem bloqueios
+    Quando ela navega pelo painel
+    Então a leitura deve seguir normalmente, sem bloqueios de interface
 ```
 
 ---
 
-### HU12 — Avaliação de Relevância e Precisão da Análise
-- **Prioridade:** Could Have | OUT (Pós-MVP / Onda 3)
+### HU12 — Avaliação de Relevância e Precisão da Análise (CANCELADA / FORA DO MVP)
+- **Prioridade:** Could Have | OUT (Cancelada / DIV-01)
 - **Persona:** Helena
 - **Pontos de História:** 3
-- **Rastreabilidade:** Cenário 11, RF-10, RNF-05
+- **Rastreabilidade:** RF-10 (Fora do MVP), DIVERGENCIAS.md (DIV-01)
+- **Status:** Cancelada por decisão de produto (atrito zero e conformidade LGPD sem retenção de feedback).
 
-**Declaração de Valor:**
-> *Como Helena, pretendo classificar a utilidade das evidências e perguntas recebidas para colaborar com a melhoria contínua das respostas analíticas do sistema.*
+---
+
+## Épico 3 (Extensão) — Histórias da Arquitetura Evidence-First (Sprint 2)
+
+### HU13 — Evidence-First Schema e Eliminação de Veredito Global
+- **Prioridade:** Must Have | IN (Sprint 2)
+- **Persona:** Amanda (Estudante universitária)
+- **Pontos de História:** 5
+- **Rastreabilidade:** RF-06, RF-12, ADR-006, Issue #33
+- **Status:** Concluído
 
 ```gherkin
-Funcionalidade: Avaliação de relevância e precisão da análise
+Funcionalidade: Contrato Evidence-First sem nota numérica
 
-  Cenário: Envio de avaliação sem dados pessoais
-    Dado que Helena finalizou a leitura dos cartões de evidências
-    Quando ela aciona um botão de avaliação (positivo/negativo)
-    Então o registro deve ser enviado de forma assíncrona e anônima
-    E nenhum dado pessoal identificável deve ser coletado
+  Cenário: Resposta da API sem campos de score
+    Dado que o backend processa uma checagem factual
+    Quando o payload de resposta é emitido
+    Então nenhum campo de score numérico (0-100) deve estar presente
+    E o payload deve conter uma lista estruturada de alegações, evidências e incertezas
+```
 
-  Cenário: Falha no envio
-    Dado que ocorre perda de conexão durante o envio do feedback
-    Quando a ação de avaliação falha
-    Então a falha deve ocorrer silenciosamente, sem interromper a navegação
+---
+
+### HU14 — Evidence Cards no Painel da Extensão
+- **Prioridade:** Must Have | IN (Sprint 2)
+- **Persona:** Carlos Augusto (Estudante)
+- **Pontos de História:** 5
+- **Rastreabilidade:** RF-06, ADR-006, Issue #35
+- **Componente:** `EvidenceCard.tsx`
+- **Status:** Concluído
+
+```gherkin
+Funcionalidade: Cards de evidência auditável
+
+  Cenário: Exibição de evidência documental
+    Dado que uma alegação possui correspondência em base jornalística
+    Quando o usuário expande a alegação no painel
+    Então cada evidência deve exibir o veículo checador, data, citação direta e link externo
+    E a relação lógica deve ser classificada como apoia, contradiz ou contextualiza
+```
+
+---
+
+### HU16 — Degradação Graciosa para Modo Evidence-Only
+- **Prioridade:** Must Have | IN (Sprint 2)
+- **Persona:** Amanda (Estudante com rede oscilante)
+- **Pontos de História:** 3
+- **Rastreabilidade:** RF-14, RNF-06, ADR-006, Issue #37
+- **Status:** Concluído
+
+```gherkin
+Funcionalidade: Degradação graciosa em timeout ou falha de IA
+
+  Cenário: Falha do motor de síntese por IA
+    Dado que a requisição atinge o timeout de 8 segundos no LLM
+    Quando o backend captura a falha de provedor
+    Então a resposta deve chavear para o modo evidence_only
+    E o painel da extensão deve exibir um banner de alerta informando a indisponibilidade da síntese
+    E todas as evidências documentais já recuperadas devem ser apresentadas normalmente
 ```

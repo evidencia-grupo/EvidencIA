@@ -1,175 +1,120 @@
 # Quadro Kanban & Planejamento Operacional — EvidencIA
 
-> Mapeamento visual contínuo do fluxo de valor do projeto **EvidencIA**, integrando os Épicos homologados na documentação, Features do Sequenciador Lean Inception e Histórias de Usuário Gherkin.
+> Mapeamento visual contínuo do fluxo de valor do projeto **EvidencIA**, integrando os Épicos homologados na documentação, Features do Sequenciador Lean Inception, Histórias de Usuário Gherkin e o status real de entrega.
+> **Última atualização:** Outubro de 2026 — Sprints 1 e 2 **100% Concluídas**, entrando na Sprint 3 (Hardening & Release).
 
 ---
 
 ## 1. Visão Geral do Quadro Kanban
 
-```
+```text
 ┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐
 │  Product Backlog │──>│ Ready for Sprint │──>│   In Progress    │──>│  Review & Test   │──>│ Done (DoD Valid) │
-│ (Elicitado/Spec) │   │  (Priorizado)    │   │  (Desenvolvimento│   │  (CI, QA & SAST) │   │ (Onda Concluída) │
+│ (Elicitado/Spec) │   │  (Sprint 3 Ativa)│   │  (Sprint 3 QA)   │   │  (CI, QA & SAST) │   │ (S1 e S2 Feitas) │
 └──────────────────┘   └──────────────────┘   └──────────────────┘   └──────────────────┘   └──────────────────┘
 ```
 
 ---
 
-## 2. Distribuição de Responsabilidades da Equipe (5 Membros)
+## 2. Status Geral do Roadmap
 
-A distribuição de trabalho foi balanceada de forma a atribuir domínios arquiteturais claros e ~8 pontos de história de MVP por integrante:
-
-| Membro | Domínio Arquitetural | Features & Épicos | Histórias Atribuídas no GitHub | Story Points (MVP) |
-|:---|:---|:---|:---|:---:|
-| **@MylenaTrindade** | **UI/UX & Acessibilidade WCAG 2.1 AA** | E1 (F2.1), E3 (F2.3), E6 (F3.1) | [#1 (HU01)](https://github.com/evidencia-grupo/EvidencIA/issues/1), [#9 (HU09)](https://github.com/evidencia-grupo/EvidencIA/issues/9), [#13 (Épico 1)](https://github.com/evidencia-grupo/EvidencIA/issues/13) | **8 pts** |
-| **@pedrohpsantos** | **Backend Proxy, IA & Segurança** | E3 (F1.2), Threat Model, E6 (F3.2) | [#2 (HU02)](https://github.com/evidencia-grupo/EvidencIA/issues/2), [#4 (HU04)](https://github.com/evidencia-grupo/EvidencIA/issues/4), [#15 (Épico 3)](https://github.com/evidencia-grupo/EvidencIA/issues/15) | **10 pts** |
-| **@luizoryone** | **Content Script, Ingestão & Legendas** | E2 (F1.1), Player YouTube, Shadow DOM | [#5 (HU05)](https://github.com/evidencia-grupo/EvidencIA/issues/5), [#10 (HU10)](https://github.com/evidencia-grupo/EvidencIA/issues/10), [#14 (Épico 2)](https://github.com/evidencia-grupo/EvidencIA/issues/14) | **8 pts** |
-| **@lipestile** | **Service Worker, Cache Local & SLAs** | E1 (F2.1), E5 (F1.3), Mensageria MV3 | [#3 (HU03)](https://github.com/evidencia-grupo/EvidencIA/issues/3), [#6 (HU06)](https://github.com/evidencia-grupo/EvidencIA/issues/6), [#17 (Épico 5)](https://github.com/evidencia-grupo/EvidencIA/issues/17) | **8 pts** |
-| **@mahiaara** | **Auditoria de Fontes & Contexto Temporal** | E4 (F2.2), Confiabilidade Editorial | [#7 (HU07)](https://github.com/evidencia-grupo/EvidencIA/issues/7), [#8 (HU08)](https://github.com/evidencia-grupo/EvidencIA/issues/8), [#16 (Épico 4)](https://github.com/evidencia-grupo/EvidencIA/issues/16) | **6 pts (+ Onda 2)** |
+| Fase / Sprint | Período | Objetivo Central | Status | Progresso |
+|:---|:---:|:---|:---:|:---:|
+| **Sprint 1: Core MVP** | 28/09 a 02/10 | Happy Path: Injeção no player, captura de legendas, proxy e painel | **CONCLUÍDA** | 100% (8/8 issues) |
+| **Sprint 2: Evidence-First** | 05/10 a 09/10 | Descongelamento, fim do score/gauge, Evidence Cards, Providers e resiliência | **CONCLUÍDA** | 100% (7/7 issues) |
+| **Sprint 3: Hardening & Release** | 12/10 a 16/10 | SLAs P90, E2E Playwright, auditoria WCAG AA axe-core e Release v1.0.0-mvp | **EM ANDAMENTO** | 4 tarefas restantes |
 
 ---
 
-## 3. Status das Histórias e Features por Coluna
+## 3. O Que Resta Para Concluir o Produto (Sprint 3 — 12/10 a 16/10)
 
-### 3.1 Product Backlog (Refinado)
-Itens especificados, priorizados via MoSCoW e mapeados nas Issues do GitHub:
+Estas são as **únicas 4 tarefas restantes** para o encerramento do MVP e homologação perante a banca:
 
-| ID | Épico / Feature | Título da História / Item | Responsável | Prioridade | Onda Lean | Story Points |
-|:---|:---|:---|:---:|:---:|:---:|:---:|
-| **#8** | **E4** / F2.2 | [HU08 — Contextualização Temporal e Autoria](https://github.com/evidencia-grupo/EvidencIA/issues/8) | @mahiaara | Should Have | Onda 2 | 3 |
-| **#11** | **E6** / F3.1 | [HU11 — Perguntas para Reflexão Crítica](https://github.com/evidencia-grupo/EvidencIA/issues/11) | @mahiaara, @MylenaTrindade | Could Have | Onda 3 (Out) | 5 |
-| **#12** | **E6** / F3.2 | [HU12 — Avaliação e Feedback da Análise](https://github.com/evidencia-grupo/EvidencIA/issues/12) | @lipestile, @pedrohpsantos | Could Have | Onda 3 (Out) | 3 |
-| `F3.3` | **E6** / F3.3 | Text-to-Speech e Recursos de Áudio Acessíveis | Equipe | Could Have | Onda 3 (Out) | 8 |
-
----
-
-### 3.2 Ready for Sprint (Planejamento em 2 Semanas: 28/09 a 09/10)
-
-> **Prazo Fatal do Projeto:** 09 de Outubro de 2026 (Sexta-feira).  
-> **Cadência Operacional:** 2 Sprints semanais intensivas com 5 desenvolvedores.
-
-#### Sprint 1 (Semana 1: 28/09 a 02/10) — MVP Core Funcional (Happy Path Ponta a Ponta)
-*Objetivo: Fechar a cadeia completa de valor: clique no YouTube -> extração -> backend proxy -> IA -> painel Preact.*
-
-| Issue | Descrição da História | Responsável | Prazo | Status |
-|:---|:---|:---:|:---:|:---:|
-| [#1](https://github.com/evidencia-grupo/EvidencIA/issues/1) | **HU01:** Botão em Shadow DOM com feedback $\le 1\text{s}$ | @MylenaTrindade | 02/10 | Ready |
-| [#3](https://github.com/evidencia-grupo/EvidencIA/issues/3) | **HU03:** UI de carregamento e mensageria MV3 | @lipestile | 02/10 | Ready |
-| [#5](https://github.com/evidencia-grupo/EvidencIA/issues/5) | **HU05:** Interceptador e higienizador de legendas do player | @luizoryone | 02/10 | Ready |
-| [#2](https://github.com/evidencia-grupo/EvidencIA/issues/2) | **HU02:** Orquestrador LLM para síntese sem jargões | @pedrohpsantos | 02/10 | **Concluído** |
-| [#4](https://github.com/evidencia-grupo/EvidencIA/issues/4) | **HU04:** Extrator de alegações estruturadas (apoiada/contradita) | @pedrohpsantos | 02/10 | **Concluído** |
-| [#7](https://github.com/evidencia-grupo/EvidencIA/issues/7) | **HU07:** Lista de fontes auditadas com `target="_blank"` | @mahiaara | 02/10 | Ready |
-
-*Marco de Sexta (02/10): Demonstração interna do Happy Path executando em vídeo real do YouTube.*
+| Issue | ID / Código | Título da Atividade | Responsável | Prazo | Dependências / Critério de Aceitação |
+|:---:|:---:|:---|:---:|:---:|:---|
+| [#38](https://github.com/evidencia-grupo/EvidencIA/issues/38) | **HU03** | Testes de Latência e Performance (SLA P90 $\le 10\text{s}$) | @lipestile | 13/10 | Benchmark automatizado de P50, P90 e P99 com cache e busca vetorial. |
+| [#39](https://github.com/evidencia-grupo/EvidencIA/issues/39) | **QA-E2E** | Testes E2E com Playwright para o Fluxo Evidence-First | @luizoryone, @lipestile | 14/10 | Execução da suíte E2E em Chromium real contra o YouTube watch page. |
+| [#42](https://github.com/evidencia-grupo/EvidencIA/issues/42) | **A11Y-01** | Auditoria Completa de Acessibilidade WCAG 2.1 AA via `axe-core` | @MylenaTrindade | 15/10 | Scanner automatizado com axe-core comprovando zero violações de acessibilidade. |
+| [#40](https://github.com/evidencia-grupo/EvidencIA/issues/40) | **REL-01** | Sprint Review Evidence, Tag `v1.0.0-mvp` & **Apresentação Final** | @mahiaara, @pedrohpsantos | **16/10** | Tag oficial gerada, relatório de DoD completo e demo gravada/ao vivo. |
 
 ---
 
-#### Sprint 2 (Semana 2: 05/10 a 09/10) — Core Evidence-First, Descongelamento e Interface
-*Objetivo: Migração de provedores (LLMProvider), schema evidence-first estrito, descongelamento e remoção do gauge, Evidence Cards e Reflection Questions.*
+## 4. Histórico de Entregas por Coluna
 
-| Issue | Descrição da História / Tarefa | Responsável | Prazo | Status |
-|:---|:---|:---:|:---:|:---:|
-| [#10](https://github.com/evidencia-grupo/EvidencIA/issues/10) | **HU10:** Alerta rápido $< 1\text{s}$ para vídeos sem legendas | @luizoryone | 06/10 | Backlog |
-| [#32](https://github.com/evidencia-grupo/EvidencIA/issues/32) | **HU16:** Provider Abstraction: Migração de OllamaProvider e RemoteLLMProvider | @pedrohpsantos | 06/10 | Backlog |
-| [#33](https://github.com/evidencia-grupo/EvidencIA/issues/33) | **HU13:** Evidence-First Schema: Migração de Contratos e Fim do Score Global | @pedrohpsantos, @mahiaara | 07/10 | Backlog |
-| [#34](https://github.com/evidencia-grupo/EvidencIA/issues/34) | **HU02:** Descongelamento Formal e Remoção do Score Global da UI | @MylenaTrindade | 07/10 | Backlog |
-| [#35](https://github.com/evidencia-grupo/EvidencIA/issues/35) | **HU14:** Evidence Cards no Painel da Extensão (Substituição do Gauge) | @MylenaTrindade, @luizoryone | 08/10 | Backlog |
-| [#36](https://github.com/evidencia-grupo/EvidencIA/issues/36) | **HU15:** Reflection Questions no Painel da Extensão (HU11 promovida) | @mahiaara, @MylenaTrindade | 08/10 | Backlog |
-| [#37](https://github.com/evidencia-grupo/EvidencIA/issues/37) | **HU16:** Failure/Timeout Handling: Modo Evidence-Only e Fim dos Mocks | @pedrohpsantos, @lipestile | 09/10 | Backlog |
+### 4.1 Product Backlog (Itens Fora do MVP / Futuros)
+| ID | Descrição do Item | Decisão / Motivo | Status |
+|:---:|:---|:---|:---:|
+| [#12](https://github.com/evidencia-grupo/EvidencIA/issues/12) | **HU12 / RF-10:** Feedback e Avaliação do Usuário | Excluído do MVP (DIV-01) para manter atrito zero e privacidade LGPD | **Cancelado (Out)** |
+| `F3.3` | Text-to-Speech e Recursos de Áudio Acessíveis | Onda 3 pós-MVP | **Backlog Futuro** |
 
 ---
 
-#### Sprint 3 (Semana 3: 12/10 a 16/10) — Hardening, SLAs, E2E, Release v1.0.0-mvp & Apresentação Final (16/10)
-*Objetivo: Blindagem de segurança, persistência em cache local (TTL 24h), validação de SLAs (P90 $\le 10\text{s}$), testes E2E com Playwright, auditoria WCAG 2.1 AA e Apresentação da Solução à Banca em 16/10.*
-
-| Issue | Descrição da História / Tarefa | Responsável | Prazo | Status |
-|:---|:---|:---:|:---:|:---:|
-| [#6](https://github.com/evidencia-grupo/EvidencIA/issues/6) | **HU06:** Cache local `chrome.storage.local` (TTL 24h, lazy eviction) | @lipestile | 13/10 | Backlog |
-| [#38](https://github.com/evidencia-grupo/EvidencIA/issues/38) | **HU03:** Testes de Latência e Performance (SLA P90 $\le 10\text{s}$) | @lipestile | 13/10 | Backlog |
-| [#39](https://github.com/evidencia-grupo/EvidencIA/issues/39) | **QA-E2E:** Testes E2E com Playwright para o Fluxo Evidence-First | @luizoryone, @lipestile | 14/10 | Backlog |
-| [#42](https://github.com/evidencia-grupo/EvidencIA/issues/42) | **A11Y-01:** Auditoria Completa de Acessibilidade WCAG 2.1 AA via `axe-core` | @MylenaTrindade | 15/10 | Backlog |
-| [#40](https://github.com/evidencia-grupo/EvidencIA/issues/40) | **REL-01:** Sprint Review Evidence, Release `v1.0.0-mvp` e **Apresentação Final (16/10)** | @mahiaara, @pedrohpsantos | 16/10 | Backlog |
+### 4.2 In Progress & Review (Sprint 3 Ativa)
+- [ ] **[#38] HU03:** Validação dos testes de latência e P90 $\le 10\text{s}$ no backend e na extensão.
+- [ ] **[#39] QA-E2E:** Execução dos testes automatizados Playwright (`e2e/hu03.spec.ts` e `e2e/hu06.spec.ts`).
+- [ ] **[#42] A11Y-01:** Relatório final axe-core de acessibilidade com zero violações.
+- [ ] **[#40] REL-01:** Preparação da demonstração ao vivo e geração da tag `v1.0.0-mvp`.
 
 ---
 
-### 3.3 In Progress (Desenvolvimento Ativo)
-*Histórias ou tarefas sendo executadas no ciclo atual:*
+### 4.3 Done (100% Concluído e Validado no Código na Branch `main`)
 
-| ID / Tarefa | Descrição da Atividade | Responsável | Branch de Trabalho | Status |
-|:---|:---|:---:|:---:|:---:|
-| `SETUP-01` | Scaffolding do Monorepo (`extension/`, `backend/`, `shared/`) | Equipe Dev | `main` | **Concluído** |
-| `SETUP-02` | Definição de Schemas e Contratos Tipados (`contrato-api.md`) | Arquiteto | `main` | **Concluído** |
+#### Sprint 1 — Happy Path & Core Funcional
+- [x] **[#1] HU01:** Botão em Shadow DOM com feedback $\le 1\text{s}$ no YouTube.
+- [x] **[#2] HU02:** Orquestrador LLM para síntese sem jargões para Dona Lurdes.
+- [x] **[#3] HU03:** UI de carregamento e mensageria Manifest V3.
+- [x] **[#4] HU04:** Extrator de alegações estruturadas.
+- [x] **[#5] HU05:** Ingestão e higienização de transcrições do player.
+- [x] **[#7] HU07:** Lista de fontes auditadas com links externos.
+- [x] **[#8] HU08:** Contextualização temporal e autoria do vídeo.
+- [x] **[#9] HU09:** Alerta visual imediato de incerteza analítica.
+- [x] **[#6] HU06:** Cache local `chrome.storage.local` com TTL de 24h e recuperação em $< 100\text{ ms}$.
 
----
+#### Sprint 2 — Evidence-First, Descongelamento & Resiliência
+- [x] **[#10] HU10:** Alerta rápido $< 1\text{s}$ para vídeos sem legendas (`friendly-messages.ts`).
+- [x] **[#32] HU16:** Abstração `LLMProvider` em `backend/app/providers/` (`OllamaProvider`, `RemoteLLMProvider`, `MockInProductionError`).
+- [x] **[#33] HU13:** Contratos canônicos Evidence-First (`shared/schemas/api-schema.json`, `shared/types/api.ts`, `backend/app/schemas.py`).
+- [x] **[#34] HU02:** Descongelamento formal e expurgo de `Gauge.tsx`, `SourceList.tsx` e menções a "veracidade".
+- [x] **[#35] HU14:** `EvidenceCard.tsx` no painel da extensão, com citações e base `FactChecks.br`.
+- [x] **[#36] HU15:** `ReflectionQuestions.tsx` (antiga HU11 promovida) integrada ao `ClaimCard.tsx`.
+- [x] **[#37] HU16:** Modo gracioso `evidence_only` sob timeout/falha de IA em `fact_checker.py`.
 
-### 3.4 Code Review & QA (Validação)
-*Itens aguardando validação de critérios de aceitação e testes automatizados:*
-
-| Issue / Tarefa | Descrição da Atividade | Responsável | Branch de Trabalho | Status |
-|:---|:---|:---:|:---:|:---:|
-| [#3](https://github.com/evidencia-grupo/EvidencIA/issues/3) | **HU03:** UI de carregamento e mensageria MV3 | @lipestile | `feat/hu03-checagem-rapida` | **Aguardando PR** |
-| [#6](https://github.com/evidencia-grupo/EvidencIA/issues/6) | **HU06:** Cache local `chrome.storage.local` (TTL 24h, lazy eviction) | @lipestile | `feat/hu06-cache-local` | **Aguardando PR** |
-
----
-
-### 3.5 Done (Definition of Done Validada)
-*Itens integrados, testados com $\ge 80\%$ de cobertura e com documentação atualizada:*
-
-- [x] **`DOC-01` — Levantamento de Requisitos e Elicitação:** Catálogo com 11 RFs e 7 RNFs homologados.
-- [x] **`DOC-02` — Decisões Arquiteturais Registradas:** ADR-001 (MV3), ADR-002 (Backend Proxy), ADR-003 (Cache Local).
-- [x] **`DOC-03` — Threat Model & Acessibilidade:** STRIDE formal, mapeamento LGPD e design tokens WCAG AA.
-- [x] **`DOC-04` — Especificação de Contrato:** Schemas TypeScript e JSON para os endpoints `/analyze` e `/health`.
-- [x] **`SETUP-01` — Setup Inicial do Monorepo:** Extensão Preact MV3, Backend FastAPI, Schemas e CI.
-- [x] **`GH-ISSUES` — Cadastro e Distribuição no GitHub:** Issues cadastradas com datas e assignees.
-- [x] **`#2 (HU02)` — Síntese Estruturada sem Jargões:** Geração de síntese acessível para Dona Lurdes (RF-03) e separação visual de alegações no painel lateral Preact (RF-06).
-- [x] **`#4 (HU04)` — Categorização Estruturada de Alegações:** Extração atômica de alegações checáveis (ClaimPT) e integração RAG com Google Fact Check Tools API / ClaimReview sem vereditos dogmáticos (RF-06).
+#### Governança & Arquitetura
+- [x] **`DOC-01` — Catálogo de Requisitos:** 14 RFs e 7 RNFs mapeados em `docs/RASTREABILIDADE.md`.
+- [x] **`DOC-02` — Registro de Divergências:** `DIVERGENCIAS.md` documentando todas as decisões do produto.
+- [x] **`DOC-03` — Decisões Arquiteturais:** ADR-001 (MV3), ADR-002 (Proxy), ADR-003 (Cache), ADR-006 (Evidence-First).
+- [x] **`SETUP-01` — Monorepo & CI:** Suítes automatizadas passando (58 testes backend + 139 testes frontend).
 
 ---
 
-## 4. Cronograma Regressivo de 3 Semanas (28/09 a 16/10)
+## 5. Cronograma Regressivo até a Entrega Final (16/10)
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ SEMANA 1 (28/09 a 02/10): SPRINT 1 — "CORE MVP FUNCIONAL"                   │
+│ SPRINT 1 (28/09 a 02/10): CORE MVP FUNCIONAL               [100% CONCLUÍDA] │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ • Seg 28/09: Setup do monorepo, contratos e alinhamento de issues (FEITO)  │
-│ • Ter 29/09: Injeção do botão Shadow DOM (Mylena) + Endpoints FastAPI (Pedro)│
-│ • Qua 30/09: Parser de legendas (Luiz) + Agregador de fontes (Mayara)       │
-│ • Qui 01/10: Roteamento Service Worker (Felipe) + Painel Preact Gauge (Mylena)│
-│ • Sex 02/10: Integração do Happy Path completo (Demonstração E2E interna)   │
+│ • Setup do monorepo, contratos de API e injeção no player                   │
+│ • Captura de legendas, orquestrador de síntese e painel lateral             │
+│ • Cache local chrome.storage.local (TTL 24h) e fontes auditáveis            │
 └─────────────────────────────────────────────────────────────────────────────┘
                                       │
                                       ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ SEMANA 2 (05/10 a 09/10): SPRINT 2 — "CORE EVIDENCE-FIRST & DESCONGELAMENTO"│
+│ SPRINT 2 (05/10 a 09/10): CORE EVIDENCE-FIRST              [100% CONCLUÍDA] │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ • Seg 05/10: Alerta legendas (Luiz #10) + Provider Abstraction (Pedro #32)  │
-│ • Ter 06/10: Evidence-First Schema (Pedro/Mayara #33)                        │
-│ • Qua 07/10: Descongelamento e Remoção do Gauge (Mylena #34)                │
-│ • Qui 08/10: Evidence Cards (Mylena/Luiz #35) + Reflection Questions (#36) │
-│ • Sex 09/10: Modo Evidence-Only e Eliminação de Mocks (Pedro/Felipe #37)    │
+│ • Descongelamento formal e remoção definitiva de velocímetro/score          │
+│ • Schemas Evidence-First, EvidenceCard e ReflectionQuestions                │
+│ • Provedores Ollama e RemoteLLM com proteção MockInProductionError          │
+│ • Degradação graciosa para modo Evidence-Only sob falha de IA               │
 └─────────────────────────────────────────────────────────────────────────────┘
                                       │
                                       ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ SEMANA 3 (12/10 a 16/10): SPRINT 3 — "HARDENING, SLAS & APRESENTAÇÃO FINAL" │
+│ SPRINT 3 (12/10 a 16/10): HARDENING, SLAS & RELEASE FINAL    [EM ANDAMENTO] │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ • Seg 12/10: Cache local chrome.storage.local (Felipe #6)                   │
-│ • Ter 13/10: Testes de Latência e Performance P90 <= 10s (Felipe #38)       │
-│ • Qua 14/10: Testes E2E com Playwright em Chromium (Luiz/Felipe #39)        │
-│ • Qui 15/10: Auditoria WCAG 2.1 AA via axe-core (Mylena #42)                │
-│ • Sex 16/10 (APRESENTAÇÃO FINAL): Tag v1.0.0-mvp, banca avaliadora & demo   │
+│ • Issue #38: Benchmark automatizado de latência (P90 <= 10s)                │
+│ • Issue #39: Execução da suíte E2E Playwright Evidence-First                │
+│ • Issue #42: Auditoria final WCAG 2.1 AA via axe-core com zero violações    │
+│ • Issue #40: Tag v1.0.0-mvp, release notes e Apresentação Final (16/10)     │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
-
----
-
-## 5. Regras de Movimentação do Quadro
-
-1. **Entrada em `In Progress`:** Requer que o desenvolvedor crie uma branch com o padrão `feat/huXX-descricao` ou `fix/huXX-descricao`.
-2. **Entrada em `Review & Test`:** Requer Pull Request aberto, cobertura de testes unitários $\ge 80\%$, e aprovação de linter/typecheck no CI.
-3. **Movimentação para `Done`:** Requer cumprimento estrito do **Definition of Done (DoD)**:
-   - Critérios Gherkin validados por testes.
-   - Zero alertas em auditoria de segurança e acessibilidade.
-   - Atualização do catálogo de requisitos e documentação.
-
