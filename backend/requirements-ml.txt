@@ -1,0 +1,33 @@
+# requirements-ml.txt — Dependências do pipeline de dados e ML
+# Instalação SEPARADA do requirements.txt principal para não quebrar o backend existente.
+#
+# Uso: pip install -r requirements-ml.txt
+# (ou: uv pip install -r requirements-ml.txt)
+#
+# NUNCA altere requirements.txt principal por causa de dependências ML.
+# Referência: ADR-001, IS-04.
+
+# Schema e validação
+pydantic>=2.7.0
+pyyaml>=6.0
+
+# Manipulação de dados
+pandas>=2.2.0
+pyarrow>=16.0.0  # backend Parquet para pandas
+
+# Embeddings e modelos de linguagem
+sentence-transformers>=3.0.0
+
+# Índice vetorial
+chromadb>=0.5.0
+
+# Retrieval lexical (BM25)
+rank-bm25>=0.2.2
+
+# Notebooks e validação
+nbformat>=5.10.0
+ipykernel>=6.29.0
+
+# Testes
+pytest>=8.2.0
+pytest-asyncio>=0.23.0
