@@ -11,17 +11,17 @@ const RELATION_CONFIG: Record<
   supports: {
     label: "Apoia a alegação",
     className: "relation-supports",
-    icon: "✓",
+    icon: "+",
   },
   contradicts: {
     label: "Contradiz a alegação",
     className: "relation-contradicts",
-    icon: "✕",
+    icon: "-",
   },
   contextualizes: {
     label: "Contextualiza a alegação",
     className: "relation-contextualizes",
-    icon: "ℹ",
+    icon: "*",
   },
 };
 

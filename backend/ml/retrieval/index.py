@@ -159,7 +159,7 @@ def main() -> None:
             model_name=args.model,
             batch_size=args.batch_size,
         )
-        print(f"✅ Índice '{args.collection}' construído com sucesso.")
+        print(f"[OK] Índice '{args.collection}' construído com sucesso.")
         sys.exit(0)
     except Exception as exc:
         logger.error("Erro ao construir índice: %s", exc, exc_info=True)

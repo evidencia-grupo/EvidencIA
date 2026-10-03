@@ -218,7 +218,7 @@ Exemplos:
             output_dir=output_dir,
             dry_run=args.dry_run,
         )
-        print(f"✅ Ingestão concluída: {count} registros válidos" + (" [DRY RUN]" if args.dry_run else ""))
+        print(f"[OK] Ingestão concluída: {count} registros válidos" + (" [DRY RUN]" if args.dry_run else ""))
         sys.exit(0)
     except FileNotFoundError as exc:
         logger.error("Diretório não encontrado: %s", exc)

@@ -169,10 +169,10 @@ def main() -> None:
     if args.command == "verify":
         ok = verify_manifest(args.manifest)
         if ok:
-            print("✅ Todos os hashes do manifest conferem.")
+            print("[OK] Todos os hashes do manifest conferem.")
             sys.exit(0)
         else:
-            print("❌ Divergência de hash detectada. Verifique os logs.")
+            print("[ERRO] Divergência de hash detectada. Verifique os logs.")
             sys.exit(1)
     else:
         parser.print_help()

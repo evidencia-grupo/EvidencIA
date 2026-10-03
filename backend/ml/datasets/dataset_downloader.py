@@ -94,12 +94,12 @@ def main():
 
     if args.dataset == "sample":
         data = load_local_sample_dataset()
-        print(f"✅ Amostra local brasileira carregada com sucesso: {len(data)} checagens registradas.")
+        print(f"[OK] Amostra local brasileira carregada com sucesso: {len(data)} checagens registradas.")
         for item in data[:3]:
             print(f" - [{item['status'].upper()}] {item['claim']} ({item['publisher']})")
     else:
         data = download_dataset_from_hub(args.dataset, limit=args.limit)
-        print(f"✅ {len(data)} exemplos baixados com sucesso do dataset brasileiro '{args.dataset}'.")
+        print(f"[OK] {len(data)} exemplos baixados com sucesso do dataset brasileiro '{args.dataset}'.")
 
 
 if __name__ == "__main__":

@@ -9,9 +9,9 @@
 O **Backend Proxy** é o componente responsável por isolar todo o acesso a modelos de inteligência artificial e serviços externos de busca de checagens de fatos. A extensão cliente interage unicamente com este serviço via HTTPS/JSON, implementando o princípio fundamental de **Zero Segredos no Cliente**.
 
 ### Princípios Arquiteturais e Decisões Formais (ADRs)
-- **Isolamento de Credenciais ([ADR-002](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-002-backend-proxy.md)):** Nenhuma chave de API (OpenAI, Gemini, Serper, etc.) reside no código da extensão. O backend centraliza a gestão segura de credenciais via variáveis de ambiente.
-- **Modelo Local e Soberania em PT-BR ([ADR-005](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-005-modelo-local-e-datasets-brasileiros.md)):** Suporte nativo à inferência local soberana via Ollama utilizando o modelo `qwen2.5:3b-instruct` e priorização de checagens de agências brasileiras (FactChecks.br, Lupa, Aos Fatos).
-- **Paradigma Evidence-First ([ADR-006](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-006-evidence-first-architecture.md)):** A API entrega coleções estruturadas de alegações, evidências rastreáveis e estados de incerteza analítica. Não são geradas notas numéricas unilaterais ou scores de veracidade.
+- **Isolamento de Credenciais ([ADR-002](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-002-backend-proxy.md)):** Nenhuma chave de API (OpenAI, Gemini, Serper, etc.) reside no código da extensão. O backend centraliza a gestão segura de credenciais via variáveis de ambiente.
+- **Modelo Local e Soberania em PT-BR ([ADR-005](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-005-modelo-local-e-datasets-brasileiros.md)):** Suporte nativo à inferência local soberana via Ollama utilizando o modelo `qwen2.5:3b-instruct` e priorização de checagens de agências brasileiras (FactChecks.br, Lupa, Aos Fatos).
+- **Paradigma Evidence-First ([ADR-006](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-006-evidence-first-architecture.md)):** A API entrega coleções estruturadas de alegações, evidências rastreáveis e estados de incerteza analítica. Não são geradas notas numéricas unilaterais ou scores de veracidade.
 - **Degradação Graciosa Evidence-Only ([RF-14](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-14)):** Em caso de indisponibilidade ou timeout do provedor de IA, o orquestrador sintetiza os dados das bases de checagem nacionais no modo `evidence_only`, mantendo o serviço operacional para o usuário.
 - **Defesa em Profundidade contra Provedores Falsos ([RF-15](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-15)):** Travas em nível de configuração impedem estritamente a execução de `MockLLMProvider` em ambiente de produção (`ENVIRONMENT=production`).
 
@@ -58,7 +58,7 @@ backend/
 
 ## 3. Endpoints da API
 
-Para a especificação completa de contratos e tipos de payload, consulte o [Contrato Canônico de API](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/contrato-api.md).
+Para a especificação completa de contratos e tipos de payload, consulte o [Contrato Canônico de API](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/contrato-api.md).
 
 | Método | Rota | Descrição | Requisitos Relacionados |
 |:---|:---|:---|:---|
@@ -117,12 +117,12 @@ uv run pytest --cov=app --cov-report=term-missing
 
 Toda a documentação conceitual e técnica deste serviço é mantida no repositório oficial [evidencia-grupo/documentation](https://github.com/evidencia-grupo/documentation) (branch `docs/reorganizacao`):
 
-- **Arquitetura Geral:** [Documento de Arquitetura de Software](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/arquitetura.md)
-- **Contrato de API:** [Especificação do Contrato de API](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/contrato-api.md)
-- **Pipeline de IA e Datasets:** [IA e Datasets Brasileiros](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/ia-e-datasets.md)
+- **Arquitetura Geral:** [Documento de Arquitetura de Software](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/arquitetura.md)
+- **Contrato de API:** [Especificação do Contrato de API](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/contrato-api.md)
+- **Pipeline de IA e Datasets:** [IA e Datasets Brasileiros](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/ia-e-datasets.md)
 - **Decisões Arquiteturais:**
-  - [ADR-002: Backend Proxy Seguro](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-002-backend-proxy.md)
-  - [ADR-005: Modelo Local e Datasets Brasileiros](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-005-modelo-local-e-datasets-brasileiros.md)
-  - [ADR-006: Arquitetura Evidence-First](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/decisoes/ADR-006-evidence-first-architecture.md)
-- **Segurança:** [Modelo de Ameaças (Threat Model)](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/threat-model.md)
-- **Validação e Testes:** [Estratégia Global de Testes](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/arquitetura/estrategia-testes.md)
+  - [ADR-002: Backend Proxy Seguro](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-002-backend-proxy.md)
+  - [ADR-005: Modelo Local e Datasets Brasileiros](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-005-modelo-local-e-datasets-brasileiros.md)
+  - [ADR-006: Arquitetura Evidence-First](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-006-evidence-first-architecture.md)
+- **Segurança:** [Modelo de Ameaças (Threat Model)](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/threat-model.md)
+- **Validação e Testes:** [Estratégia Global de Testes](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/estrategia-testes.md)
