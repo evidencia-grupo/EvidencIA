@@ -128,3 +128,18 @@ it("remove marcador de troca de locutor sem remover a fala", () => {
 
   expect(parseCaptionBody(body)).toBe("Tudo bem?");
 });
+
+
+it("cancela detecção pendente e ignora resposta tardia sem baixar legendas", async () => {
+  let resolveTracks!: (value: unknown) => void;
+  sendMessage.mockReturnValueOnce(new Promise(resolve => { resolveTracks = resolve; }));
+  const controller = new AbortController();
+  const extraction = extractCaptionsFromPage("video", controller.signal);
+  const rejection = expect(extraction).rejects.toThrow("Checagem cancelada");
+  await Promise.resolve();
+  controller.abort(new Error("Checagem cancelada"));
+  await rejection;
+  resolveTracks({ success: true, data: { tracks: [{ baseUrl: "https://www.youtube.com/api/timedtext", languageCode: "pt" }], metadata } });
+  await Promise.resolve();
+  expect(fetch).not.toHaveBeenCalled();
+});
