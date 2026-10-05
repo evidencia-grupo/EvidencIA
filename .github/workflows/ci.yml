@@ -1,58 +1,286 @@
-name: CI
+name: CI/CD Pipeline — EvidencIA
 
 on:
   push:
-    branches: [ main, 'feat/**' ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
-  node:
-    name: Node (extension)
+  # ==========================================
+  # Frontend Pipeline: Extension (Manifest V3)
+  # lint front -> build front -> test front -> deploy front
+  # ==========================================
+
+  lint-front:
+    name: Lint Frontend
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: extension
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20 LTS
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+          cache: "npm"
           cache-dependency-path: extension/package-lock.json
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm ci
 
-      - name: Typecheck
-        run: npm run typecheck
+      - name: Lint & Typecheck
+        run: npm run lint
 
-      - name: Unit tests
-        run: npm test
+  build-front:
+    name: Build Frontend
+    needs: [lint-front]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Build
+      - name: Setup Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: extension/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Extension Artifacts
         run: npm run build
 
-  python:
-    name: Python (backend)
+      - name: Archive Extension Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-dist
+          path: extension/dist/
+          retention-days: 7
+
+  test-front:
+    name: Test Frontend
+    needs: [build-front]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: extension/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Unit Tests with Coverage (Vitest)
+        run: npm run test:coverage
+
+      - name: Download Extension Build
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-dist
+          path: extension/dist
+
+      - name: Setup Python for E2E Backend
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install E2E Backend and Chromium
+        run: |
+          python -m pip install -r ../backend/requirements.txt
+          npx playwright install chromium
+
+      - name: Acceptance, Keyboard and Accessibility Tests
+        run: npm run test:e2e
+
+      - name: Archive HU03 Test Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hu03-test-evidence
+          path: |
+            extension/coverage/
+            extension/test-results/
+          retention-days: 14
+
+  deploy-front:
+    name: Deploy Frontend
+    needs: [test-front]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Extension Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-dist
+          path: extension/dist
+
+      - name: Package Extension for Chrome Web Store
+        run: |
+          mkdir -p package
+          cd dist && zip -r ../package/evidencia-extension-mv3.zip ./*
+          cd ..
+          ls -la package/
+
+      - name: Archive Distribution Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-production-package
+          path: extension/package/evidencia-extension-mv3.zip
+          retention-days: 30
+
+      - name: Deployment Gate & Status
+        if: github.ref == 'refs/heads/main'
+        run: echo "Frontend extension package successfully generated and validated for deployment."
+
+  # ==========================================
+  # Backend Pipeline: Proxy (Python / FastAPI)
+  # lint back -> build back -> test back -> deploy back
+  # ==========================================
+
+  lint-back:
+    name: Lint Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: '3.10'
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "backend/pyproject.toml"
 
-      - name: Install backend deps
+      - name: Setup Python 3.12
+        run: uv python install 3.12
+
+      - name: Install Linting Tools
+        run: uv sync --extra dev
+
+      - name: Run Ruff Linter & Syntax Compile
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          uv run ruff check .
+          uv run python -m compileall -q app ml tests
 
-      - name: Run backend tests
-        run: python -m pytest -q
+  build-back:
+    name: Build Backend
+    needs: [lint-back]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "backend/pyproject.toml"
+
+      - name: Setup Python 3.12
+        run: uv python install 3.12
+
+      - name: Install Runtime Dependencies
+        run: uv sync
+
+      - name: Verify Application Imports & Structure
+        run: |
+          uv run python -c "import app.main; print('FastAPI application initialized successfully.')"
+
+      - name: Build Source and Binary Distributions
+        run: uv build
+
+      - name: Archive Backend Package Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-dist
+          path: backend/dist/
+          retention-days: 7
+
+  test-back:
+    name: Test Backend
+    needs: [build-back]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "backend/pyproject.toml"
+
+      - name: Setup Python 3.12
+        run: uv python install 3.12
+
+      - name: Install Dependencies & Test Suite
+        run: uv sync --extra dev
+
+      - name: Run Backend Integration & Unit Tests
+        run: uv run pytest -v --cov=app --cov-report=term-missing -W error
+
+  deploy-back:
+    name: Deploy Backend
+    needs: [test-back]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Backend Package Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-dist
+          path: backend/dist
+
+      - name: Deployment Gate & Status
+        if: github.ref == 'refs/heads/main'
+        run: echo "Backend package successfully validated and ready for container/cloud deployment."

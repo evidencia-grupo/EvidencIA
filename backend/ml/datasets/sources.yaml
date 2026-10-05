@@ -1,0 +1,81 @@
+# Registry de datasets — EvidencIA Pipeline
+# Refs: ADR-001, IS-03, GQ03
+#
+# Campos obrigatórios por entrada:
+#   role: linguistic_corpus | fact_check_evidence | external_complementary | methodological_auxiliary
+#   language: código BCP-47 (pt-BR, pt-PT, en)
+#   url: URL oficial do dataset / repositório
+#   license: identificador SPDX ou "A verificar" se desconhecida
+#   expected_columns: lista de colunas esperadas no CSV/JSON de origem
+#   notes: observações sobre uso, limitações ou pendências
+
+fakebr:
+  role: linguistic_corpus
+  # IMPORTANTE: Fake.br é corpus de CLASSIFICAÇÃO LINGUÍSTICA, NÃO base de verdades factuais.
+  # Papel no pipeline: treino/avaliação de modelos de detecção de estilo, NÃO como evidência.
+  language: pt-BR
+  url: https://github.com/roneysco/Fake.br-Corpus
+  license: A verificar
+  # TODO(verify-format): confirmar colunas reais abrindo o CSV no repositório oficial
+  expected_columns:
+    - text
+    - label       # "fake" ou "true"
+    - category
+    - author      # opcional, pode estar ausente
+  notes: >
+    Corpus de notícias em PT-BR do NILC / USP São Carlos, alinhadas e balanceadas.
+    Publicado originalmente por Monteiro et al. (2018).
+    AVISO: não usar como fonte de verdade factual; usar apenas como corpus linguístico
+    para análise de estilo e treinamento de classificadores.
+
+factchecksbr:
+  role: fact_check_evidence
+  language: pt-BR
+  url: https://github.com/fake-news-UFG/FactChecks.br
+  license: A verificar
+  # TODO(verify-format): confirmar colunas reais abrindo o JSON no repositório oficial
+  expected_columns:
+    - claim        # texto da alegação
+    - label        # veredito bruto (ex.: "Falso", "Verdadeiro", "Enganoso")
+    - explanation  # justificativa da checagem
+    - source       # agência de checagem (Lupa, Aos Fatos, Boatos.org, ...)
+    - url          # URL da matéria original de checagem
+    - date         # data de publicação (pode variar em formato)
+  notes: >
+    Dataset de fact-checks de agências brasileiras certificadas pela IFCN
+    (Lupa, Aos Fatos, Boatos.org). Padrão ouro para evidências factuais em PT-BR.
+    Fonte primária do pipeline de evidências (ver ADR-001).
+
+claimreview:
+  role: external_complementary
+  language: en  # multilíngue na prática; filtramos por lang=pt no uso
+  url: https://www.google.com/factcheck/tools
+  license: A verificar
+  expected_columns:
+    - claimReviewed   # texto da alegação (ClaimReview schema)
+    - reviewRating    # ratingValue e alternateName
+    - author          # agência de checagem
+    - datePublished
+    - url             # URL da matéria
+  notes: >
+    Google Fact Check Tools API (ClaimReview markup). Complementar ao FactChecks.br.
+    Requer chave de API via env GOOGLE_FACT_CHECK_API_KEY (nunca commitada).
+    Cobertura: global, multilíngue. Usar apenas como complemento quando FactChecks.br
+    não retornar resultado. Stub implementado; chave via env.
+
+claimpt:
+  role: methodological_auxiliary
+  language: pt-PT
+  # NOTA: Português Europeu (PT-PT), NÃO Português Brasileiro (PT-BR).
+  url: https://github.com/IST-EDIT/ClaimPT
+  license: A verificar
+  expected_columns:
+    - sentence        # texto da sentença candidata
+    - check_worthy    # 0 ou 1 (check-worthiness label)
+    - topic
+  notes: >
+    AVISO IMPORTANTE: ClaimPT usa Português Europeu (PT-PT), não PT-BR.
+    Papel: referência metodológica para critérios de check-worthiness (seleção de alegações).
+    NÃO usar como corpus de evidências factuais. Diferenças lexicais e morfológicas
+    entre PT-PT e PT-BR devem ser documentadas antes de qualquer uso de embeddings
+    ou modelos treinados neste corpus.
