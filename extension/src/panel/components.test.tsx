@@ -9,13 +9,13 @@ import { UncertaintyAlert } from "./components/UncertaintyAlert";
 import type { Claim, Evidence, UncertaintyState, EvidenceRelation } from "../../../shared/types/api";
 
 describe("ReflectionQuestions Component", () => {
-  it("não renderiza nada se questions for undefined ou vazio", () => {
-    const container = document.createElement("div");
-    render(<ReflectionQuestions />, container);
-    expect(container.innerHTML).toBe("");
-
-    render(<ReflectionQuestions questions={[]} />, container);
-    expect(container.innerHTML).toBe("");
+  it("exibe três perguntas neutras de fallback quando questions está ausente ou vazio", () => {
+    for (const questions of [undefined, []]) {
+      const container = document.createElement("div");
+      render(<ReflectionQuestions questions={questions} />, container);
+      expect(container.querySelectorAll(".reflection-item")).toHaveLength(3);
+      expect(container.textContent).not.toMatch(/certo|errado|verdadeiro|falso/i);
+    }
   });
 
   it("renderiza lista numerada de perguntas reflexivas para pensamentos críticos", () => {

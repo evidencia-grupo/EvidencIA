@@ -1,6 +1,5 @@
 import type { Claim, UncertaintyState } from "../../../../shared/types/api";
 import { EvidenceCard } from "./EvidenceCard";
-import { ReflectionQuestions } from "./ReflectionQuestions";
 
 interface ClaimCardProps {
   claim: Claim;
@@ -127,11 +126,6 @@ export function ClaimCard({ claim }: ClaimCardProps) {
           </p>
         )}
       </section>
-
-      {/* Seção de Perguntas Reflexivas (HU15) */}
-      {claim.reflectionQuestions && claim.reflectionQuestions.length > 0 && (
-        <ReflectionQuestions questions={claim.reflectionQuestions} />
-      )}
     </article>
   );
 }

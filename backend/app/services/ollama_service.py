@@ -153,5 +153,4 @@ class OllamaService:
         except Exception:
             return None
 
-
 ollama_service = OllamaService()

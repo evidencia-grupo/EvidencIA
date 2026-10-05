@@ -15,6 +15,7 @@ const valid = {
       text: "Texto da alegação",
       temporalContext: { videoPublishedAt: "2021-04-15T00:00:00Z" },
       uncertainty: "supported",
+      reflectionQuestions: ["Pergunta 1?", "Pergunta 2?", "Pergunta 3?"],
       evidence: [
         {
           sourceId: "src-01",
@@ -32,6 +33,21 @@ const valid = {
 
 it("aceita contrato evidence-first completo", () => {
   expect(isAnalysis(valid, "video")).toBe(true);
+});
+
+it("rejeita perguntas reflexivas inválidas", () => {
+  const invalidQuestionSets: unknown[] = [
+    ["Pergunta 1?"],
+    ["Pergunta 1?", "Pergunta 2?", ""],
+    ["Pergunta 1?", "Pergunta 2?", 3],
+  ];
+  for (const reflectionQuestions of invalidQuestionSets) {
+    const invalid = {
+      ...valid,
+      claims: [{ ...valid.claims[0], reflectionQuestions }],
+    };
+    expect(isAnalysis(invalid, "video")).toBe(false);
+  }
 });
 
 it.each([

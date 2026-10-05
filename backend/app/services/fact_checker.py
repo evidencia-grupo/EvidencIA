@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 import time
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -33,6 +34,12 @@ class FactCheckerService:
     - Degradação graciosa para modo Evidence-Only sob timeout ou falha de IA (RF-14, RNF-06).
     """
 
+    FALLBACK_REFLECTION_QUESTIONS = [
+        "Que evidências independentes poderiam ajudar a avaliar as alegações apresentadas?",
+        "Quais aspectos das fontes, como autoria, data e método, vale a pena verificar?",
+        "Que contexto ou evidência adicional ajudaria você a formar sua própria interpretação?",
+    ]
+
     @staticmethod
     def _build_temporal_context(upload_date: Optional[str]) -> TemporalContext:
         published_at = upload_date or datetime.now(timezone.utc).isoformat()
@@ -53,6 +60,20 @@ class FactCheckerService:
             videoPublishedAt=published_at,
             note=note,
         )
+
+    @classmethod
+    def _normalize_reflection_questions(cls, questions: Optional[List[str]]) -> List[str]:
+        if not questions or len(questions) != 3:
+            return cls.FALLBACK_REFLECTION_QUESTIONS.copy()
+
+        forbidden_verdict = re.compile(r"\b(certo|errado|verdadeiro|falso|mentira|mentiroso|correto|incorreto)\b", re.IGNORECASE)
+        normalized = [question.strip() for question in questions if isinstance(question, str)]
+        if (
+            len(normalized) == 3
+            and all(question.endswith("?") and not forbidden_verdict.search(question) for question in normalized)
+        ):
+            return normalized
+        return cls.FALLBACK_REFLECTION_QUESTIONS.copy()
 
     async def analyze(self, request: AnalyzeRequest) -> AnalyzeResponse:
         start_time = time.perf_counter()
@@ -157,9 +178,8 @@ class FactCheckerService:
             try:
                 all_evidence_refs: List[ProviderEvidence] = []
                 reflections = await provider.generate_reflection(provider_claims, all_evidence_refs)
-                if reflections:
-                    for claim in claims:
-                        claim.reflectionQuestions = reflections
+                if claims:
+                    claims[0].reflectionQuestions = self._normalize_reflection_questions(reflections)
             except Exception as ref_exc:
                 logger.debug(f"Perguntas reflexivas não geradas: {ref_exc}")
 
@@ -199,6 +219,9 @@ class FactCheckerService:
                         reflectionQuestions=[],
                     )
                 )
+
+        if claims and not any(claim.reflectionQuestions for claim in claims):
+            claims[0].reflectionQuestions = self.FALLBACK_REFLECTION_QUESTIONS.copy()
 
         elapsed_ms = int((time.perf_counter() - start_time) * 1000)
 

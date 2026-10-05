@@ -19,6 +19,11 @@ const data: AnalyzeResponse = {
       id: "clm-01",
       text: "Alegação de teste",
       uncertainty: "supported",
+          reflectionQuestions: [
+            "Que evidências ajudam a avaliar esta alegação?",
+            "Quais fontes independentes podem ser consultadas?",
+            "Que contexto adicional pode ser relevante?",
+          ],
       temporalContext: { videoPublishedAt: "2021-04-15T00:00:00Z", note: "Contexto de 2021" },
       evidence: [
         {
@@ -57,6 +62,10 @@ it("sincroniza início, sucesso, erros e limpa resultado anterior", () => {
   expect(document.body.textContent).toContain("Canal de teste");
   expect(document.body.textContent).toContain("15 de abril de 2021");
   expect(document.body.textContent).toContain("Contexto de 2021");
+  const reflection = document.querySelector(".reflection-section");
+  expect(reflection?.querySelectorAll("li")).toHaveLength(3);
+  expect(reflection?.textContent).not.toMatch(/certo|errado/i);
+  expect(document.querySelector("a")?.getAttribute("rel")).toBe("noopener noreferrer");
   expect(document.body.textContent).toContain("Alegação de teste");
   expect(document.body.textContent).toContain("Fonte de teste");
   expect(document.querySelector("a")?.getAttribute("rel")).toBe("noopener noreferrer");
@@ -70,7 +79,13 @@ it("sincroniza início, sucesso, erros e limpa resultado anterior", () => {
   message({ type: "ANALYSIS_START" });
   expect(document.querySelector('[role="alert"]')).toBeNull();
 });
-
+it("exibe três perguntas neutras de fallback quando não há reflexão no claim", () => {
+  const claims = [{ ...data.claims[0], reflectionQuestions: undefined }];
+  message({ type: "ANALYSIS_SUCCESS", data: { ...data, claims } });
+  const reflection = document.querySelector(".reflection-section");
+  expect(reflection?.querySelectorAll("li")).toHaveLength(3);
+  expect(reflection?.textContent).not.toMatch(/certo|errado/i);
+});
 it("exibe banner de modo Evidence-Only sob degradação por falha externa", () => {
   message({
     type: "ANALYSIS_SUCCESS",

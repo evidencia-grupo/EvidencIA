@@ -2,10 +2,14 @@ interface ReflectionQuestionsProps {
   questions?: string[];
 }
 
+const fallbackQuestions = [
+  "Que evidências independentes poderiam ajudar a avaliar as alegações apresentadas?",
+  "Quais aspectos das fontes, como autoria, data e método, vale a pena verificar?",
+  "Que contexto ou evidência adicional ajudaria você a formar sua própria interpretação?",
+];
+
 export function ReflectionQuestions({ questions }: ReflectionQuestionsProps) {
-  if (!questions || questions.length === 0) {
-    return null;
-  }
+  const visibleQuestions = questions?.length === 3 ? questions : fallbackQuestions;
 
   return (
     <section
@@ -23,7 +27,7 @@ export function ReflectionQuestions({ questions }: ReflectionQuestionsProps) {
       </header>
 
       <ul class="reflection-list" role="list">
-        {questions.map((question, index) => (
+        {visibleQuestions.map((question, index) => (
           <li key={index} class="reflection-item">
             <span class="reflection-number" aria-hidden="true">{index + 1}.</span>
             <span class="reflection-text">{question}</span>

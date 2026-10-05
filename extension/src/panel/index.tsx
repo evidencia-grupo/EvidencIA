@@ -2,6 +2,7 @@ import { render } from "preact";
 import { useState, useLayoutEffect } from "preact/hooks";
 import { ClaimCard } from "./components/ClaimCard";
 import { UncertaintyAlert } from "./components/UncertaintyAlert";
+import { ReflectionQuestions } from "./components/ReflectionQuestions";
 import type { AnalyzeResponse } from "../../../shared/types/api";
 
 function formatUploadDate(value?: string | null): string {
@@ -145,6 +146,9 @@ export function App() {
               <ClaimCard key={claim.id} claim={claim} />
             ))}
           </div>
+          <ReflectionQuestions
+            questions={data.claims.find((claim) => claim.reflectionQuestions?.length)?.reflectionQuestions}
+          />
         </div>
       )}
 

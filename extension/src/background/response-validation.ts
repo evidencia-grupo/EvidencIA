@@ -34,6 +34,10 @@ export function isAnalysis(value: unknown, videoId: string): value is AnalyzeRes
         claim.id.trim().length > 0 &&
         typeof claim.text === "string" &&
         claim.text.trim().length > 0 &&
+        (claim.reflectionQuestions === undefined ||
+          (Array.isArray(claim.reflectionQuestions) &&
+            claim.reflectionQuestions.length === 3 &&
+            claim.reflectionQuestions.every((question) => typeof question === "string" && question.trim().length > 0))) &&
         Boolean(claim.temporalContext) &&
         typeof claim.temporalContext.videoPublishedAt === "string" &&
         [
