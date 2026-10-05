@@ -1,9 +1,10 @@
 import { isAnalysis } from "./response-validation";
 import { getCaptionTracks } from "./player-captions";
 import { getCachedResult, saveCachedResult, CACHE_TTL_MS } from "./cache-manager";
-import type { AnalyzeRequest, AnalyzeResponse } from "../../../shared/types/api";
+import type { AnalyzeRequest, AnalyzeResponse, FeedbackRequest, FeedbackResponse } from "../../../shared/types/api";
 
 const BACKEND_URL = "http://127.0.0.1:8000/api/v1/analyze";
+const FEEDBACK_URL = "http://127.0.0.1:8000/api/v1/feedback";
 
 export { getCachedResult, saveCachedResult, CACHE_TTL_MS };
 
@@ -13,6 +14,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "GET_CAPTION_TRACKS" && sender.tab?.id !== undefined) operation = getCaptionTracks(sender.tab.id, message.videoId);
   else if (message.type === "GET_CACHE") operation = getCachedResult(message.videoId);
   else if (message.type === "ANALYZE_VIDEO") operation = handleAnalyzeRequest(message.payload, message.deadline);
+  else if (message.type === "SUBMIT_FEEDBACK") operation = handleFeedbackRequest(message.payload);
   else return;
   operation.then(data => sendResponse({ success: true, data })).catch(error =>
     sendResponse({ success: false, error: error instanceof Error ? error.message : "Falha na checagem." }));
@@ -45,4 +47,15 @@ export async function handleAnalyzeRequest(payload: AnalyzeRequest, deadline = D
     clearTimeout(timeout);
   }
 }
+
+export async function handleFeedbackRequest(payload: FeedbackRequest): Promise<FeedbackResponse> {
+  const response = await fetch(FEEDBACK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Client-Version": "1.0.0" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error(`Falha ao registrar feedback: HTTP ${response.status}`);
+  return (await response.json()) as FeedbackResponse;
+}
+
 

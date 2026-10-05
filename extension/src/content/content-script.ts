@@ -35,6 +35,8 @@ window.addEventListener("message", (event) => {
     if (btn && btn.getAttribute("aria-disabled") !== "true") {
       btn.click();
     }
+  } else if (event.data?.type === "SUBMIT_FEEDBACK") {
+    chrome.runtime.sendMessage({ type: "SUBMIT_FEEDBACK", payload: event.data.payload }).catch(() => {});
   }
 });
 window.addEventListener("keydown", (event) => {

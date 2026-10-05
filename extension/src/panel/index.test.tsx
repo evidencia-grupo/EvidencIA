@@ -181,3 +181,13 @@ it("avisos de carregamento, erro e falta de legendas não usam termos técnicos"
   message({ type: "NO_CAPTIONS_AVAILABLE" });
   expect(document.body.textContent).not.toMatch(jargon);
 });
+
+it("exibe seção discreta de feedback anônimo após carregar os resultados da análise", () => {
+  message({ type: "ANALYSIS_SUCCESS", data });
+  const feedbackSection = document.querySelector(".feedback-section");
+  expect(feedbackSection).not.toBeNull();
+  expect(feedbackSection?.textContent).toContain("Esta análise foi útil para você?");
+  expect(feedbackSection?.querySelector('button[aria-label="Avaliar análise como útil"]')).not.toBeNull();
+  expect(feedbackSection?.querySelector('button[aria-label="Avaliar análise como não útil"]')).not.toBeNull();
+});
+

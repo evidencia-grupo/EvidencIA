@@ -3,7 +3,8 @@ import { useState, useLayoutEffect } from "preact/hooks";
 import { ClaimCard } from "./components/ClaimCard";
 import { UncertaintyAlert } from "./components/UncertaintyAlert";
 import { ReflectionQuestions } from "./components/ReflectionQuestions";
-import type { AnalyzeResponse } from "../../../shared/types/api";
+import { FeedbackSection } from "./components/FeedbackSection";
+import type { AnalyzeResponse, FeedbackRequest } from "../../../shared/types/api";
 
 function formatUploadDate(value?: string | null): string {
   if (!value) return "Data não disponível";
@@ -12,7 +13,11 @@ function formatUploadDate(value?: string | null): string {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeZone: "UTC" }).format(date);
 }
 
-export function App() {
+export interface AppProps {
+  onSubmitFeedback?: (payload: FeedbackRequest) => Promise<void> | void;
+}
+
+export function App({ onSubmitFeedback }: AppProps = {}) {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<AnalyzeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -171,6 +176,7 @@ export function App() {
           <ReflectionQuestions
             questions={data.claims.find((claim) => claim.reflectionQuestions?.length)?.reflectionQuestions}
           />
+          <FeedbackSection videoId={data.videoId} onSubmitFeedback={onSubmitFeedback} />
         </div>
       )}
 

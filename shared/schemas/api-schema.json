@@ -143,6 +143,34 @@
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "additionalProperties": false
+    },
+    "FeedbackRequest": {
+      "type": "object",
+      "required": ["videoId", "rating"],
+      "properties": {
+        "videoId": { "type": "string", "minLength": 1 },
+        "rating": {
+          "type": "string",
+          "enum": ["positive", "negative"]
+        },
+        "reason": {
+          "type": "string",
+          "enum": ["outdated_sources", "insufficient_evidence", "inaccurate", "other"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "FeedbackResponse": {
+      "type": "object",
+      "required": ["status", "message"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["received"]
+        },
+        "message": { "type": "string" }
+      },
+      "additionalProperties": false
     }
   }
 }

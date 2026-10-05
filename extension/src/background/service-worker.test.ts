@@ -1,7 +1,7 @@
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
 const storage = { get: vi.fn(), set: vi.fn(), remove: vi.fn() };
 vi.stubGlobal("chrome", { runtime: { id: "extension", onMessage: { addListener: vi.fn() } }, storage: { local: storage } });
-const { getCachedResult, handleAnalyzeRequest } = await import("./service-worker");
+const { getCachedResult, handleAnalyzeRequest, handleFeedbackRequest } = await import("./service-worker");
 const listener = vi.mocked(chrome.runtime.onMessage.addListener).mock.calls[0][0];
 const data = {
   analysisMode: "evidence_first",
@@ -85,3 +85,41 @@ it("mensagens autorizadas recebem sucesso, erros e cache miss", async () => {
   listener({ type: "GET_CACHE" }, { ...sender, url: "https://evil.test" }, response);
   expect(response).not.toHaveBeenCalled();
 });
+
+it("processa envio de feedback assíncrono com sucesso", async () => {
+  const sender = { id: "extension", url: "https://www.youtube.com/watch?v=video" };
+  const response = vi.fn();
+  const feedbackPayload = { videoId: "video", rating: "positive" as const };
+  vi.mocked(fetch).mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({ status: "received", message: "Feedback registrado" }),
+  } as Response);
+
+  listener({ type: "SUBMIT_FEEDBACK", payload: feedbackPayload }, sender, response);
+  await vi.advanceTimersByTimeAsync(0);
+
+  expect(response).toHaveBeenCalledWith({
+    success: true,
+    data: { status: "received", message: "Feedback registrado" },
+  });
+});
+
+it("handleFeedbackRequest envia requisição POST para endpoint de feedback", async () => {
+  const feedbackPayload = { videoId: "video", rating: "positive" as const };
+  vi.mocked(fetch).mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({ status: "received", message: "Feedback registrado" }),
+  } as Response);
+
+  const res = await handleFeedbackRequest(feedbackPayload);
+  expect(res.status).toBe("received");
+  expect(fetch).toHaveBeenCalledWith(
+    "http://127.0.0.1:8000/api/v1/feedback",
+    expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify(feedbackPayload),
+    })
+  );
+});
+
+
