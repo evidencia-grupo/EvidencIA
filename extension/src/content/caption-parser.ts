@@ -16,13 +16,17 @@ export function parseCaptionBody(body: string): string {
   return sanitizeTranscriptText(Array.from(xml.querySelectorAll("text, p")).map(node => node.textContent ?? "").join(" "));
 }
 
-export async function extractCaptionsFromPage(videoId: string, signal?: AbortSignal): Promise<ExtractedCaptions | null> {
+export interface CaptionTrack { baseUrl: string; languageCode: string }
+
+export async function detectCaptionTracks(videoId: string, signal?: AbortSignal): Promise<CaptionTrack[]> {
   signal?.throwIfAborted();
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const detectionPromise = chrome.runtime.sendMessage({ type: "GET_CAPTION_TRACKS", videoId });
+  const detectionPromise = Promise.resolve().then(() => chrome.runtime.sendMessage({ type: "GET_CAPTION_TRACKS", videoId }));
+  let onAbort: (() => void) | undefined;
   const timeoutPromise = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new Error("Tempo limite de 1 segundo para detecção de legendas excedido. Tente novamente.")), 1000);
-    signal?.addEventListener("abort", () => reject(signal.reason ?? new DOMException("Aborted", "AbortError")));
+    onAbort = () => reject(signal?.reason ?? new DOMException("Aborted", "AbortError"));
+    signal?.addEventListener("abort", onAbort, { once: true });
   });
 
   let result: any;
@@ -30,12 +34,19 @@ export async function extractCaptionsFromPage(videoId: string, signal?: AbortSig
     result = await Promise.race([detectionPromise, timeoutPromise]);
   } finally {
     clearTimeout(timer);
+    if (onAbort) signal?.removeEventListener("abort", onAbort);
   }
 
   signal?.throwIfAborted();
   if (!result?.success) throw new Error(result?.error || "Não foi possível acessar as legendas. Tente novamente.");
-  const tracks = result.data as Array<{ baseUrl: string; languageCode: string }>;
+  const tracks = result.data as CaptionTrack[];
   if (!Array.isArray(tracks)) throw new Error("Resposta de legendas inválida.");
+  return tracks;
+}
+
+export async function extractCaptionsFromPage(videoId: string, signal?: AbortSignal, detectedTracks?: CaptionTrack[]): Promise<ExtractedCaptions | null> {
+  const tracks = detectedTracks ?? await detectCaptionTracks(videoId, signal);
+  signal?.throwIfAborted();
   if (!tracks.length) return null;
   const track = tracks.find(item => item.languageCode.startsWith("pt")) ?? tracks[0];
   const url = new URL(track.baseUrl);

@@ -1,4 +1,4 @@
-import { extractCaptionsFromPage } from "./caption-parser";
+import { detectCaptionTracks, extractCaptionsFromPage } from "./caption-parser";
 import type { AnalyzeRequest } from "../../../shared/types/api";
 
 let currentVideoId: string | null = null;
@@ -185,10 +185,13 @@ function injectTriggerBadge() {
     };
     try {
       const work = async () => {
+        const tracks = await detectCaptionTracks(videoId, controller.signal);
+        checkActive();
+        if (!tracks.length) return null;
         const cached = await chrome.runtime.sendMessage({ type: "GET_CACHE", videoId });
         checkActive();
         if (cached?.success && cached.data) return cached.data;
-        const captions = await extractCaptionsFromPage(videoId, controller.signal);
+        const captions = await extractCaptionsFromPage(videoId, controller.signal, tracks);
         checkActive();
         if (!captions) return null;
         const payload: AnalyzeRequest = {

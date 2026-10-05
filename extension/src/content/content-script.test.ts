@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 // @vitest-environment-options {"url":"https://www.youtube.com/watch?v=video"}
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
-vi.mock("./caption-parser", () => ({ extractCaptionsFromPage: vi.fn() }));
-import { extractCaptionsFromPage } from "./caption-parser";
+vi.mock("./caption-parser", () => ({ detectCaptionTracks: vi.fn(), extractCaptionsFromPage: vi.fn() }));
+import { detectCaptionTracks, extractCaptionsFromPage } from "./caption-parser";
 const sendMessage = vi.fn();
 let listeners: Array<[string, EventListenerOrEventListenerObject]>;
 const realAdd = window.addEventListener.bind(window);
@@ -22,6 +22,7 @@ beforeEach(() => {
   history.replaceState({}, "", "/watch?v=video");
   document.body.innerHTML = '<h1 class="ytd-watch-metadata">Título</h1><div id="channel-name">Canal</div><div id="above-the-fold"></div>';
   sendMessage.mockReset().mockResolvedValue({ success: true, data: { score: 85 } });
+  vi.mocked(detectCaptionTracks).mockReset().mockResolvedValue([{ baseUrl: "https://www.youtube.com/api/timedtext", languageCode: "pt" }]);
   vi.mocked(extractCaptionsFromPage).mockReset().mockResolvedValue({ videoId: "video", transcript: "texto", language: "pt" });
   vi.stubGlobal("chrome", { runtime: { getURL: (path: string) => `https://extension.test/${path}`, sendMessage } });
 });
@@ -83,9 +84,11 @@ it("ausência de legendas encerra carregamento; erro inesperado tem fallback", a
   panelMessage("PANEL_READY");
   const post = vi.spyOn(frame().contentWindow!, "postMessage");
   sendMessage.mockResolvedValue({ success: true, data: null });
-  vi.mocked(extractCaptionsFromPage).mockResolvedValueOnce(null);
+  vi.mocked(detectCaptionTracks).mockResolvedValueOnce([]);
   button().click(); await flush();
   expect(button().textContent).toContain("Sem legendas");
+  expect(sendMessage).not.toHaveBeenCalled();
+  expect(extractCaptionsFromPage).not.toHaveBeenCalled();
   expect(post).toHaveBeenCalledWith({ type: "NO_CAPTIONS" }, "https://extension.test");
   panelMessage("RETRY_ANALYSIS");
   await flush();
@@ -121,4 +124,27 @@ it("aguarda metadados, recria iframe removido e suporta chegada pela home", asyn
   frame().remove(); button().click(); await flush(); expect(frame().isConnected).toBe(true);
   navigate("/"); document.body.innerHTML = '<ytd-watch-metadata></ytd-watch-metadata>';
   navigate("/watch?v=next"); expect(button()).toBeTruthy();
+});
+
+it("HU10: ausência em até 1s ignora cache lento e encerra carregamento", async () => {
+  await import("./content-script"); panelMessage("PANEL_READY");
+  const post = vi.spyOn(frame().contentWindow!, "postMessage");
+  sendMessage.mockReturnValue(new Promise(() => {}));
+  vi.mocked(detectCaptionTracks).mockImplementationOnce(() => new Promise(resolve => setTimeout(() => resolve([]), 900)));
+  button().click();
+  await vi.advanceTimersByTimeAsync(900);
+  expect(post).toHaveBeenCalledWith({ type: "NO_CAPTIONS" }, "https://extension.test");
+  expect(button().getAttribute("aria-disabled")).toBe("false");
+  expect(button().classList.contains("evidencia-loading")).toBe(false);
+  expect(sendMessage).not.toHaveBeenCalled();
+});
+it("HU10: falha de detecção permite recuperação pelo painel", async () => {
+  await import("./content-script"); panelMessage("PANEL_READY");
+  const post = vi.spyOn(frame().contentWindow!, "postMessage");
+  vi.mocked(detectCaptionTracks).mockRejectedValueOnce(new Error("Falha temporária"));
+  button().click(); await flush();
+  expect(post).toHaveBeenCalledWith({ type: "ANALYSIS_ERROR", error: "Falha temporária" }, "https://extension.test");
+  expect(sendMessage).not.toHaveBeenCalled();
+  panelMessage("RETRY_ANALYSIS"); await flush();
+  expect(button().textContent).toContain("85%");
 });

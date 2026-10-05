@@ -1,5 +1,5 @@
 import { test as base, expect, chromium, type BrowserContext, type Worker } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const test = base.extend<{ extension: { context: BrowserContext; worker: Worker } }>({
@@ -16,12 +16,16 @@ const test = base.extend<{ extension: { context: BrowserContext; worker: Worker 
   },
 });
 
-async function setup(context: BrowserContext, id = "video", captions = true) {
+async function setup(context: BrowserContext, id = "video", captions = true, failCaptions = false) {
   let captionCalls = 0;
   await context.route("https://www.youtube.com/**", async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname === "/api/timedtext") {
       captionCalls++;
+      if (failCaptions) {
+        await route.fulfill({ status: 503, body: "Service Unavailable" });
+        return;
+      }
       await route.fulfill({
         contentType: "text/xml",
         body: `<transcript><text>Um estudo apresenta dados sobre a relacao entre exercicio fisico e qualidade de vida.</text></transcript>`,
@@ -58,7 +62,7 @@ async function setup(context: BrowserContext, id = "video", captions = true) {
   await expect(button).toBeVisible();
   const panel = page.frameLocator("#evidencia-side-panel");
   await expect(panel.getByRole("button", { name: /Fechar painel/, includeHidden: true })).toBeAttached();
-  return { page, button, panel, captionCalls: () => captionCalls };
+  return { page, button, panel, captionCalls: () => captionCalls, recover: () => { failCaptions = false; } };
 }
 
 test("HU10: Cenário 1 — Vídeo sem legendas notifica em até 1s e encerra com segurança sem bloquear a aba", async ({ extension }) => {
@@ -72,7 +76,12 @@ test("HU10: Cenário 1 — Vídeo sem legendas notifica em até 1s e encerra com
     };
   });
 
-  const start = Date.now();
+  const panelFrame = await page.locator("#evidencia-side-panel").elementHandle().then(handle => handle!.contentFrame());
+  await panelFrame!.evaluate(() => {
+    new MutationObserver(() => {
+      if (document.querySelector('[role="alert"]')) (window as any).alertTime ??= performance.timeOrigin + performance.now();
+    }).observe(document.body, { childList: true, subtree: true });
+  });
   await button.click();
 
   // Alerta deve ser exibido com role="alert" informando a impossibilidade técnica
@@ -80,8 +89,9 @@ test("HU10: Cenário 1 — Vídeo sem legendas notifica em até 1s e encerra com
   await expect(alert).toContainText("Legendas Indisponíveis");
   await expect(alert).toContainText("não possui transcrição ou legendas ativadas");
 
-  const elapsedMs = Date.now() - start;
-  expect(elapsedMs).toBeLessThanOrEqual(1500); // 1.0s com tolerância de frame
+  const alertTime = await panelFrame!.evaluate(() => (window as any).alertTime);
+  const clickTime = await page.evaluate(() => (window as any).hu10.click);
+  expect(alertTime - clickTime).toBeLessThanOrEqual(1000);
 
   // Player não deve ter sido pausado nem a aba bloqueada
   expect(await page.evaluate(() => (window as any).pauses)).toBe(0);
@@ -98,27 +108,16 @@ test("HU10: Cenário 1 — Vídeo sem legendas notifica em até 1s e encerra com
   await expect(panel.getByRole("button", { name: "Tentar novamente" })).toBeVisible();
 
   // Validação de acessibilidade WCAG no painel com o alerta ativo
-  const frameElement = await page.$("#evidencia-side-panel");
-  const panelFrame = await frameElement?.contentFrame();
+
   if (panelFrame) {
-    const axeResults = await new AxeBuilder({ page: panelFrame as any }).analyze();
+    await panelFrame.evaluate(readFileSync(resolve("node_modules/axe-core/axe.min.js"), "utf8"));
+    const axeResults = await panelFrame.evaluate(() => (window as any).axe.run(document));
     expect(axeResults.violations).toEqual([]);
   }
 });
 
 test("HU10: Cenário 2 — Falha temporária da API do YouTube exibe botão de nova tentativa no painel", async ({ extension }) => {
-  // Simula falha de rede/API na consulta de legendas
-  await extension.worker.evaluate(() => {
-    (globalThis as any).originalFetch = fetch;
-    globalThis.fetch = async (url) => {
-      if (String(url).includes("/api/timedtext")) {
-        return new Response("", { status: 503, statusText: "Service Unavailable" });
-      }
-      return (globalThis as any).originalFetch(url);
-    };
-  });
-
-  const { button, panel } = await setup(extension.context, "temp-fail-video", true);
+  const { button, panel, recover } = await setup(extension.context, "temp-fail-video", true, true);
   await button.click();
 
   // Painel deve exibir o alerta com o erro e o botão de nova tentativa
@@ -127,10 +126,7 @@ test("HU10: Cenário 2 — Falha temporária da API do YouTube exibe botão de n
   const retryBtn = panel.getByRole("button", { name: "Tentar novamente" });
   await expect(retryBtn).toBeVisible();
 
-  // Restaura a API para simular recuperação
-  await extension.worker.evaluate(() => {
-    globalThis.fetch = (globalThis as any).originalFetch;
-  });
+  recover();
 
   // Aciona nova tentativa pelo botão dentro do painel
   await retryBtn.click();
