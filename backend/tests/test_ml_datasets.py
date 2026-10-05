@@ -24,8 +24,8 @@ def test_brazilian_fact_matcher_direct_match():
 
     assert match is not None
     assert match["status"] == "contraditada"
-    assert "Agência Lupa" in match["source"].title
-    assert match["source"].domain == "lupa.uol.com.br"
+    assert "Agência Lupa" in match["evidence"].title
+    assert "lupa.uol.com.br" in match["evidence"].url
     assert match["confidence"] >= 0.85
 
 
@@ -34,3 +34,16 @@ def test_brazilian_fact_matcher_no_false_positive():
     query = "Um filme interessante sobre astronautas viajando no espaço sideral"
     match = brazilian_fact_matcher.find_match(query, threshold=0.6)
     assert match is None
+
+
+def test_brazilian_fact_matcher_evidencia_rastreavel_hu14():
+    """HU14: a evidência traz trecho, publisher, endereço e proveniência, sem inventar data de publicação."""
+    match = brazilian_fact_matcher.find_match("O chá de casca de banana cura diabetes e zera glicose")
+
+    evidence = match["evidence"]
+    assert evidence.relation == "contradicts"
+    assert evidence.publisher == "Agência Lupa"
+    assert evidence.url.startswith("https://")
+    assert evidence.snippet
+    assert evidence.provenance.dataset == "factchecksbr"
+    assert evidence.publishedAt == ""

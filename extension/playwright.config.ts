@@ -6,7 +6,7 @@ export default defineConfig({
   reporter: [["list"], ["json", { outputFile: "test-results/results.json" }]],
   use: { trace: "retain-on-failure" },
   webServer: {
-    command: `${process.env.E2E_PYTHON || "python3"} -m uvicorn app.main:app --host 127.0.0.1 --port 8000`,
+    command: `"${process.env.E2E_PYTHON || "python3"}" -m uvicorn app.main:app --host 127.0.0.1 --port 8000`,
     cwd: "../backend",
     url: "http://127.0.0.1:8000/api/v1/health",
     reuseExistingServer: false,

@@ -1,18 +1,8 @@
 /**
  * Contrato de Dados Oficial — EvidencIA Backend Proxy & Extension Client
- * Rastreabilidade: documentation/docs/tecnico/contrato-api.md
+ * Arquitetura Evidence-First (ADR-006)
+ * Rastreabilidade: documentation/docs/tecnico/contrato-api.md (RF-06, RF-12, RF-13, RF-14)
  */
-
-export type VerificationClassification =
-  | "verdadeiro"
-  | "moderado"
-  | "falso"
-  | "inconclusivo";
-
-export type ClaimVerificationStatus =
-  | "apoiada"
-  | "contraditada"
-  | "inconclusiva";
 
 export interface AnalyzeRequest {
   videoId: string;
@@ -24,45 +14,56 @@ export interface AnalyzeRequest {
   language?: string;
 }
 
-export interface VerificationClaim {
-  id: string;
-  text: string;
-  status: ClaimVerificationStatus;
-  evidenceSummary: string;
-  confidence: number;
-  sourceIds?: string[];
-}
+export type EvidenceRelation = "supports" | "contradicts" | "contextualizes";
 
-export interface FactCheckingSource {
-  id: string;
-  title: string;
-  url: string;
-  domain: string;
-  reliabilityScore: number;
-  publishedAt?: string;
+export type UncertaintyState =
+  | "supported"
+  | "contradicted"
+  | "contextualized"
+  | "conflicting"
+  | "insufficient_evidence";
+
+export interface EvidenceProvenance {
+  dataset: string;
+  indexedAt: string;
+  contentHash?: string;
 }
 
 export interface TemporalContext {
-  publicationYear?: number | null;
-  isOldContent: boolean;
-  message: string;
+  claimDate?: string;
+  videoPublishedAt: string;
+  note?: string;
+}
+
+export interface Evidence {
+  sourceId: string;
+  relation: EvidenceRelation;
+  title: string;
+  url: string;
+  publishedAt: string;
+  publisher: string;
+  snippet?: string;
+  provenance: EvidenceProvenance;
+}
+
+export interface Claim {
+  id: string;
+  text: string;
+  temporalContext: TemporalContext;
+  evidence: Evidence[];
+  uncertainty: UncertaintyState;
+  reflectionQuestions?: string[];
 }
 
 export interface AnalyzeResponse {
-  analysisMode: "demo" | "live";
   videoId: string;
+  analysisMode: "evidence_first" | "evidence_only";
   videoTitle: string;
   channelName: string;
-  uploadDate?: string | null;
-  temporalContext: TemporalContext;
-  analyzedAt: string;
-  score: number; // 0 a 100
-  classification: VerificationClassification;
-  summary: string;
-  claims: VerificationClaim[];
-  sources: FactCheckingSource[];
-  reflectionQuestions?: string[];
+  publishedAt: string;
   processingTimeMs: number;
+  claims: Claim[];
+  limitations: string[];
 }
 
 export interface HealthResponse {

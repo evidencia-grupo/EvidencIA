@@ -1,22 +1,24 @@
-import type { VerificationClaim, VerificationClassification } from "../../../../shared/types/api";
+import type { Claim } from "../../../../shared/types/api";
 
 interface UncertaintyAlertProps {
-  classification: VerificationClassification;
-  claims: VerificationClaim[];
+  claims: Claim[];
 }
 
 /**
  * Alerta visual imediato de incerteza analítica (HU09 / RF-07 / RNF-06 / RNF-07).
- * Aparece no topo do painel quando não há confirmação consolidada ou quando
- * fontes legítimas chegam a conclusões opostas, sem arbitrar um vencedor.
+ * Exibido quando há divergência entre fontes ou quando as evidências são insuficientes,
+ * sem impor autoridade algorítmica.
  */
-export function UncertaintyAlert({ classification, claims }: UncertaintyAlertProps) {
-  const supported = claims.filter((c) => c.status === "apoiada").length;
-  const contradicted = claims.filter((c) => c.status === "contraditada").length;
-  const inconclusive = classification === "inconclusivo";
-  const controversy = supported > 0 && contradicted > 0;
+export function UncertaintyAlert({ claims }: UncertaintyAlertProps) {
+  const supported = claims.filter((c) => c.uncertainty === "supported").length;
+  const contradicted = claims.filter((c) => c.uncertainty === "contradicted").length;
+  const conflicting = claims.filter((c) => c.uncertainty === "conflicting").length;
+  const insufficient = claims.filter((c) => c.uncertainty === "insufficient_evidence").length;
 
-  if (!inconclusive && !controversy) {
+  const hasControversy = conflicting > 0 || (supported > 0 && contradicted > 0);
+  const allInsufficient = claims.length > 0 && insufficient === claims.length;
+
+  if (!hasControversy && !allInsufficient) {
     return null;
   }
 
@@ -27,41 +29,44 @@ export function UncertaintyAlert({ classification, claims }: UncertaintyAlertPro
           <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
         </svg>
         <strong id="uncertainty-alert-title">
-          {inconclusive ? "Ainda não dá para confirmar" : "As fontes discordam entre si"}
+          {allInsufficient
+            ? "Evidências documentais insuficientes"
+            : "Evidências com divergências apuradas"}
         </strong>
       </div>
 
-      {inconclusive ? (
+      {allInsufficient ? (
         <p>
-          Nenhuma fonte confiável confirma nem desmente o que é dito neste vídeo. Pense antes de
-          compartilhar.
+          Não foram localizadas checagens consolidadas ou estudos científicos para confirmar ou refutar
+          as afirmações deste vídeo. Recomendamos cautela antes de compartilhar.
         </p>
       ) : (
         <p>
-          Encontramos fontes confiáveis dizendo coisas opostas. Mostramos os dois lados para você tirar
-          suas conclusões. Pense antes de compartilhar.
+          Foram localizadas evidências com conclusões distintas para diferentes afirmações do vídeo.
+          Apresentamos os fatos documentados para sua própria análise crítica.
         </p>
       )}
 
-      {controversy && (
-        <ul class="uncertainty-sides" aria-label="Os dois lados">
-          <li>
-            <span class="uncertainty-side-label">O que apoia</span>
-            <span>
-              {supported} {supported === 1 ? "ponto tem" : "pontos têm"} apoio de fontes
-            </span>
-          </li>
-          <li>
-            <span class="uncertainty-side-label">O que contradiz</span>
-            <span>
-              {contradicted} {contradicted === 1 ? "ponto é contrariado" : "pontos são contrariados"} por
-              fontes
-            </span>
-          </li>
+      {hasControversy && (
+        <ul class="uncertainty-sides" aria-label="Distribuição de evidências">
+          {supported > 0 && (
+            <li>
+              <span class="uncertainty-side-label">Alegações apoiadas</span>
+              <span>
+                {supported} {supported === 1 ? "alegação possui" : "alegações possuem"} evidência favorável
+              </span>
+            </li>
+          )}
+          {contradicted > 0 && (
+            <li>
+              <span class="uncertainty-side-label">Alegações contraditas</span>
+              <span>
+                {contradicted} {contradicted === 1 ? "alegação foi contestada" : "alegações foram contestadas"} por checagens
+              </span>
+            </li>
+          )}
         </ul>
       )}
-
-      {controversy && <p class="uncertainty-alert-hint">Veja os detalhes de cada lado logo abaixo.</p>}
     </section>
   );
 }

@@ -13,11 +13,5 @@
 # Contratos Compartilhados (API Schemas e TypeScript Types)
 /shared/ @pedrohpsantos @MylenaTrindade @lipestile @luizoryone @mahiaara
 
-# Governanca, Documentacao e Auditoria Editorial
-/docs/ @mahiaara
-/*.md @mahiaara
-/BACKLOG.md @mahiaara @pedrohpsantos
-/KANBAN.md @mahiaara @pedrohpsantos
-
 # CI/CD e Workflows
 /.github/workflows/ @pedrohpsantos @lipestile

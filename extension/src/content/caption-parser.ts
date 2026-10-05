@@ -10,18 +10,57 @@ export interface ExtractedCaptions {
 }
 
 export function sanitizeTranscriptText(rawText: string): string {
-  return rawText.replace(/<[^>]+>/g, " ").replace(/\[[\p{L}\s]+\]/gu, "")
-    .replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+  return rawText
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\[\p{L}[\p{L}\s]*\]/gu, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function parseCaptionBody(body: string): string {
   if (body.trimStart().startsWith("{")) {
-    const data = JSON.parse(body) as { events?: Array<{ segs?: Array<{ utf8?: string }> }> };
-    return sanitizeTranscriptText((data.events ?? []).flatMap(event => (event.segs ?? []).map(seg => seg.utf8 ?? "")).join(" "));
+    const data = JSON.parse(body) as {
+      events?: Array<{
+        segs?: Array<{
+          utf8?: string;
+          isSpeakerChange?: number;
+        }>;
+      }>;
+    };
+
+    const transcript = (data.events ?? [])
+      .map((event) => {
+        const eventText = (event.segs ?? [])
+          .map((segment) => segment.utf8 ?? "")
+          .join("");
+
+        return eventText.replace(/^\s*>>\s*/, "");
+      })
+      .map(sanitizeTranscriptText)
+      .filter(Boolean)
+      .join(" ");
+
+    return sanitizeTranscriptText(transcript);
   }
+
   const xml = new DOMParser().parseFromString(body, "text/xml");
-  if (xml.querySelector("parsererror")) throw new Error("Não foi possível interpretar as legendas. Tente novamente.");
-  return sanitizeTranscriptText(Array.from(xml.querySelectorAll("text, p")).map(node => node.textContent ?? "").join(" "));
+
+  if (xml.querySelector("parsererror")) {
+    throw new Error(
+      "Não foi possível interpretar as legendas. Tente novamente.",
+    );
+  }
+
+  return sanitizeTranscriptText(
+    Array.from(xml.querySelectorAll("text, p"))
+      .map((node) => node.textContent ?? "")
+      .join(" "),
+  );
 }
 
 export async function extractCaptionsFromPage(videoId: string, signal?: AbortSignal): Promise<ExtractedCaptions | null> {

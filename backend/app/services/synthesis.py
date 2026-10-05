@@ -1,5 +1,4 @@
-from typing import List
-from app.schemas import VerificationClaim, VerificationClassification
+from typing import Any, List
 
 # Lista de termos técnicos e jargões proibidos na síntese voltada para Dona Lurdes (HU02 / RF-03)
 FORBIDDEN_JARGONS = [
@@ -30,9 +29,9 @@ class SynthesisService:
 
     def generate_accessible_summary(
         self,
-        claims: List[VerificationClaim],
-        classification: VerificationClassification,
-        score: int,
+        claims: List[Any],
+        classification: str,
+        score: int = 50,
         video_title: str = "",
     ) -> str:
         """
