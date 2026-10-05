@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from "vitest";
 import { render } from "preact";
+import axe from "axe-core";
 import { ClaimCard } from "./components/ClaimCard";
 import { EvidenceCard } from "./components/EvidenceCard";
 import { ReflectionQuestions } from "./components/ReflectionQuestions";
@@ -35,63 +36,134 @@ describe("ReflectionQuestions Component", () => {
   });
 });
 
-describe("EvidenceCard Component", () => {
+describe("EvidenceCard Component (HU14)", () => {
   const baseEvidence: Evidence = {
     sourceId: "src-10",
     relation: "supports",
     title: "Checagem Oficial",
-    url: "https://fatooufake.com/artigo",
+    url: "https://www.fatooufake.com/artigo",
     publishedAt: "2023-08-10T12:00:00Z",
     publisher: "Agência Fato",
     snippet: "O dado apresentado é verdadeiro conforme dados do ministério.",
     provenance: {
-      dataset: "FactChecks.br",
+      dataset: "factchecksbr",
       indexedAt: "2026-01-01T00:00:00Z",
     },
   };
 
-  it("renderiza card com relação 'supports'", () => {
+  function renderCard(ev: Evidence) {
     const container = document.createElement("div");
-    render(<EvidenceCard evidence={baseEvidence} />, container);
+    render(<EvidenceCard evidence={ev} />, container);
+    return container;
+  }
+
+  it("exibe título, endereço, data, publisher e relação de forma explícita", () => {
+    const container = renderCard(baseEvidence);
 
     expect(container.querySelector(".relation-supports")?.textContent).toContain("Apoia a alegação");
+    expect(container.querySelector(".evidence-title")?.textContent).toContain("Checagem Oficial");
     expect(container.querySelector(".evidence-publisher")?.textContent).toBe("Agência Fato");
-    expect(container.querySelector(".evidence-title a")?.getAttribute("href")).toBe("https://fatooufake.com/artigo");
+    expect(container.querySelector(".evidence-date time")?.getAttribute("dateTime")).toBe("2023-08-10T12:00:00Z");
+    expect(container.querySelector(".evidence-date")?.textContent).toMatch(/10 de ago\.? de 2023/);
+    expect(container.querySelector(".evidence-url")?.textContent).toBe("fatooufake.com/artigo");
+    expect(container.querySelector(".evidence-provenance")?.textContent).toBe("FactChecks.br");
     expect(container.querySelector(".evidence-snippet")?.textContent).toContain("O dado apresentado é verdadeiro");
-    expect(container.querySelector(".evidence-provenance")?.textContent).toContain("FactChecks.br");
+
+    const labels = Array.from(container.querySelectorAll(".evidence-meta dt")).map((dt) => dt.textContent);
+    expect(labels).toEqual(["Publicado por", "Publicado em", "Endereço", "Base de checagens"]);
   });
 
-  it("renderiza card com relação 'contradicts'", () => {
-    const container = document.createElement("div");
-    const ev: Evidence = { ...baseEvidence, relation: "contradicts" };
-    render(<EvidenceCard evidence={ev} />, container);
+  it("abre a fonte em nova aba de forma segura", () => {
+    const link = renderCard(baseEvidence).querySelector(".evidence-title a");
 
+    expect(link?.getAttribute("href")).toBe("https://www.fatooufake.com/artigo");
+    expect(link?.getAttribute("target")).toBe("_blank");
+    expect(link?.getAttribute("rel")).toBe("noopener noreferrer");
+    expect(link?.textContent).toContain("(abre em nova aba)");
+  });
+
+  it("destaca a relação 'Contradiz' junto do trecho factual", () => {
+    const container = renderCard({ ...baseEvidence, relation: "contradicts" });
+
+    expect(container.querySelector(".evidence-card--contradicts")).not.toBeNull();
     expect(container.querySelector(".relation-contradicts")?.textContent).toContain("Contradiz a alegação");
+    expect(container.querySelector(".evidence-snippet-label")?.textContent).toBe("O que a fonte diz:");
+    expect(container.querySelector(".evidence-snippet")?.textContent).toContain("O dado apresentado");
   });
 
-  it("renderiza card com relação 'contextualizes'", () => {
-    const container = document.createElement("div");
-    const ev: Evidence = { ...baseEvidence, relation: "contextualizes" };
-    render(<EvidenceCard evidence={ev} />, container);
+  it("exibe a relação 'Contextualiza' com os metadados completos", () => {
+    const container = renderCard({ ...baseEvidence, relation: "contextualizes" });
 
+    expect(container.querySelector(".evidence-card--contextualizes")).not.toBeNull();
     expect(container.querySelector(".relation-contextualizes")?.textContent).toContain("Contextualiza a alegação");
+    expect(container.querySelectorAll(".evidence-meta-row").length).toBe(4);
   });
 
-  it("lida graciosamente com relação desconhecida e data inválida", () => {
-    const container = document.createElement("div");
+  it("avisa quando a fonte não trouxe trecho", () => {
+    const container = renderCard({ ...baseEvidence, snippet: undefined });
+
+    expect(container.querySelector(".evidence-snippet")).toBeNull();
+    expect(container.querySelector(".evidence-snippet-missing")?.textContent).toContain("Abra o link");
+  });
+
+  it("não inventa data quando ela está ausente ou inválida", () => {
+    expect(renderCard({ ...baseEvidence, publishedAt: "" }).querySelector(".evidence-date")?.textContent).toBe(
+      "Data não informada"
+    );
+    expect(
+      renderCard({ ...baseEvidence, publishedAt: "data-invalida" }).querySelector(".evidence-date")?.textContent
+    ).toBe("Data não informada");
+  });
+
+  it("mostra a data do dia certo mesmo para datas sem horário", () => {
+    const container = renderCard({ ...baseEvidence, publishedAt: "2024-01-01" });
+    expect(container.querySelector(".evidence-date")?.textContent).toMatch(/1 de jan\.? de 2024/);
+  });
+
+  it("não cria link para endereços que não sejam http/https", () => {
+    const container = renderCard({ ...baseEvidence, url: "javascript:alert(1)" });
+
+    expect(container.querySelector("a")).toBeNull();
+    expect(container.querySelector(".evidence-title")?.textContent).toBe("Checagem Oficial");
+    expect(container.querySelector(".evidence-url")?.textContent).toBe("Endereço não disponível");
+  });
+
+  it("lida graciosamente com relação desconhecida e sem proveniência", () => {
     const ev = {
       ...baseEvidence,
       relation: "outra" as unknown as EvidenceRelation,
-      publishedAt: "data-invalida",
-      snippet: undefined,
       provenance: undefined as unknown as Evidence["provenance"],
     };
-    render(<EvidenceCard evidence={ev} />, container);
+    const container = renderCard(ev);
 
     expect(container.querySelector(".relation-contextualizes")?.textContent).toContain("Contextualiza a alegação");
-    expect(container.querySelector(".evidence-date")?.textContent).toContain("data-invalida");
-    expect(container.querySelector(".evidence-snippet")).toBeNull();
     expect(container.querySelector(".evidence-provenance")).toBeNull();
+  });
+
+  it("não apresenta violações de acessibilidade (axe-core, WCAG 2.1 AA)", async () => {
+    const relations: EvidenceRelation[] = ["supports", "contradicts", "contextualizes"];
+    const host = document.createElement("main");
+    host.setAttribute("lang", "pt-BR");
+    document.body.appendChild(host);
+    render(
+      <section aria-label="Evidências">
+        {relations.map((relation) => (
+          <EvidenceCard key={relation} evidence={{ ...baseEvidence, sourceId: relation, relation }} />
+        ))}
+        <EvidenceCard evidence={{ ...baseEvidence, sourceId: "sem-dados", snippet: undefined, publishedAt: "" }} />
+      </section>,
+      host
+    );
+
+    // Contraste de cor depende de layout real e não é calculável no jsdom; os demais critérios são auditados aqui.
+    const results = await axe.run(host, {
+      runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] },
+      rules: { "color-contrast": { enabled: false } },
+    });
+    expect(results.violations).toEqual([]);
+
+    render(null, host);
+    host.remove();
   });
 });
 
