@@ -84,7 +84,13 @@ export function ClaimCard({ claim, expanded = false, onSelect }: ClaimCardProps)
         class="claim-text"
         style={{ fontWeight: "600", fontSize: "14px", marginBottom: "8px", color: "var(--color-text-primary)" }}
       >
-        <button type="button" class="claim-toggle" aria-expanded={expanded} aria-controls={`claim-details-${claim.id}`} onClick={onSelect}>
+        <button
+          type="button"
+          class="claim-toggle"
+          aria-expanded={expanded}
+          aria-controls={expanded ? `claim-details-${claim.id}` : undefined}
+          onClick={onSelect}
+        >
           "{claim.text}"
         </button>
       </h3>
