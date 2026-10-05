@@ -63,7 +63,7 @@ class BrazilianFactMatcher:
                 relation=relation,
                 title=f"{best_match.get('publisher', 'Agência')}: {best_match.get('claim', '')}",
                 url=best_match.get("review_url", "https://lupa.uol.com.br"),
-                publishedAt=best_match.get("published_at", "2026-01-01T00:00:00Z"),
+                publishedAt=best_match.get("published_at") or "",  # HU14: sem data inventada
                 publisher=best_match.get("publisher", "Agência de Fact-Checking"),
                 snippet=best_match.get("evidence_summary", ""),
                 provenance=EvidenceProvenance(
