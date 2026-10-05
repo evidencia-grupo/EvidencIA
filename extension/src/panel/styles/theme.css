@@ -135,6 +135,29 @@ body {
   font-weight: 500;
 }
 
+.reflection-questions {
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: 12px;
+  color: var(--color-text-primary);
+}
+
+.reflection-questions h2 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.reflection-questions ol {
+  padding-left: 20px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.reflection-questions li + li {
+  margin-top: 6px;
+}
+
 button:focus-visible, a:focus-visible { outline: 3px solid #FBC02D; outline-offset: 3px; }
 
 @media (prefers-reduced-motion: reduce) {

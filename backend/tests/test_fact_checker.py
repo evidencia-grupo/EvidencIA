@@ -18,6 +18,8 @@ async def test_demo_classifications(monkeypatch, text, classification):
     result = await FactCheckerService().analyze(request(text))
     assert result.classification == classification
     assert result.analysisMode == "demo"
+    assert len(result.reflectionQuestions) >= 3
+    assert all(question.endswith("?") for question in result.reflectionQuestions)
 
 
 def test_unimplemented_provider_never_returns_fake_success(monkeypatch):

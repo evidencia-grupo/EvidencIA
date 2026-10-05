@@ -4,6 +4,7 @@ import { Gauge } from "./components/Gauge";
 import { ClaimCard } from "./components/ClaimCard";
 import { SourceList } from "./components/SourceList";
 import { UncertaintyAlert } from "./components/UncertaintyAlert";
+import { ReflectionQuestions } from "./components/ReflectionQuestions";
 import type { AnalyzeResponse } from "../../../shared/types/api";
 
 function formatUploadDate(value?: string | null): string {
@@ -197,6 +198,8 @@ export function App() {
 
           {/* Lista de Fontes com Hyperlinks (HU07 / RF-04) */}
           <SourceList sources={data.sources} />
+
+          <ReflectionQuestions claims={data.claims} questions={data.reflectionQuestions} />
         </div>
       )}
 

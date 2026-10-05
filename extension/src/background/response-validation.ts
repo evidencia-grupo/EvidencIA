@@ -15,6 +15,9 @@ export function isAnalysis(value: unknown, videoId: string): value is AnalyzeRes
     && typeof data.analyzedAt === "string" && Number.isFinite(Date.parse(data.analyzedAt))
     && Number.isFinite(data.processingTimeMs) && data.processingTimeMs >= 0
     && (data.analysisMode === "demo" || data.analysisMode === "live")
+    && (data.reflectionQuestions === undefined || (Array.isArray(data.reflectionQuestions)
+      && data.reflectionQuestions.length === 3
+      && data.reflectionQuestions.every(question => typeof question === "string" && question.trim().length > 0)))
     && Array.isArray(data.claims) && data.claims.every(claim => claim && typeof claim.id === "string"
       && typeof claim.text === "string" && typeof claim.evidenceSummary === "string"
       && ["apoiada", "contraditada", "inconclusiva"].includes(claim.status)

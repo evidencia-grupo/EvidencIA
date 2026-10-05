@@ -61,6 +61,7 @@ export interface AnalyzeResponse {
   summary: string;
   claims: VerificationClaim[];
   sources: FactCheckingSource[];
+  reflectionQuestions?: string[];
   processingTimeMs: number;
 }
 

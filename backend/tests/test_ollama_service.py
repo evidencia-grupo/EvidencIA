@@ -140,3 +140,40 @@ async def test_ollama_service_generate_summary_lifecycle():
         service = OllamaService()
         summary = await service.generate_accessible_summary_with_qwen([], "moderado", 50, "Título")
         assert summary is None
+
+
+@pytest.mark.asyncio
+async def test_ollama_service_generates_three_reflection_questions():
+    from unittest.mock import MagicMock
+
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"message": {"content": json.dumps({"questions": [
+            "Que evidências ajudam a avaliar esta alegação?",
+            "Quais fontes independentes podem ser consultadas?",
+            "Que contexto adicional pode ser relevante?",
+        ]})}}
+        mock_post.return_value = mock_resp
+
+        questions = await OllamaService().generate_reflection_questions_with_qwen(["Alegação de teste"])
+        assert questions is not None
+        assert len(questions) == 3
+        assert all(question.endswith("?") for question in questions)
+
+
+@pytest.mark.asyncio
+async def test_ollama_service_rejects_verdict_language_in_reflection_questions():
+    from unittest.mock import MagicMock
+
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"message": {"content": json.dumps({"questions": [
+            "Que evidências ajudam a avaliar a alegação?",
+            "O vídeo está errado?",
+            "Que contexto adicional pode ser relevante?",
+        ]})}}
+        mock_post.return_value = mock_resp
+
+        assert await OllamaService().generate_reflection_questions_with_qwen([]) is None

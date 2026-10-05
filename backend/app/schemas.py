@@ -52,6 +52,7 @@ class AnalyzeResponse(BaseModel):
     summary: str = Field(..., description="Síntese analítica em linguagem clara sem jargões")
     claims: List[VerificationClaim]
     sources: List[FactCheckingSource]
+    reflectionQuestions: List[str] = Field(default_factory=list, description="Perguntas neutras para investigação pessoal")
     processingTimeMs: int
 
 

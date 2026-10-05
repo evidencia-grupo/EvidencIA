@@ -48,6 +48,20 @@ class FactCheckerService:
             message=message,
         )
 
+    @staticmethod
+    async def _build_reflection_questions(claims: List[VerificationClaim]) -> List[str]:
+        if settings.LLM_PROVIDER == "ollama":
+            generated = await ollama_service.generate_reflection_questions_with_qwen([claim.text for claim in claims])
+            if generated:
+                return generated
+
+        claim_text = claims[0].text if claims else "as alegações apresentadas"
+        return [
+            f"Que evidências independentes poderiam ajudar a avaliar esta alegação: “{claim_text}”?",
+            "Quais aspectos das fontes, como autoria, data e método, vale a pena verificar?",
+            "Que contexto ou evidência adicional ajudaria você a formar sua própria interpretação?",
+        ]
+
     async def analyze(self, request: AnalyzeRequest) -> AnalyzeResponse:
         start_time = time.perf_counter()
 
@@ -184,16 +198,20 @@ class FactCheckerService:
 
         # 3. Síntese sem jargões para Dona Lurdes (HU02 / RF-03), tentando Qwen se disponível
         summary = None
+        reflection_questions = None
         if settings.LLM_PROVIDER == "ollama":
             claims_dict_list = [
                 {"status": c.status, "text": c.text, "evidence_summary": c.evidenceSummary}
                 for c in claims
             ]
-            summary = await ollama_service.generate_accessible_summary_with_qwen(
-                claims=claims_dict_list,
-                classification=classification,
-                score=score,
-                video_title=request.videoTitle,
+            summary, reflection_questions = await asyncio.gather(
+                ollama_service.generate_accessible_summary_with_qwen(
+                    claims=claims_dict_list,
+                    classification=classification,
+                    score=score,
+                    video_title=request.videoTitle,
+                ),
+                self._build_reflection_questions(claims),
             )
 
         if not summary:
@@ -203,6 +221,9 @@ class FactCheckerService:
                 score=score,
                 video_title=request.videoTitle,
             )
+
+        if reflection_questions is None:
+            reflection_questions = await self._build_reflection_questions(claims)
 
         elapsed_ms = int((time.perf_counter() - start_time) * 1000)
 
@@ -219,6 +240,7 @@ class FactCheckerService:
             summary=summary,
             claims=claims,
             sources=sources,
+            reflectionQuestions=reflection_questions,
             processingTimeMs=elapsed_ms,
         )
 
@@ -417,6 +439,7 @@ class FactCheckerService:
             score=score,
             video_title=request.videoTitle,
         )
+        reflection_questions = await self._build_reflection_questions(claims)
 
         elapsed_ms = int((time.perf_counter() - start_time) * 1000)
 
@@ -433,6 +456,7 @@ class FactCheckerService:
             summary=summary,
             claims=claims,
             sources=sources,
+            reflectionQuestions=reflection_questions,
             processingTimeMs=elapsed_ms,
         )
 
