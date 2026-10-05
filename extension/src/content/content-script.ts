@@ -27,39 +27,75 @@ function initSidePanel() {
     height: calc(100vh - 56px);
     border: none;
     border-left: 1px solid #3F3F3F;
+    background: #1F1F1F;
+    z-index: 2040;
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.5);
+    display: none;
+    transition: transform 0.3s ease-in-out;
+  `;
+  document.body.appendChild(panelIframe);
+}
+
+function togglePanel(visible: boolean) {
+  initSidePanel();
+  if (panelIframe) panelIframe.style.display = visible ? "block" : "none";
+}
+
+function injectTriggerBadge() {
+  const videoId = getVideoIdFromUrl();
+  if (!videoId) return;
+  if (videoId === currentVideoId && badgeContainer) return;
+
+  currentVideoId = videoId;
+
+  const targetArea = document.querySelector("#above-the-fold") || document.querySelector("#top-row") || document.querySelector("ytd-watch-metadata");
+  if (!targetArea) {
+    setTimeout(injectTriggerBadge, 1000);
+    return;
+  }
+
+  if (badgeContainer) badgeContainer.remove();
+
+  badgeContainer = document.createElement("div");
+  badgeContainer.id = "evidencia-badge-host";
+  const shadowRoot = badgeContainer.attachShadow({ mode: "open" });
+
+  const style = document.createElement("style");
+  style.textContent = `
+    .evidencia-btn { display: inline-flex; align-items: center; gap: 8px; background: #1F1F1F; color: #FFFFFF; border: 1px solid #3F3F3F; border-radius: 18px; padding: 6px 14px; font-family: Roboto, Arial, sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; margin: 8px 0; }
+    .evidencia-btn:hover { background: #272727; border-color: #2BA640; }
+    .evidencia-icon { width: 16px; height: 16px; fill: #2BA640; }
+    .evidencia-loading { opacity: 0.7; cursor: wait; }
+  `;
+
+  const button = document.createElement("button");
+  button.className = "evidencia-btn";
+  button.innerHTML = `
+    <svg class="evidencia-icon" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+    <span>Verificar Veracidade</span>
+  `;
+
+  button.addEventListener("click", async () => {
+    button.classList.add("evidencia-loading");
+    button.querySelector("span")!.textContent = "Analisando...";
+    togglePanel(true);
+
     try {
-      // 1. Confirmação visual imediata <= 1s (RNF-01 / HU01 / HU03)
-      button.classList.add("evidencia-loading");
-      button.querySelector("span")!.textContent = "Analisando...";
-      togglePanel(true);
+      // extrai metadados
+      const videoTitle = document.querySelector("h1.ytd-watch-metadata")?.textContent?.trim() || document.title;
+      const channelName = document.querySelector("#channel-name")?.textContent?.trim() || "Canal YouTube";
 
-      // 2. Extrai metadados do vídeo
-      const videoTitle =
-        document.querySelector("h1.ytd-watch-metadata")?.textContent?.trim() ||
-        document.title;
-      const channelName =
-        document.querySelector("#channel-name")?.textContent?.trim() || "Canal YouTube";
-
-      // 3. Extrai legendas (HU05 / HU10)
-      const captions = await extractCaptionsFromPage(videoId);
-
+      // extrai legendas (servidor/service worker) — retorna null quando não há
+      const captions = await extractCaptionsFromPage(videoId!);
       if (!captions) {
         button.querySelector("span")!.textContent = "Sem Legendas";
         button.classList.remove("evidencia-loading");
-        // Notifica o painel sobre a ausência de legendas (HU10)
         panelIframe?.contentWindow?.postMessage({ type: "NO_CAPTIONS_AVAILABLE" }, "*");
         return;
       }
 
-      const requestPayload: AnalyzeRequest = {
-        videoId,
-        videoTitle,
-        channelName,
-        transcript: captions.transcript,
-        language: captions.language,
-      };
+      const requestPayload: AnalyzeRequest = { videoId: videoId!, videoTitle, channelName, transcript: captions.transcript, language: captions.language };
 
-      // 4. Solicita análise ao Service Worker
       chrome.runtime.sendMessage({ type: "ANALYZE_VIDEO", payload: requestPayload }, (response) => {
         button.classList.remove("evidencia-loading");
         if (response?.success) {
@@ -75,115 +111,6 @@ function initSidePanel() {
       button.querySelector("span")!.textContent = "Erro Inesperado";
       console.error("[EvidencIA] Erro na checagem:", err);
     }
-      padding: 6px 14px;
-      font-family: Roboto, Arial, sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      margin: 8px 0;
-    }
-    .evidencia-btn:hover {
-      background: #272727;
-      border-color: #2BA640;
-    }
-    .evidencia-icon {
-      width: 16px;
-      height: 16px;
-      fill: #2BA640;
-    }
-    .evidencia-loading {
-      opacity: 0.7;
-      cursor: wait;
-    }
-  `;
-
-  const button = document.createElement("button");
-  button.className = "evidencia-btn";
-  button.innerHTML = `
-    <svg class="evidencia-icon" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-    <span>Verificar Veracidade</span>
-  `;
-
-  button.addEventListener("click", async () => {
-    // 1. Confirmação visual imediata <= 1s (RNF-01 / HU01 / HU03)
-    button.classList.add("evidencia-loading");
-    button.querySelector("span")!.textContent = "Analisando...";
-    togglePanel(true);
-
-    try {
-<<<<<<< Updated upstream
-      // 2. Extrai metadados do vídeo
-      const videoTitle =
-        document.querySelector("h1.ytd-watch-metadata")?.textContent?.trim() ||
-        document.title;
-      const channelName =
-        document.querySelector("#channel-name")?.textContent?.trim() || "Canal YouTube";
-
-      // 3. Extrai legendas (HU05 / HU10)
-      const captions = await extractCaptionsFromPage(videoId);
-
-      if (!captions) {
-        button.querySelector("span")!.textContent = "Sem Legendas";
-        button.classList.remove("evidencia-loading");
-        // Notifica o painel sobre a ausência de legendas (HU10)
-        panelIframe?.contentWindow?.postMessage(
-          { type: "NO_CAPTIONS_AVAILABLE" },
-          "*"
-        );
-        return;
-=======
-      // Verificação rápida local (HU10): detectar ausência de legendas sem chamadas externas.
-      // Deve responder em <=1s e emitir evento local `NO_CAPTIONS` e mensagem `NO_CAPTIONS_AVAILABLE`.
-      try {
-        const playerResponse = (window as unknown as { ytInitialPlayerResponse?: { captions?: { playerCaptionsTracklistRenderer?: { captionTracks?: Array<{ baseUrl: string; languageCode: string }> } } } }).ytInitialPlayerResponse;
-        // Só concluímos ausência de legendas se a resposta do player existir e indicar explicitamente ausência.
-        const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-        if (playerResponse && (!tracks || tracks.length === 0)) {
-          try { window.dispatchEvent(new CustomEvent("NO_CAPTIONS", { detail: { videoId } })); } catch {}
-          publish({ type: "NO_CAPTIONS_AVAILABLE" });
-          button.querySelector("span")!.textContent = "Sem legendas — tentar novamente";
-          status.textContent = "Legendas indisponíveis";
-          return;
-        }
-      } catch (e) {
-        // Se falhar nessa checagem rápida, continua com o fluxo normal
->>>>>>> Stashed changes
-      }
-
-      const requestPayload: AnalyzeRequest = {
-        videoId,
-        videoTitle,
-        channelName,
-        transcript: captions.transcript,
-        language: captions.language,
-      };
-
-      // 4. Solicita análise ao Service Worker
-      chrome.runtime.sendMessage(
-        { type: "ANALYZE_VIDEO", payload: requestPayload },
-        (response) => {
-          button.classList.remove("evidencia-loading");
-          if (response?.success) {
-            button.querySelector("span")!.textContent = `Veracidade: ${response.data.score}%`;
-            panelIframe?.contentWindow?.postMessage(
-              { type: "ANALYSIS_SUCCESS", data: response.data },
-              "*"
-            );
-          } else {
-            button.querySelector("span")!.textContent = "Erro na Checagem";
-            panelIframe?.contentWindow?.postMessage(
-              { type: "ANALYSIS_ERROR", error: response?.error },
-              "*"
-            );
-          }
-        }
-      );
-    } catch (err) {
-      button.classList.remove("evidencia-loading");
-      button.querySelector("span")!.textContent = "Erro Inesperado";
-      console.error("[EvidencIA] Erro na checagem:", err);
-    }
   });
 
   shadowRoot.appendChild(style);
@@ -191,16 +118,15 @@ function initSidePanel() {
   targetArea.prepend(badgeContainer);
 }
 
-// O YouTube é uma SPA — escuta evento nativo de navegação
 window.addEventListener("yt-navigate-finish", () => {
-  if (window.location.pathname === "/watch") {
-    setTimeout(injectTriggerBadge, 500);
-  } else {
-    togglePanel(false);
-  }
+  if (window.location.pathname === "/watch") setTimeout(injectTriggerBadge, 500);
+  else togglePanel(false);
 });
 
-// Executa na carga inicial se já estiver em /watch
-if (window.location.pathname === "/watch") {
-  setTimeout(injectTriggerBadge, 1000);
-}
+if (window.location.pathname === "/watch") setTimeout(injectTriggerBadge, 1000);
+
+
+
+
+
+
