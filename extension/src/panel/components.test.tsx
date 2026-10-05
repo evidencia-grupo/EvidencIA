@@ -214,7 +214,7 @@ describe("ClaimCard Component", () => {
 
   it("renderiza aviso quando não há evidências documentadas (RF-12)", () => {
     const container = document.createElement("div");
-    render(<ClaimCard claim={{ ...baseClaim, evidence: [] }} />, container);
+    render(<ClaimCard expanded claim={{ ...baseClaim, evidence: [] }} />, container);
     expect(container.querySelector(".no-evidence-notice")?.textContent).toContain("Nenhuma evidência documental");
   });
 

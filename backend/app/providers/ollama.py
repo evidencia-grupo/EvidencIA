@@ -49,11 +49,16 @@ class OllamaProvider:
         """Extrai proposições atômicas checáveis usando Qwen 2.5-3B local."""
         system_prompt = (
             "Você é um especialista em checagem de fatos em português do Brasil. "
-            "Sua tarefa é extrair de 2 a 4 alegações factuais atômicas da transcrição. "
+            "Sua tarefa é extrair de 0 a 4 alegações factuais atômicas da transcrição. "
             "Isole somente afirmações factuais verificáveis. "
             "Responda estritamente em formato JSON: {\"claims\": [{\"text\": \"...\", \"search_query\": \"...\"}]}"
         )
 
+        system_prompt += (
+            " Cada alegação deve conter uma única proposição verificável, preservando sujeitos, datas e qualificadores. "
+            "Não invente fatos nem use o título como alegação. Ignore preferências, opiniões e saudações. "
+            'Se não houver fatos verificáveis, retorne {"claims": []}. Não atribua notas ou vereditos ao vídeo.'
+        )
         user_content = f"Título: {video_title}\n\nTranscrição:\n{transcript[:2500]}"
         payload = {
             "model": self.model,
@@ -75,7 +80,11 @@ class OllamaProvider:
                 data = res.json()
                 content = data.get("message", {}).get("content", "")
                 parsed = json.loads(content)
-                raw_claims = parsed.get("claims", [])
+                raw_claims = parsed["claims"]
+                if not isinstance(raw_claims, list):
+                    raise ValueError("Lista de alegações inválida")
+                if not raw_claims:
+                    return []
 
                 claims: List[Claim] = []
                 for idx, c in enumerate(raw_claims):
@@ -103,8 +112,11 @@ class OllamaProvider:
         evidence: List[Evidence],
     ) -> List[str]:
         """Formula perguntas reflexivas neutras estimulando o pensamento crítico."""
+        if not claims:
+            return []
+        claim_text = claims[0].text
         return [
-            "Quais fontes primárias foram consultadas para embasar as afirmações do vídeo?",
-            "As informações levam em consideração o período e a data de publicação?",
-            "Existem outros pontos de vista ou evidências independentes sobre o tema?",
+            f'Quais fontes primárias ajudam a investigar a afirmação "{claim_text}"?',
+            "Que dados independentes permitem comparar as evidências desta alegação?",
+            "Como a data e o contexto desta afirmação influenciam sua interpretação?",
         ]

@@ -11,6 +11,7 @@ Refs: ADR-001, IS-11.
 
 from __future__ import annotations
 
+import re
 from typing import List
 from app.providers.types import Claim, Evidence
 
@@ -25,19 +26,12 @@ class MockProvider:
 
     async def extract_claims(self, transcript: str, video_title: str) -> List[Claim]:
         """Retorna alegações sintéticas determinísticas baseadas no conteúdo da transcrição."""
-        # Extração determinística mínima para fixture de testes
-        words = transcript.strip().split()
-        sample_sentence = " ".join(words[:15]) if len(words) >= 15 else transcript.strip()
-
+        sentences = re.split(r"(?<=[.!?])\s+", transcript.strip())
+        subjective = re.compile(r"^(eu\s+)?(acho|prefiro|adoro|gosto|detesto)|^na minha opinião", re.IGNORECASE)
+        factual = [sentence for sentence in sentences if not subjective.search(sentence)]
         return [
-            Claim(
-                id="mock-clm-01",
-                text=f"Alegação extraída (mock): {sample_sentence}",
-                search_query=sample_sentence[:40],
-                status="inconclusiva",
-                evidence_summary="Alegação sintetizada por MockProvider em ambiente de teste.",
-                confidence=0.85,
-            )
+            Claim(id=f"mock-clm-{index + 1:02d}", text=sentence, search_query=sentence[:40])
+            for index, sentence in enumerate(factual[:4])
         ]
 
     async def generate_reflection(
@@ -46,8 +40,11 @@ class MockProvider:
         evidence: List[Evidence],
     ) -> List[str]:
         """Retorna perguntas reflexivas padrão determinísticas sem inferência real."""
+        if not claims:
+            return []
+        claim_text = claims[0].text
         return [
-            "Quais fontes primárias foram consultadas para embasar os dados apresentados?",
-            "As conclusões apresentadas levam em conta o contexto temporal da publicação?",
-            "Existem evidências científicas revisadas por pares que sustentam a afirmação?",
+            f'Quais fontes primárias ajudam a investigar a afirmação "{claim_text}"?',
+            "Que dados independentes permitem comparar as evidências desta alegação?",
+            "Como a data e o contexto desta afirmação influenciam sua interpretação?",
         ]

@@ -2,7 +2,6 @@ import { render } from "preact";
 import { useState, useLayoutEffect } from "preact/hooks";
 import { ClaimCard } from "./components/ClaimCard";
 import { UncertaintyAlert } from "./components/UncertaintyAlert";
-import { ReflectionQuestions } from "./components/ReflectionQuestions";
 import type { AnalyzeResponse } from "../../../shared/types/api";
 
 function formatUploadDate(value?: string | null): string {
@@ -13,6 +12,7 @@ function formatUploadDate(value?: string | null): string {
 }
 
 export function App() {
+  const [selectedClaimId, setSelectedClaimId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<AnalyzeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +23,7 @@ export function App() {
       if (event.source !== window.parent || event.origin !== "https://www.youtube.com") return;
       const msg = event.data;
       if (!msg || !msg.type) return;
+      if (["ANALYSIS_START", "ANALYSIS_SUCCESS", "ANALYSIS_ERROR", "NO_CAPTIONS", "NO_CAPTIONS_AVAILABLE"].includes(msg.type)) setSelectedClaimId(null);
 
       if (msg.type === "FOCUS_PANEL") {
         document.querySelector<HTMLButtonElement>(".close-btn")?.focus();
@@ -165,12 +166,14 @@ export function App() {
             </h2>
 
             {data.claims.map((claim) => (
-              <ClaimCard key={claim.id} claim={claim} />
+              <ClaimCard key={claim.id} claim={claim} expanded={selectedClaimId === claim.id} onSelect={() => setSelectedClaimId(selectedClaimId === claim.id ? null : claim.id)} />
             ))}
           </div>
-          <ReflectionQuestions
-            questions={data.claims.find((claim) => claim.reflectionQuestions?.length)?.reflectionQuestions}
-          />
+          {data.claims.length === 0 && (
+            <p role="status">{data.analysisMode === "evidence_only"
+              ? "Não foi possível identificar alegações checáveis nesta tentativa. Tente novamente mais tarde."
+              : "Não foram identificadas alegações checáveis neste vídeo. Opiniões e preferências pessoais não recebem nota ou veredito."}</p>
+          )}
         </div>
       )}
 

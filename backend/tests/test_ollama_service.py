@@ -15,7 +15,7 @@ async def test_ollama_service_resilience_when_offline():
     claims = await offline_ollama.extract_claims_with_qwen("Texto de teste", "Título")
     assert claims is None
 
-    summary = await offline_ollama.generate_accessible_summary_with_qwen([], "moderado", 50, "Título")
+    summary = await offline_ollama.generate_accessible_summary_with_qwen([], "Título")
     assert summary is None
 
 
@@ -124,12 +124,13 @@ async def test_ollama_service_generate_summary_lifecycle():
         service = OllamaService()
         summary = await service.generate_accessible_summary_with_qwen(
             claims=[{"status": "apoiada", "text": "Fato", "evidence_summary": "Evidência"}],
-            classification="verdadeiro",
-            score=90,
             video_title="Título",
         )
         assert summary is not None
         assert "Dona Lurdes" in summary
+        prompt = str(mock_post.call_args.kwargs["json"])
+        assert "Nota:" not in prompt
+        assert "Classificação Geral" not in prompt
 
     with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
         mock_resp = MagicMock()
@@ -138,5 +139,5 @@ async def test_ollama_service_generate_summary_lifecycle():
         mock_post.return_value = mock_resp
 
         service = OllamaService()
-        summary = await service.generate_accessible_summary_with_qwen([], "moderado", 50, "Título")
+        summary = await service.generate_accessible_summary_with_qwen([], "Título")
         assert summary is None

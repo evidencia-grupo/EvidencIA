@@ -1,24 +1,25 @@
 interface ReflectionQuestionsProps {
   questions?: string[];
+  headingId?: string;
 }
 
 const fallbackQuestions = [
-  "Que evidências independentes poderiam ajudar a avaliar as alegações apresentadas?",
+  "Que evidências independentes poderiam ajudar a avaliar esta alegação?",
   "Quais aspectos das fontes, como autoria, data e método, vale a pena verificar?",
   "Que contexto ou evidência adicional ajudaria você a formar sua própria interpretação?",
 ];
 
-export function ReflectionQuestions({ questions }: ReflectionQuestionsProps) {
+export function ReflectionQuestions({ questions, headingId = "reflection-heading" }: ReflectionQuestionsProps) {
   const visibleQuestions = questions?.length === 3 ? questions : fallbackQuestions;
 
   return (
     <section
       class="reflection-section"
-      aria-labelledby="reflection-heading"
+      aria-labelledby={headingId}
       role="region"
     >
       <header class="reflection-header">
-        <h3 id="reflection-heading" class="reflection-title">
+        <h3 id={headingId} class="reflection-title">
           Perguntas para Reflexão Crítica
         </h3>
         <p class="reflection-subtitle">

@@ -166,6 +166,7 @@ test("HU06: Cenário 1 — Cache válido disponível exibe resultado em <1s sem 
 
   // Valida que o resultado renderiza imediatamente
   await expect(panel.getByText("Alegação verificada em cache")).toBeVisible();
+  await panel.getByRole("button", { name: /Alegação verificada em cache/ }).click();
   await expect(panel.getByText("Fonte de Auditoria")).toBeVisible();
 
   // Verifica ausência absoluta de chamadas externas de legendas e backend

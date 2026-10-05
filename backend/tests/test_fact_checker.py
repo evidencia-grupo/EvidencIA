@@ -56,7 +56,8 @@ async def test_evidence_only_analysis_still_includes_reflection_questions(monkey
         result = await FactCheckerService().analyze(request())
 
     assert result.analysisMode == "evidence_only"
-    assert len(result.claims[0].reflectionQuestions) == 3
+    assert result.claims == []
+    assert result.limitations
 
 
 def test_unimplemented_provider_never_returns_fake_success(monkeypatch):
