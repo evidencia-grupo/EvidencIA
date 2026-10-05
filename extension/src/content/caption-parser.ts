@@ -22,7 +22,6 @@ export interface ExtractedCaptions {
   transcript: string;
   language: string;
 }
-
 export interface CaptionSegment {
   text: string;
   start: number;
@@ -72,210 +71,186 @@ interface YouTubeMoviePlayer extends Element {
 /**
  * Higieniza um trecho textual de legenda.
  */
-export function sanitizeTranscriptText(
-  rawText: string | null | undefined
-): string {
-  if (!rawText) {
-    return "";
-  }
-
+export function sanitizeTranscriptText(rawText: string | null | undefined): string {
+  if (!rawText) return "";
+export function sanitizeTranscriptText(rawText: string): string {
+  if (!rawText) return "";
+>>>>>>> Stashed changes
   return rawText
     .replace(/<[^>]+>/g, " ")
-    .replace(/\[\p{L}[\p{L}\s]*\]/gu, " ")
+    .replace(/\[[\p{L}\s]+\]/gu, " ")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&#39;/g, "'")
     .replace(/&quot;/g, '"')
     .replace(/&amp;/g, "&")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
-/**
- * Converte o XML retornado pelo serviço de legendas
- * em segmentos estruturados.
- */
-export function parseCaptionXml(
-  xmlText: string
-): CaptionSegment[] {
-  if (!xmlText.trim()) {
-    return [];
+  /**
+   * Converte o XML retornado pelo serviço de legendas
+   * em segmentos estruturados.
+   */
+  export function parseCaptionXml(xmlText: string): CaptionSegment[] {
+    if (!xmlText.trim()) return [];
+
+    const parser = new DOMParser();
+    const xmlDocument = parser.parseFromString(xmlText, "text/xml");
+    if (xmlDocument.querySelector("parsererror")) return [];
+
+    const textElements = Array.from(xmlDocument.querySelectorAll("text"));
+
+    return textElements
+      .map((element): CaptionSegment | null => {
+        const text = sanitizeTranscriptText(element.textContent ?? "");
+        const start = Number.parseFloat(element.getAttribute("start") ?? "");
+        const duration = Number.parseFloat(element.getAttribute("dur") ?? "");
+        if (!text || !Number.isFinite(start) || !Number.isFinite(duration)) return null;
+        return { text, start, duration };
+      })
+      .filter((segment): segment is CaptionSegment => segment !== null);
+  }
+
+  /**
+   * Converte o formato JSON3 utilizado pelo endpoint
+   * timedtext do YouTube em segmentos internos.
+   */
+  export function parseCaptionJson(jsonText: string): CaptionSegment[] {
+    if (!jsonText.trim()) return [];
+    try {
+      const data = JSON.parse(jsonText) as YouTubeCaptionJsonResponse;
+      if (!Array.isArray(data.events)) return [];
+      return data.events
+        .map((event): CaptionSegment | null => {
+          if (!Array.isArray(event.segs) || event.segs.length === 0) return null;
+          if (typeof event.tStartMs !== "number" || typeof event.dDurationMs !== "number") return null;
+          const rawText = event.segs.map((segment) => segment.utf8 ?? "").join("");
+          const text = sanitizeTranscriptText(rawText.replace(/^\s*>>\s*/, ""));
+          if (!text) return null;
+          return { text, start: event.tStartMs / 1000, duration: event.dDurationMs / 1000 };
+        })
+        .filter((segment): segment is CaptionSegment => segment !== null);
+    } catch {
+      return [];
+    }
+  }
+
+  export function parseCaptionBody(body: string): string {
+    const trimmed = body.trimStart();
+    if (trimmed.startsWith("{")) {
+      try {
+        const data = JSON.parse(body) as {
+          events?: Array<{ segs?: Array<{ utf8?: string; isSpeakerChange?: number }> }>;
+        };
+        const transcript = (data.events ?? [])
+          .flatMap((ev) => ev.segs ?? [])
+          .map((s) => s.utf8 ?? "")
+          .join("")
+          .replace(/(^|\n)\s*>>\s*/g, "$1");
+        return sanitizeTranscriptText(transcript);
+      } catch (e) {
+        // fallback to XML parsing below
+      }
+    }
+
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(body, "text/xml");
+    if (xml.querySelector("parsererror")) {
+      throw new Error("Não foi possível interpretar as legendas. Tente novamente.");
+    }
+    const text = Array.from(xml.querySelectorAll("text, p")).map((n) => n.textContent ?? "").join(" ");
+    return sanitizeTranscriptText(text);
+  }
+
+  export async function extractCaptionsFromPage(videoId: string, signal?: AbortSignal): Promise<ExtractedCaptions | null> {
+    const result = await chrome.runtime.sendMessage({ type: "GET_CAPTION_TRACKS", videoId });
+    signal?.throwIfAborted();
+    if (!result?.success) throw new Error(result?.error || "Não foi possível acessar as legendas. Tente novamente.");
+    const payload = result.data as {
+      tracks?: Array<{ baseUrl: string; languageCode: string }>;
+      metadata?: Pick<ExtractedCaptions, "videoTitle" | "channelName" | "uploadDate" | "durationSeconds">;
+    };
+    const tracks = payload?.tracks;
+    if (!Array.isArray(tracks)) throw new Error("Resposta de legendas inválida.");
+    if (!tracks.length) return null;
+    const track = tracks.find((t) => t.languageCode.startsWith("pt")) ?? tracks[0];
+    const url = new URL(track.baseUrl);
+    if (url.origin !== "https://www.youtube.com" || url.pathname !== "/api/timedtext") throw new Error("Endereço de legendas inválido.");
+    const response = await fetch(url.toString(), { signal });
+    if (!response.ok) throw new Error(`Não foi possível baixar as legendas (HTTP ${response.status}). Tente novamente.`);
+    const transcript = parseCaptionBody(await response.text());
+    if (transcript.length < 50) throw new Error("A transcrição recebida está vazia ou é curta demais para análise. Tente novamente.");
+    return {
+      videoId,
+      transcript,
+      language: track.languageCode,
+      videoTitle: payload.metadata?.videoTitle || document.title,
+      channelName: payload.metadata?.channelName || "Canal YouTube",
+      uploadDate: payload.metadata?.uploadDate,
+      durationSeconds: payload.metadata?.durationSeconds,
+    };
+  }
+=======
+export function parseCaptionBody(body: string): string {
+  const trimmed = body.trimStart();
+  // YouTube sometimes returns JSON-like structures for newer captions formats
+  if (trimmed.startsWith("{")) {
+    try {
+      const data = JSON.parse(body) as {
+        events?: Array<{
+          segs?: Array<{
+            utf8?: string;
+            isSpeakerChange?: number;
+          }>;
+        }>;
+      };
+      const transcript = (data.events ?? [])
+        .flatMap((ev) => ev.segs ?? [])
+        .map((s) => s.utf8 ?? "")
+        .join("")
+        .replace(/(^|\n)\s*>>\s*/g, "$1");
+      return sanitizeTranscriptText(transcript);
+    } catch (e) {
+      // fallback to XML parsing below
+    }
   }
 
   const parser = new DOMParser();
-
-  const xmlDocument = parser.parseFromString(
-    xmlText,
-    "text/xml"
-  );
-
-  if (xmlDocument.querySelector("parsererror")) {
-    return [];
+  const xml = parser.parseFromString(body, "text/xml");
+  if (xml.querySelector("parsererror")) {
+    throw new Error("Não foi possível interpretar as legendas. Tente novamente.");
   }
 
-  const textElements = Array.from(
-    xmlDocument.querySelectorAll("text")
-  );
-
-  return textElements
-    .map((element): CaptionSegment | null => {
-      const text = sanitizeTranscriptText(
-        element.textContent ?? ""
-      );
-
-      const start = Number.parseFloat(
-        element.getAttribute("start") ?? ""
-      );
-
-      const duration = Number.parseFloat(
-        element.getAttribute("dur") ?? ""
-      );
-
-      if (
-        !text ||
-        !Number.isFinite(start) ||
-        !Number.isFinite(duration)
-      ) {
-        return null;
-      }
-
-      return {
-        text,
-        start,
-        duration,
-      };
-    })
-    .filter(
-      (segment): segment is CaptionSegment =>
-        segment !== null
-    );
+  const text = Array.from(xml.querySelectorAll("text, p")).map((n) => n.textContent ?? "").join(" ");
+  return sanitizeTranscriptText(text);
 }
 
-/**
- * Converte o formato JSON3 utilizado pelo endpoint
- * timedtext do YouTube em segmentos internos.
- *
- * O formato observado utiliza:
- *
- * events[].tStartMs
- * events[].dDurationMs
- * events[].segs[].utf8
- */
-export function parseCaptionJson(
-  jsonText: string
-): CaptionSegment[] {
-  if (!jsonText.trim()) {
-    return [];
-  }
-
-  try {
-    const data = JSON.parse(
-      jsonText
-    ) as YouTubeCaptionJsonResponse;
-
-    if (!Array.isArray(data.events)) {
-      return [];
-    }
-
-    return data.events
-      .map(
-        (
-          event
-        ): CaptionSegment | null => {
-          if (
-            !Array.isArray(event.segs) ||
-            event.segs.length === 0
-          ) {
-            return null;
-          }
-
-          if (
-            typeof event.tStartMs !==
-              "number" ||
-            typeof event.dDurationMs !==
-              "number"
-          ) {
-            return null;
-          }
-
-          const rawText = event.segs
-            .map(
-              (segment) =>
-                segment.utf8 ?? ""
-            )
-            .join("");
-
-          /*
-           * Remove o marcador textual de
-           * mudança de locutor (" >> ").
-           *
-           * Não removemos a fala propriamente
-           * dita.
-           */
-          const text =
-            sanitizeTranscriptText(
-              rawText.replace(
-                /^\s*>>\s*/,
-                ""
-              )
-            );
-
-          /*
-           * Eventos contendo somente quebra
-           * de linha ou marcadores removidos
-           * pelo sanitizador são descartados.
-           */
-          if (!text) {
-            return null;
-          }
-
-          return {
-            text,
-
-            /*
-             * O modelo interno trabalha
-             * em segundos.
-             */
-            start:
-              event.tStartMs / 1000,
-
-            duration:
-              event.dDurationMs / 1000,
-          };
-        }
-      )
-      .filter(
-        (
-          segment
-        ): segment is CaptionSegment =>
-          segment !== null
-      );
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Seleciona a faixa de legenda.
- *
- * Regra:
- * 1. português;
- * 2. primeira faixa disponível.
- */
-export function selectCaptionTrack(
-  tracks: CaptionTrack[]
-): CaptionTrack | null {
-  if (tracks.length === 0) {
-    return null;
-  }
-
-  const portugueseTrack = tracks.find((track) =>
-    track.languageCode
-      .toLowerCase()
-      .startsWith("pt")
-  );
-
-  return portugueseTrack ?? tracks[0];
+export async function extractCaptionsFromPage(videoId: string, signal?: AbortSignal): Promise<ExtractedCaptions | null> {
+  const result = await chrome.runtime.sendMessage({ type: "GET_CAPTION_TRACKS", videoId });
+  signal?.throwIfAborted();
+  if (!result?.success) throw new Error(result?.error || "Não foi possível acessar as legendas. Tente novamente.");
+  const payload = result.data as {
+    tracks?: Array<{ baseUrl: string; languageCode: string }>;
+    metadata?: Pick<ExtractedCaptions, "videoTitle" | "channelName" | "uploadDate" | "durationSeconds">;
+  };
+  const tracks = payload?.tracks;
+  if (!Array.isArray(tracks)) throw new Error("Resposta de legendas inválida.");
+  if (!tracks.length) return null;
+  const track = tracks.find((t) => t.languageCode.startsWith("pt")) ?? tracks[0];
+  const url = new URL(track.baseUrl);
+  if (url.origin !== "https://www.youtube.com" || url.pathname !== "/api/timedtext") throw new Error("Endereço de legendas inválido.");
+  const response = await fetch(url.toString(), { signal });
+  if (!response.ok) throw new Error(`Não foi possível baixar as legendas (HTTP ${response.status}). Tente novamente.`);
+  const transcript = parseCaptionBody(await response.text());
+  if (transcript.length < 50) throw new Error("A transcrição recebida está vazia ou é curta demais para análise. Tente novamente.");
+  return {
+    videoId,
+    transcript,
+    language: track.languageCode,
+    videoTitle: payload.metadata?.videoTitle || document.title,
+    channelName: payload.metadata?.channelName || "Canal YouTube",
+    uploadDate: payload.metadata?.uploadDate,
+    durationSeconds: payload.metadata?.durationSeconds,
+  };
+>>>>>>> Stashed changes
 }
 
 /**

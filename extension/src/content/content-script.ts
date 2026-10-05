@@ -27,60 +27,54 @@ function initSidePanel() {
     height: calc(100vh - 56px);
     border: none;
     border-left: 1px solid #3F3F3F;
-    background: #1F1F1F;
-    z-index: 2040;
-    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.5);
-    display: none;
-    transition: transform 0.3s ease-in-out;
-  `;
-  document.body.appendChild(panelIframe);
-}
+    try {
+      // 1. Confirmação visual imediata <= 1s (RNF-01 / HU01 / HU03)
+      button.classList.add("evidencia-loading");
+      button.querySelector("span")!.textContent = "Analisando...";
+      togglePanel(true);
 
-function togglePanel(visible: boolean) {
-  initSidePanel();
-  if (panelIframe) {
-    panelIframe.style.display = visible ? "block" : "none";
-  }
-}
+      // 2. Extrai metadados do vídeo
+      const videoTitle =
+        document.querySelector("h1.ytd-watch-metadata")?.textContent?.trim() ||
+        document.title;
+      const channelName =
+        document.querySelector("#channel-name")?.textContent?.trim() || "Canal YouTube";
 
-function injectTriggerBadge() {
-  const videoId = getVideoIdFromUrl();
-  if (!videoId) return;
-  if (videoId === currentVideoId && badgeContainer) return;
+      // 3. Extrai legendas (HU05 / HU10)
+      const captions = await extractCaptionsFromPage(videoId);
 
-  currentVideoId = videoId;
+      if (!captions) {
+        button.querySelector("span")!.textContent = "Sem Legendas";
+        button.classList.remove("evidencia-loading");
+        // Notifica o painel sobre a ausência de legendas (HU10)
+        panelIframe?.contentWindow?.postMessage({ type: "NO_CAPTIONS_AVAILABLE" }, "*");
+        return;
+      }
 
-  // Encontra o container abaixo do título do vídeo do YouTube
-  const targetArea =
-    document.querySelector("#above-the-fold") ||
-    document.querySelector("#top-row") ||
-    document.querySelector("ytd-watch-metadata");
+      const requestPayload: AnalyzeRequest = {
+        videoId,
+        videoTitle,
+        channelName,
+        transcript: captions.transcript,
+        language: captions.language,
+      };
 
-  if (!targetArea) {
-    setTimeout(injectTriggerBadge, 1000);
-    return;
-  }
-
-  // Remove container anterior se houver
-  if (badgeContainer) {
-    badgeContainer.remove();
-  }
-
-  // Cria elemento com Shadow DOM para total isolamento de CSS (RNF-02)
-  badgeContainer = document.createElement("div");
-  badgeContainer.id = "evidencia-badge-host";
-  const shadowRoot = badgeContainer.attachShadow({ mode: "open" });
-
-  const style = document.createElement("style");
-  style.textContent = `
-    .evidencia-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: #1F1F1F;
-      color: #FFFFFF;
-      border: 1px solid #3F3F3F;
-      border-radius: 18px;
+      // 4. Solicita análise ao Service Worker
+      chrome.runtime.sendMessage({ type: "ANALYZE_VIDEO", payload: requestPayload }, (response) => {
+        button.classList.remove("evidencia-loading");
+        if (response?.success) {
+          button.querySelector("span")!.textContent = `Veracidade: ${response.data.score}%`;
+          panelIframe?.contentWindow?.postMessage({ type: "ANALYSIS_SUCCESS", data: response.data }, "*");
+        } else {
+          button.querySelector("span")!.textContent = "Erro na Checagem";
+          panelIframe?.contentWindow?.postMessage({ type: "ANALYSIS_ERROR", error: response?.error }, "*");
+        }
+      });
+    } catch (err) {
+      button.classList.remove("evidencia-loading");
+      button.querySelector("span")!.textContent = "Erro Inesperado";
+      console.error("[EvidencIA] Erro na checagem:", err);
+    }
       padding: 6px 14px;
       font-family: Roboto, Arial, sans-serif;
       font-size: 14px;
@@ -118,6 +112,7 @@ function injectTriggerBadge() {
     togglePanel(true);
 
     try {
+<<<<<<< Updated upstream
       // 2. Extrai metadados do vídeo
       const videoTitle =
         document.querySelector("h1.ytd-watch-metadata")?.textContent?.trim() ||
@@ -137,6 +132,23 @@ function injectTriggerBadge() {
           "*"
         );
         return;
+=======
+      // Verificação rápida local (HU10): detectar ausência de legendas sem chamadas externas.
+      // Deve responder em <=1s e emitir evento local `NO_CAPTIONS` e mensagem `NO_CAPTIONS_AVAILABLE`.
+      try {
+        const playerResponse = (window as unknown as { ytInitialPlayerResponse?: { captions?: { playerCaptionsTracklistRenderer?: { captionTracks?: Array<{ baseUrl: string; languageCode: string }> } } } }).ytInitialPlayerResponse;
+        // Só concluímos ausência de legendas se a resposta do player existir e indicar explicitamente ausência.
+        const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+        if (playerResponse && (!tracks || tracks.length === 0)) {
+          try { window.dispatchEvent(new CustomEvent("NO_CAPTIONS", { detail: { videoId } })); } catch {}
+          publish({ type: "NO_CAPTIONS_AVAILABLE" });
+          button.querySelector("span")!.textContent = "Sem legendas — tentar novamente";
+          status.textContent = "Legendas indisponíveis";
+          return;
+        }
+      } catch (e) {
+        // Se falhar nessa checagem rápida, continua com o fluxo normal
+>>>>>>> Stashed changes
       }
 
       const requestPayload: AnalyzeRequest = {
