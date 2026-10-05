@@ -1,5 +1,8 @@
 # EvidencIA — Extensão de Fact-Checking para YouTube
 
+[![CI](https://github.com/evidencia-grupo/EvidencIA/actions/workflows/ci.yml/badge.svg)](https://github.com/evidencia-grupo/EvidencIA/actions)
+
+
 > Solução de navegador (Manifest V3) para checagem factual em tempo real de vídeos do YouTube através de transcrições, inteligência artificial e painel lateral com tema escuro.
 
 ---
