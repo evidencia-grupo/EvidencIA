@@ -131,7 +131,11 @@ const mockValidEntry: LocalCacheEntry = {
           },
         },
       ],
-      reflectionQuestions: ["A metodologia da auditoria é independente?"],
+      reflectionQuestions: [
+        "A metodologia da auditoria é independente?",
+        "Quais fontes primárias sustentam essa checagem?",
+        "Que contexto ou evidência adicional ajudaria a avaliar a alegação?",
+      ],
     },
   ],
   timestamp: Date.now() - 3600000, // 1 hora atrás (válido, < 24h)
