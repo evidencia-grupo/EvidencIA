@@ -70,3 +70,23 @@ class HealthResponse(BaseModel):
     version: str
     services: Dict[str, str]
     timestamp: str
+
+
+FeedbackRating = Literal["positive", "negative"]
+FeedbackReason = Literal["outdated_sources", "insufficient_evidence", "inaccurate", "other"]
+
+
+class FeedbackRequest(BaseModel):
+    videoId: str = Field(..., min_length=1, description="Identificador do vídeo avaliado")
+    rating: FeedbackRating = Field(..., description="Classificação de relevância e utilidade da análise")
+    reason: Optional[FeedbackReason] = Field(None, description="Motivo opcional da classificação")
+
+    model_config = {
+        "extra": "forbid",
+    }
+
+
+class FeedbackResponse(BaseModel):
+    status: Literal["received"] = "received"
+    message: str = "Feedback anônimo registrado com sucesso."
+

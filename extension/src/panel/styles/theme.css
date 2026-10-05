@@ -408,3 +408,148 @@ button:focus-visible, a:focus-visible { outline: 3px solid #FBC02D; outline-offs
 
 .claim-toggle { font: inherit; color: inherit; text-align: left; background: transparent; border: none; padding: 6px 0; width: 100%; cursor: pointer; }
 .claim-toggle:focus-visible { outline: 3px solid #FBC02D; outline-offset: 3px; }
+
+/* Seção de Avaliação Anônima (HU12 / RF-10 / RNF-05) */
+.feedback-section {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+  margin-bottom: 8px;
+}
+
+.feedback-header {
+  margin-bottom: 10px;
+}
+
+.feedback-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.feedback-subtitle {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.feedback-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.feedback-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 16px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.feedback-btn:hover {
+  background: #333333;
+  border-color: #555555;
+}
+
+.feedback-btn:focus-visible {
+  outline: 2px solid #FBC02D;
+  outline-offset: 2px;
+}
+
+.feedback-btn-active {
+  border-color: #81C784;
+  background: rgba(43, 166, 64, 0.15);
+}
+
+.feedback-icon {
+  font-size: 14px;
+}
+
+.feedback-reason-container {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--color-border-subtle);
+}
+
+.feedback-reason-prompt {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.feedback-reason-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.feedback-chip {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 12px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.feedback-chip:hover {
+  color: var(--color-text-primary);
+  border-color: #666666;
+}
+
+.feedback-chip:focus-visible {
+  outline: 2px solid #FBC02D;
+}
+
+.feedback-chip-selected {
+  background: rgba(229, 57, 53, 0.2);
+  color: #FFCDD2;
+  border-color: var(--color-evidencia-contradita);
+  font-weight: 600;
+}
+
+.feedback-submit-btn {
+  background: #2BA640;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.feedback-submit-btn:hover {
+  background: #238634;
+}
+
+.feedback-submit-btn:focus-visible {
+  outline: 2px solid #FBC02D;
+  outline-offset: 2px;
+}
+
+.feedback-submitted {
+  border-color: rgba(43, 166, 64, 0.4);
+  background: rgba(43, 166, 64, 0.05);
+  padding: 10px 12px;
+}
+
+.feedback-success-msg {
+  font-size: 12px;
+  color: #81C784;
+  margin: 0;
+  font-weight: 500;
+}

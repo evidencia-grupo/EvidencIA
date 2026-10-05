@@ -1,12 +1,14 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from "vitest";
 import { render } from "preact";
+import { act } from "preact/test-utils";
 import axe from "axe-core";
 import { ClaimCard } from "./components/ClaimCard";
 import { EvidenceCard } from "./components/EvidenceCard";
 import { ReflectionQuestions } from "./components/ReflectionQuestions";
 import { UncertaintyAlert } from "./components/UncertaintyAlert";
-import type { Claim, Evidence, UncertaintyState, EvidenceRelation } from "../../../shared/types/api";
+import { FeedbackSection } from "./components/FeedbackSection";
+import type { Claim, Evidence, UncertaintyState, EvidenceRelation, FeedbackRequest } from "../../../shared/types/api";
 
 describe("ReflectionQuestions Component", () => {
   it("exibe três perguntas neutras de fallback quando questions está ausente ou vazio", () => {
@@ -302,3 +304,115 @@ describe("UncertaintyAlert Component", () => {
     expect(container.innerHTML).toBe("");
   });
 });
+
+describe("FeedbackSection Component (HU12)", () => {
+  it("renderiza opções discretas de feedback (positivo/negativo)", () => {
+    const container = document.createElement("div");
+    render(<FeedbackSection videoId="test-vid" />, container);
+
+    expect(container.querySelector(".feedback-title")?.textContent).toContain("Esta análise foi útil para você?");
+    expect(container.querySelector('button[aria-label="Avaliar análise como útil"]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Avaliar análise como não útil"]')).not.toBeNull();
+  });
+
+  it("submete feedback positivo de forma anônima e exibe mensagem de confirmação", async () => {
+    const container = document.createElement("div");
+    const submitted: FeedbackRequest[] = [];
+    act(() => {
+      render(
+        <FeedbackSection
+          videoId="test-vid"
+          onSubmitFeedback={(p) => {
+            submitted.push(p);
+          }}
+        />,
+        container
+      );
+    });
+
+    const usefulBtn = container.querySelector('button[aria-label="Avaliar análise como útil"]') as HTMLButtonElement;
+    await act(async () => {
+      usefulBtn.click();
+    });
+
+    expect(submitted).toHaveLength(1);
+    expect(submitted[0]).toEqual({ videoId: "test-vid", rating: "positive" });
+    expect(container.querySelector(".feedback-success-msg")?.textContent).toContain("Obrigado pelo seu feedback anônimo!");
+  });
+
+  it("permite selecionar motivo para feedback negativo antes de submeter", async () => {
+    const container = document.createElement("div");
+    const submitted: FeedbackRequest[] = [];
+    act(() => {
+      render(
+        <FeedbackSection
+          videoId="test-vid"
+          onSubmitFeedback={(p) => {
+            submitted.push(p);
+          }}
+        />,
+        container
+      );
+    });
+
+    const notUsefulBtn = container.querySelector('button[aria-label="Avaliar análise como não útil"]') as HTMLButtonElement;
+    await act(async () => {
+      notUsefulBtn.click();
+    });
+
+    const outdatedChip = Array.from(container.querySelectorAll(".feedback-chip")).find(
+      (chip) => chip.textContent?.includes("Fontes desatualizadas")
+    ) as HTMLButtonElement;
+    expect(outdatedChip).not.toBeNull();
+    await act(async () => {
+      outdatedChip.click();
+    });
+
+    const submitBtn = container.querySelector(".feedback-submit-btn") as HTMLButtonElement;
+    await act(async () => {
+      submitBtn.click();
+    });
+
+    expect(submitted).toHaveLength(1);
+    expect(submitted[0]).toEqual({
+      videoId: "test-vid",
+      rating: "negative",
+      reason: "outdated_sources",
+    });
+    expect(container.querySelector(".feedback-success-msg")?.textContent).toContain("Obrigado pelo seu feedback anônimo!");
+  });
+
+  it("trata falha de rede silenciosamente sem interromper navegação", async () => {
+    const container = document.createElement("div");
+    const failingSubmit = () => {
+      throw new Error("Network failure");
+    };
+
+    act(() => {
+      render(<FeedbackSection videoId="test-vid" onSubmitFeedback={failingSubmit} />, container);
+    });
+
+    const usefulBtn = container.querySelector('button[aria-label="Avaliar análise como útil"]') as HTMLButtonElement;
+    await act(async () => {
+      expect(() => usefulBtn.click()).not.toThrow();
+    });
+
+    expect(container.querySelector(".feedback-success-msg")?.textContent).toContain("Obrigado pelo seu feedback anônimo!");
+  });
+
+  it("não apresenta violações de acessibilidade (axe-core, WCAG 2.1 AA)", async () => {
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    render(<FeedbackSection videoId="test-vid" />, host);
+
+    const results = await axe.run(host, {
+      runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] },
+      rules: { "color-contrast": { enabled: false } },
+    });
+    expect(results.violations).toEqual([]);
+
+    render(null, host);
+    host.remove();
+  });
+});
+

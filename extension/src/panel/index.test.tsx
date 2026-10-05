@@ -212,3 +212,11 @@ it("informa ausência de alegações sem perguntas, nota ou veredito", () => {
   message({ type: "ANALYSIS_SUCCESS", data: { ...data, claims: [], analysisMode: "evidence_only" } });
   expect(document.body.textContent).toContain("Não foi possível identificar");
 });
+it("exibe seção discreta de feedback anônimo após carregar os resultados da análise", () => {
+  message({ type: "ANALYSIS_SUCCESS", data });
+  const feedbackSection = document.querySelector(".feedback-section");
+  expect(feedbackSection).not.toBeNull();
+  expect(feedbackSection?.textContent).toContain("Esta análise foi útil para você?");
+  expect(feedbackSection?.querySelector('button[aria-label="Avaliar análise como útil"]')).not.toBeNull();
+  expect(feedbackSection?.querySelector('button[aria-label="Avaliar análise como não útil"]')).not.toBeNull();
+});

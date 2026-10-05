@@ -1,10 +1,13 @@
+import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Header, status
 from typing import Optional
 
-from app.schemas import AnalyzeRequest, AnalyzeResponse, HealthResponse
+from app.schemas import AnalyzeRequest, AnalyzeResponse, HealthResponse, FeedbackRequest, FeedbackResponse
 from app.config import settings
 from app.services.fact_checker import fact_checker_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["Fact-Checking"])
 
@@ -58,3 +61,27 @@ async def health_check():
         },
         timestamp=datetime.now(timezone.utc).isoformat(),
     )
+
+
+@router.post(
+    "/feedback",
+    response_model=FeedbackResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Recebe avaliação voluntária e anônima de utilidade da análise (HU12, RF-10, RNF-05)",
+)
+async def submit_feedback(
+    request: FeedbackRequest,
+):
+    """
+    Registra avaliação anônima da utilidade das evidências e perguntas recebidas.
+    Em estrito cumprimento à LGPD (RNF-05), nenhum dado pessoal identificável ou
+    endereço IP de rastreamento é persistido.
+    """
+    logger.info(
+        f"Feedback anônimo recebido: videoId={request.videoId}, rating={request.rating}, reason={request.reason}"
+    )
+    return FeedbackResponse(
+        status="received",
+        message="Feedback anônimo registrado com sucesso.",
+    )
+
