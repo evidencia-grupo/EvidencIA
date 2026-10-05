@@ -17,7 +17,21 @@ export function parseCaptionBody(body: string): string {
 }
 
 export async function extractCaptionsFromPage(videoId: string, signal?: AbortSignal): Promise<ExtractedCaptions | null> {
-  const result = await chrome.runtime.sendMessage({ type: "GET_CAPTION_TRACKS", videoId });
+  signal?.throwIfAborted();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const detectionPromise = chrome.runtime.sendMessage({ type: "GET_CAPTION_TRACKS", videoId });
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("Tempo limite de 1 segundo para detecção de legendas excedido. Tente novamente.")), 1000);
+    signal?.addEventListener("abort", () => reject(signal.reason ?? new DOMException("Aborted", "AbortError")));
+  });
+
+  let result: any;
+  try {
+    result = await Promise.race([detectionPromise, timeoutPromise]);
+  } finally {
+    clearTimeout(timer);
+  }
+
   signal?.throwIfAborted();
   if (!result?.success) throw new Error(result?.error || "Não foi possível acessar as legendas. Tente novamente.");
   const tracks = result.data as Array<{ baseUrl: string; languageCode: string }>;

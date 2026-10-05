@@ -38,3 +38,12 @@ it("distingue HTTP, transcrição vazia e cancelamento", async () => {
   const controller = new AbortController(); controller.abort();
   await expect(extractCaptionsFromPage("video", controller.signal)).rejects.toThrow();
 });
+it("limita tempo de deteccao de faixas a 1 segundo (HU10 / RNF-01)", async () => {
+  vi.useFakeTimers();
+  sendMessage.mockReturnValueOnce(new Promise(() => {}));
+  const promise = extractCaptionsFromPage("video");
+  const expectation = expect(promise).rejects.toThrow("Tempo limite de 1 segundo");
+  await vi.advanceTimersByTimeAsync(1001);
+  await expectation;
+  vi.useRealTimers();
+});

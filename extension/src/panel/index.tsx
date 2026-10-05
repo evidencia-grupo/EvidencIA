@@ -24,7 +24,7 @@ export function App() {
         setData(null);
         setError(null);
         setNoCaptions(false);
-      } else if (msg.type === "NO_CAPTIONS_AVAILABLE") {
+      } else if (msg.type === "NO_CAPTIONS_AVAILABLE" || msg.type === "NO_CAPTIONS") {
         setLoading(false);
         setNoCaptions(true);
         setData(null);
@@ -63,6 +63,10 @@ export function App() {
     window.parent.postMessage({ type: "CLOSE_PANEL" }, "https://www.youtube.com");
   };
 
+  const handleRetry = () => {
+    window.parent.postMessage({ type: "RETRY_ANALYSIS" }, "https://www.youtube.com");
+  };
+
   return (
     <main class="panel-container" aria-label="Painel de verificação de veracidade">
       <header class="panel-header">
@@ -83,14 +87,32 @@ export function App() {
       {/* Alerta de ausência de legendas (HU10 / RNF-06) */}
       {noCaptions && (
         <section class="alert-box" role="alert">
-          <strong>Legendas Indisponíveis:</strong> Este vídeo não possui transcrição ou legendas ativadas pelo criador. A checagem factual não pôde ser gerada.
+          <div>
+            <strong>Legendas Indisponíveis:</strong> Este vídeo não possui transcrição ou legendas ativadas pelo criador. A checagem factual não pôde ser gerada.
+          </div>
+          <button
+            class="retry-btn"
+            onClick={handleRetry}
+            aria-label="Tentar novamente a verificação"
+          >
+            Tentar novamente
+          </button>
         </section>
       )}
 
       {/* Erro de rede ou indisponibilidade temporária */}
       {error && (
         <section class="alert-box" role="alert">
-          <strong>Aviso de Instabilidade:</strong> {error}
+          <div>
+            <strong>Aviso de Instabilidade:</strong> {error}
+          </div>
+          <button
+            class="retry-btn"
+            onClick={handleRetry}
+            aria-label="Tentar novamente a verificação"
+          >
+            Tentar novamente
+          </button>
         </section>
       )}
 

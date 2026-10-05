@@ -80,9 +80,15 @@ it.each([undefined, { success: false, error: "Falhou" }])("erro do worker permit
 });
 it("ausência de legendas encerra carregamento; erro inesperado tem fallback", async () => {
   await import("./content-script");
+  panelMessage("PANEL_READY");
+  const post = vi.spyOn(frame().contentWindow!, "postMessage");
   sendMessage.mockResolvedValue({ success: true, data: null });
   vi.mocked(extractCaptionsFromPage).mockResolvedValueOnce(null);
-  button().click(); await flush(); expect(button().textContent).toContain("Sem legendas");
+  button().click(); await flush();
+  expect(button().textContent).toContain("Sem legendas");
+  expect(post).toHaveBeenCalledWith({ type: "NO_CAPTIONS" }, "https://extension.test");
+  panelMessage("RETRY_ANALYSIS");
+  await flush();
   sendMessage.mockRejectedValueOnce("erro");
   button().click(); await flush(); expect(button().textContent).toContain("Tentar novamente");
 });

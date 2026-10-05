@@ -27,7 +27,14 @@ window.addEventListener("message", (event) => {
     panelReady = true;
     if (panelState) publish(panelState);
     if (panelIframe?.style.display === "block") panelIframe.contentWindow?.postMessage({ type: "FOCUS_PANEL" }, panelOrigin);
-  } else if (event.data?.type === "CLOSE_PANEL") closePanel();
+  } else if (event.data?.type === "CLOSE_PANEL") {
+    closePanel();
+  } else if (event.data?.type === "RETRY_ANALYSIS") {
+    const btn = badgeContainer?.shadowRoot?.querySelector<HTMLButtonElement>("button");
+    if (btn && btn.getAttribute("aria-disabled") !== "true") {
+      btn.click();
+    }
+  }
 });
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && panelIframe?.style.display === "block") closePanel();
@@ -203,7 +210,7 @@ function injectTriggerBadge() {
         }),
       ]);
       if (!active()) return;
-      publish(data ? { type: "ANALYSIS_SUCCESS", data } : { type: "NO_CAPTIONS_AVAILABLE" });
+      publish(data ? { type: "ANALYSIS_SUCCESS", data } : { type: "NO_CAPTIONS" });
       button.querySelector("span")!.textContent = data ? `Veracidade: ${data.score}%` : "Sem legendas — tentar novamente";
       status.textContent = data ? "Checagem concluída" : "Legendas indisponíveis";
     } catch (error) {
