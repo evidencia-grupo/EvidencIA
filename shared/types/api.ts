@@ -101,3 +101,23 @@ export interface LocalCacheEntry extends AnalyzeResponse {
   timestamp: number;
   ttl: number; // Padrão: 86400000 ms (24h)
 }
+
+export type FeedbackRating = "positive" | "negative";
+
+export type FeedbackReason =
+  | "outdated_sources"
+  | "insufficient_evidence"
+  | "inaccurate"
+  | "other";
+
+export interface FeedbackRequest {
+  videoId: string;
+  rating: FeedbackRating;
+  reason?: FeedbackReason;
+}
+
+export interface FeedbackResponse {
+  status: "received";
+  message: string;
+}
+
