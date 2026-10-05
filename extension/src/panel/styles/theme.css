@@ -7,11 +7,11 @@
   --color-text-primary: #FFFFFF;
   --color-text-secondary: #AAAAAA;
 
-  /* Cores Semânticas de Veracidade */
-  --color-veracidade-apoiada: #2BA640;
-  --color-veracidade-moderada: #FBC02D;
-  --color-veracidade-falsa: #FF7571;
-  --color-veracidade-inconclusiva: #FF9800;
+  /* Cores Semânticas de Evidências */
+  --color-evidencia-apoiada: #2BA640;
+  --color-evidencia-contexto: #FBC02D;
+  --color-evidencia-contradita: #FF7571;
+  --color-evidencia-insuficiente: #FF9800;
 
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
@@ -59,6 +59,23 @@ body {
   color: var(--color-text-secondary);
 }
 
+.video-metadata {
+  margin-top: 8px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.video-metadata-title {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.temporal-context {
+  margin-top: 4px;
+  max-width: 290px;
+}
+
 .close-btn {
   background: transparent;
   border: none;
@@ -90,9 +107,21 @@ body {
   gap: 6px;
 }
 
+.source-link,
+.evidence-link {
+  color: #A8D8FF;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.source-link:hover,
+.evidence-link:hover {
+  color: #FFFFFF;
+}
+
 .alert-box {
   background: rgba(229, 57, 53, 0.15);
-  border: 1px solid var(--color-veracidade-falsa);
+  border: 1px solid var(--color-evidencia-contradita);
   border-radius: 8px;
   padding: 12px;
   color: #FFCDD2;
@@ -100,7 +129,7 @@ body {
 
 .warning-badge {
   background: rgba(251, 192, 45, 0.2);
-  border: 1px solid var(--color-veracidade-moderada);
+  border: 1px solid var(--color-evidencia-contexto);
   color: #FFEE58;
   padding: 6px 10px;
   border-radius: 6px;
@@ -133,4 +162,246 @@ button:focus-visible, a:focus-visible { outline: 3px solid #FBC02D; outline-offs
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* Alerta de Incerteza Analítica (HU09 / RF-07) */
+.uncertainty-alert {
+  background: rgba(255, 152, 0, 0.15);
+  border: 1px solid var(--color-evidencia-insuficiente);
+  border-left-width: 4px;
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--color-text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.uncertainty-alert-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #FFB74D;
+}
+
+.uncertainty-alert-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  fill: var(--color-evidencia-insuficiente);
+}
+
+/* Evidence Card (HU14 / RF-12 / UX-01) */
+.evidence-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-subtle);
+  border-left-width: 4px;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+
+.evidence-card--supports {
+  border-left-color: var(--color-evidencia-apoiada);
+}
+
+.evidence-card--contradicts {
+  border-color: var(--color-evidencia-contradita);
+  background: rgba(229, 57, 53, 0.08);
+}
+
+.evidence-card--contextualizes {
+  border-left-color: #2196F3;
+}
+
+.evidence-card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.relation-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.relation-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  fill: currentColor;
+}
+
+.relation-supports {
+  background: rgba(43, 166, 64, 0.2);
+  color: #81C784;
+  border: 1px solid var(--color-evidencia-apoiada);
+}
+
+.relation-contradicts {
+  background: rgba(229, 57, 53, 0.25);
+  color: #FFCDD2;
+  border: 1px solid var(--color-evidencia-contradita);
+  font-size: 12px;
+  padding: 3px 8px;
+}
+
+.relation-contextualizes {
+  background: rgba(33, 150, 243, 0.2);
+  color: #90CAF9;
+  border: 1px solid #2196F3;
+}
+
+.evidence-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.evidence-snippet-block {
+  margin: 6px 0;
+}
+
+.evidence-snippet-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 2px;
+}
+
+.evidence-snippet {
+  font-size: 12px;
+  color: var(--color-text-primary);
+  border-left: 2px solid var(--color-border-subtle);
+  padding-left: 8px;
+  font-style: italic;
+}
+
+.evidence-card--contradicts .evidence-snippet {
+  border-left-color: var(--color-evidencia-contradita);
+}
+
+.evidence-snippet-missing {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.evidence-meta {
+  display: grid;
+  gap: 2px;
+  font-size: 11px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.evidence-meta-row {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.evidence-meta dt {
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.evidence-meta dt::after {
+  content: ":";
+}
+
+.evidence-meta dd {
+  color: var(--color-text-primary);
+  min-width: 0;
+}
+
+.evidence-url {
+  overflow-wrap: anywhere;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Reflection Questions (HU15) */
+.reflection-section {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--color-border-subtle);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 10px;
+}
+
+.reflection-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #FFB74D;
+  margin-bottom: 4px;
+}
+
+.reflection-subtitle {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.reflection-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.reflection-item {
+  font-size: 12px;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+  display: flex;
+  gap: 6px;
+}
+
+.uncertainty-sides {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.uncertainty-sides li {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.uncertainty-side-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.uncertainty-alert-hint {
+  font-size: 12px;
+  color: var(--color-text-secondary);
 }

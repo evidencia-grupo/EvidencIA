@@ -1,9 +1,16 @@
 import { render } from "preact";
 import { useState, useLayoutEffect } from "preact/hooks";
-import { Gauge } from "./components/Gauge";
 import { ClaimCard } from "./components/ClaimCard";
-import { SourceList } from "./components/SourceList";
+import { UncertaintyAlert } from "./components/UncertaintyAlert";
+import { ReflectionQuestions } from "./components/ReflectionQuestions";
 import type { AnalyzeResponse } from "../../../shared/types/api";
+
+function formatUploadDate(value?: string | null): string {
+  if (!value) return "Data não disponível";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Data não disponível";
+  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeZone: "UTC" }).format(date);
+}
 
 export function App() {
   const [loading, setLoading] = useState(false);
@@ -38,7 +45,7 @@ export function App() {
         setLoading(false);
         setNoCaptions(false);
         setData(null);
-        setError(msg.error || "Ocorreu uma falha ao checar as alegações.");
+        setError(msg.error || "Não conseguimos checar este vídeo agora. Tente de novo em instantes.");
       }
     };
 
@@ -68,16 +75,22 @@ export function App() {
   };
 
   return (
-    <main class="panel-container" aria-label="Painel de verificação de veracidade">
+    <main class="panel-container" aria-label="Painel de checagem factual">
       <header class="panel-header">
         <div>
-          <h1 class="panel-title">Veracidade do Vídeo</h1>
-          <p class="panel-subtitle">Análise factual e referências</p>
+          <h1 class="panel-title">Checagem Factual</h1>
+          <p class="panel-subtitle">Investigação orientada por evidências e fontes curadas</p>
+          {data && (
+            <div class="video-metadata" aria-label="Metadados de publicação do vídeo">
+              <p class="video-metadata-title">{data.videoTitle || "Título não disponível"}</p>
+              <p>{data.channelName || "Canal não disponível"} · {formatUploadDate(data.publishedAt)}</p>
+            </div>
+          )}
         </div>
         <button
           class="close-btn"
           onClick={handleClose}
-          aria-label="Fechar painel de verificação (Tecla Escape)"
+          aria-label="Fechar painel de checagem factual (Tecla Escape)"
           title="Fechar (Esc)"
         >
           &times;
@@ -88,7 +101,7 @@ export function App() {
       {noCaptions && (
         <section class="alert-box" role="alert">
           <div>
-            <strong>Legendas Indisponíveis:</strong> Este vídeo não possui transcrição ou legendas ativadas pelo criador. A checagem factual não pôde ser gerada.
+            <strong>Este vídeo não tem legendas.</strong> Sem as legendas não conseguimos analisar o que é dito, então a checagem não pôde ser feita. Você pode tentar com outro vídeo.
           </div>
           <button
             class="retry-btn"
@@ -104,7 +117,7 @@ export function App() {
       {error && (
         <section class="alert-box" role="alert">
           <div>
-            <strong>Aviso de Instabilidade:</strong> {error}
+            <strong>Algo deu errado.</strong> {error}
           </div>
           <button
             class="retry-btn"
@@ -119,52 +132,51 @@ export function App() {
       {/* Estado de Carregamento inicial */}
       {loading && (
         <div role="status" style={{ textAlign: "center", padding: "40px 0", color: "var(--color-text-secondary)" }}>
-          <p>Extraindo transcrição e consultando evidências...</p>
+          <p>Estamos analisando as alegações do vídeo e buscando evidências documentadas...</p>
         </div>
       )}
 
-      {/* Resultado da Análise */}
+      {/* Resultado da Análise Evidence-First */}
       {data && (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {data.analysisMode === "demo" && (
-            <div class="warning-badge" role="status">Demonstração: resultado simulado para testar a extensão. Não constitui checagem factual.</div>
-          )}
-          {/* Alerta de Incerteza Analítica (HU09 / RF-07) */}
-          {data.classification === "inconclusivo" && (
-            <div class="warning-badge" role="status">
-              Aviso de Incerteza Analítica: As evidências encontradas são divergentes ou insuficientes para consolidar um veredito factual.
+          {/* Banner de Modo Evidence-Only (HU16 / Issue #37) */}
+          {data.analysisMode === "evidence_only" && (
+            <div class="warning-badge" role="status" style={{ padding: "8px 12px", borderRadius: "6px", background: "rgba(255, 152, 0, 0.15)", border: "1px solid #FF9800", color: "#FFB74D", fontSize: "12px" }}>
+              <strong>Modo Exclusivo de Evidências:</strong> A síntese de IA está temporariamente indisponível. Exibindo evidências recuperadas diretamente das bases de checagem.
             </div>
           )}
 
-          {/* Velocímetro de Veracidade */}
-          <Gauge score={data.score} classification={data.classification} />
+          {/* Alerta de Incerteza Analítica no topo (HU09 / RF-07) */}
+          <UncertaintyAlert claims={data.claims} />
 
-          {/* Card de Síntese Analítica sem jargões (HU02 / RF-03) */}
-          <div class="card">
-            <h2 class="card-title">Por que essa classificação?</h2>
-            <p style={{ fontSize: "13px", lineHeight: "1.6", color: "var(--color-text-primary)" }}>
-              {data.summary}
-            </p>
-          </div>
+          {/* Limitações e Ressalvas Metodológicas */}
+          {data.limitations && data.limitations.length > 0 && (
+            <aside class="limitations-container" aria-label="Ressalvas metodológicas" style={{ fontSize: "11px", color: "var(--color-text-secondary)", background: "rgba(255, 255, 255, 0.03)", padding: "6px 10px", borderRadius: "4px" }}>
+              {data.limitations.map((lim, idx) => (
+                <p key={idx} style={{ margin: "2px 0" }}>* {lim}</p>
+              ))}
+            </aside>
+          )}
 
-          {/* Lista de Alegações Estruturadas (HU04 / RF-06) */}
-          <div>
-            <h2 style={{ fontSize: "13px", fontWeight: "600", marginBottom: "8px", color: "var(--color-text-secondary)" }}>
+          {/* Lista de Alegações com Evidence Cards (HU13 / HU14 / RF-06 / ADR-006) */}
+          <div class="claims-list-section" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <h2 style={{ fontSize: "14px", fontWeight: "600", color: "var(--color-text-primary)", margin: "4px 0" }}>
               Alegações Analisadas ({data.claims.length})
             </h2>
+
             {data.claims.map((claim) => (
               <ClaimCard key={claim.id} claim={claim} />
             ))}
           </div>
-
-          {/* Lista de Fontes com Hyperlinks (HU07 / RF-04) */}
-          <SourceList sources={data.sources} />
+          <ReflectionQuestions
+            questions={data.claims.find((claim) => claim.reflectionQuestions?.length)?.reflectionQuestions}
+          />
         </div>
       )}
 
       {!data && !loading && !noCaptions && !error && (
         <div role="status" style={{ textAlign: "center", padding: "40px 0", color: "var(--color-text-secondary)" }}>
-          <p>Clique em <strong>Verificar Veracidade</strong> no player do YouTube para iniciar a checagem.</p>
+          <p>Clique em <strong>Checar Alegações</strong> no player do YouTube para iniciar a checagem.</p>
         </div>
       )}
     </main>

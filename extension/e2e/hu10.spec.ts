@@ -58,7 +58,7 @@ async function setup(context: BrowserContext, id = "video", captions = true, fai
 
   const page = await context.newPage();
   await page.goto(`https://www.youtube.com/watch?v=${id}`);
-  const button = page.getByRole("button", { name: "Verificar Veracidade" });
+  const button = page.getByRole("button", { name: "Checar Alegações" });
   await expect(button).toBeVisible();
   const panel = page.frameLocator("#evidencia-side-panel");
   await expect(panel.getByRole("button", { name: /Fechar painel/, includeHidden: true })).toBeAttached();
@@ -86,8 +86,8 @@ test("HU10: Cenário 1 — Vídeo sem legendas notifica em até 1s e encerra com
 
   // Alerta deve ser exibido com role="alert" informando a impossibilidade técnica
   const alert = panel.getByRole("alert");
-  await expect(alert).toContainText("Legendas Indisponíveis");
-  await expect(alert).toContainText("não possui transcrição ou legendas ativadas");
+  await expect(alert).toContainText("Este vídeo não tem legendas");
+  await expect(alert).toContainText("Sem as legendas não conseguimos analisar");
 
   const alertTime = await panelFrame!.evaluate(() => (window as any).alertTime);
   const clickTime = await page.evaluate(() => (window as any).hu10.click);
@@ -122,7 +122,7 @@ test("HU10: Cenário 2 — Falha temporária da API do YouTube exibe botão de n
 
   // Painel deve exibir o alerta com o erro e o botão de nova tentativa
   const alert = panel.getByRole("alert");
-  await expect(alert).toContainText("HTTP 503");
+  await expect(alert).toContainText("Não conseguimos checar este vídeo agora");
   const retryBtn = panel.getByRole("button", { name: "Tentar novamente" });
   await expect(retryBtn).toBeVisible();
 
@@ -132,5 +132,5 @@ test("HU10: Cenário 2 — Falha temporária da API do YouTube exibe botão de n
   await retryBtn.click();
 
   // Verifica que o painel volta ao estado de carregamento e processa com sucesso
-  await expect(panel.getByText("Por que essa classificação?")).toBeVisible({ timeout: 10000 });
+  await expect(panel.getByRole("heading", { name: /Alegações Analisadas/ })).toBeVisible({ timeout: 10000 });
 });

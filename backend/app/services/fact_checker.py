@@ -1,118 +1,239 @@
 import asyncio
+import logging
+import re
 import time
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Optional
+
+from app.config import settings
+from app.providers.factory import get_provider, ProviderUnavailableError
+from app.providers.types import Claim as ProviderClaim, Evidence as ProviderEvidence
 from app.schemas import (
     AnalyzeRequest,
     AnalyzeResponse,
-    VerificationClaim,
-    FactCheckingSource,
-    VerificationClassification,
+    Claim,
+    Evidence,
+    TemporalContext,
+    UncertaintyState,
 )
-from app.config import settings
+from app.services.brazilian_fact_matcher import brazilian_fact_matcher
+from app.services.fact_check_client import fact_check_client
+
+logger = logging.getLogger(__name__)
 
 
 class FactCheckerService:
     """
-    Serviço orquestrador do pipeline de checagem:
-    1. Segmentação e extração de alegações via LLM
-    2. Agregação paralela de evidências e busca factual
-    3. Síntese e cômputo da nota de veracidade
+    Serviço orquestrador do pipeline de checagem factual Evidence-First (ADR-006).
+    
+    Princípios:
+    - Evidence-First: Apresentação atômica de evidências auditáveis por alegação,
+      sem scores agregados ou autoridade algorítmica.
+    - Priorização de bases brasileiras curadas (FactChecks.br).
+    - Estado explícito de evidência insuficiente (RF-12).
+    - Degradação graciosa para modo Evidence-Only sob timeout ou falha de IA (RF-14, RNF-06).
     """
+
+    FALLBACK_REFLECTION_QUESTIONS = [
+        "Que evidências independentes poderiam ajudar a avaliar as alegações apresentadas?",
+        "Quais aspectos das fontes, como autoria, data e método, vale a pena verificar?",
+        "Que contexto ou evidência adicional ajudaria você a formar sua própria interpretação?",
+    ]
+
+    @staticmethod
+    def _build_temporal_context(upload_date: Optional[str]) -> TemporalContext:
+        published_at = upload_date or datetime.now(timezone.utc).isoformat()
+        note = None
+        try:
+            year = datetime.fromisoformat(published_at.replace("Z", "+00:00")).year
+            current_year = datetime.now(timezone.utc).year
+            if year < current_year:
+                note = (
+                    f"As alegações foram apresentadas em {year}; "
+                    "mudanças posteriores não tornam falsa uma afirmação correta à época."
+                )
+        except Exception:
+            pass
+
+        return TemporalContext(
+            claimDate=upload_date,
+            videoPublishedAt=published_at,
+            note=note,
+        )
+
+    @classmethod
+    def _normalize_reflection_questions(cls, questions: Optional[List[str]]) -> List[str]:
+        if not questions or len(questions) != 3:
+            return cls.FALLBACK_REFLECTION_QUESTIONS.copy()
+
+        forbidden_verdict = re.compile(r"\b(certo|errado|verdadeiro|falso|mentira|mentiroso|correto|incorreto)\b", re.IGNORECASE)
+        normalized = [question.strip() for question in questions if isinstance(question, str)]
+        if (
+            len(normalized) == 3
+            and all(question.endswith("?") and not forbidden_verdict.search(question) for question in normalized)
+        ):
+            return normalized
+        return cls.FALLBACK_REFLECTION_QUESTIONS.copy()
 
     async def analyze(self, request: AnalyzeRequest) -> AnalyzeResponse:
         start_time = time.perf_counter()
+        published_at = request.uploadDate or datetime.now(timezone.utc).isoformat()
+        temporal_ctx = self._build_temporal_context(request.uploadDate)
 
-        # Aplica timeout máximo de 8.0s no orquestrador do servidor (RNF-01)
+        # 1. Obtenção do provedor via Factory (lança MockInProductionError se configurado indevidamente)
+        provider = get_provider(
+            provider_name=getattr(settings, "LLM_PROVIDER", None),
+            app_env=getattr(settings, "APP_ENV", None),
+        )
+
+        analysis_mode = "evidence_first"
+        limitations: List[str] = []
+        provider_claims: List[ProviderClaim] = []
+
+        # 2. Extração de alegações via LLM com timeout resiliente (RF-14, RNF-01, RNF-06)
+        timeout_limit = getattr(settings, "LLM_TIMEOUT_SECONDS", 8.0)
         try:
-            return await asyncio.wait_for(
-                self._execute_analysis(request, start_time),
-                timeout=settings.LLM_TIMEOUT_SECONDS,
+            provider_claims = await asyncio.wait_for(
+                provider.extract_claims(request.transcript, request.videoTitle),
+                timeout=timeout_limit,
             )
-        except asyncio.TimeoutError:
-            raise TimeoutError("Tempo limite de inferência e busca de 8,0s excedido no servidor.")
+        except (asyncio.TimeoutError, ProviderUnavailableError, Exception) as exc:
+            logger.warning(f"Degradação para modo Evidence-Only acionada por falha/timeout no LLMProvider: {exc}")
+            analysis_mode = "evidence_only"
+            limitations.append(
+                "Síntese e extração por IA temporariamente indisponíveis; "
+                "operando em modo Evidence-Only a partir de bases de checagem curadas."
+            )
 
-    async def _execute_analysis(self, request: AnalyzeRequest, start_time: float) -> AnalyzeResponse:
-        if settings.LLM_PROVIDER == "mock":
-            return await self._mock_analysis(request, start_time)
+        claims: List[Claim] = []
 
-        # HU03: integração com a IA própria ainda em preparação.
-        # Substituir este bloqueio pelo pipeline factual quando o serviço estiver disponível.
-        raise RuntimeError("A integração com a IA própria ainda está em preparação. Configure mock apenas para demonstração.")
+        # 3. Processamento no modo Evidence-First
+        if analysis_mode == "evidence_first" and provider_claims:
+            for idx, p_claim in enumerate(provider_claims):
+                claim_id = p_claim.id or f"clm-{idx + 1:02d}"
+                claim_text = p_claim.text
+                evidence_list: List[Evidence] = []
+                uncertainty: UncertaintyState = "insufficient_evidence"
 
-    async def _mock_analysis(self, request: AnalyzeRequest, start_time: float) -> AnalyzeResponse:
-        # Simula processamento assíncrono realista (ex.: 1200ms)
-        await asyncio.sleep(0.4)
+                # Prioridade 1: Casamento direto com dataset curado FactChecks.br
+                matched = brazilian_fact_matcher.find_match(claim_text)
+                if matched and matched.get("evidence"):
+                    evidence_list.append(matched["evidence"])
+                    rel = matched.get("relation", "contextualizes")
+                    if rel == "supports":
+                        uncertainty = "supported"
+                    elif rel == "contradicts":
+                        uncertainty = "contradicted"
+                    else:
+                        uncertainty = "contextualized"
+                else:
+                    # Prioridade 2: Consulta à API externa de Fact Check
+                    fc_results = await fact_check_client.search_claims(claim_text)
+                    if fc_results and fc_results[0].get("source"):
+                        item = fc_results[0]
+                        src = item["source"]
+                        status_str = item.get("status", "inconclusiva")
+                        rel = (
+                            "supports"
+                            if status_str == "apoiada"
+                            else ("contradicts" if status_str == "contraditada" else "contextualizes")
+                        )
+                        uncertainty = (
+                            "supported"
+                            if rel == "supports"
+                            else ("contradicted" if rel == "contradicts" else "contextualized")
+                        )
+                        evidence_list.append(
+                            Evidence(
+                                sourceId=src.id,
+                                relation=rel,
+                                title=src.title,
+                                url=src.url,
+                                publishedAt=src.publishedAt or published_at,
+                                publisher=src.domain,
+                                snippet=item.get("evidence_summary"),
+                                provenance={
+                                    "dataset": "google_fact_check",
+                                    "indexedAt": datetime.now(timezone.utc).isoformat(),
+                                },
+                            )
+                        )
+                    else:
+                        # Prioridade 3: Estado explícito de evidência insuficiente (RF-12, ADR-006)
+                        evidence_list = []
+                        uncertainty = "insufficient_evidence"
 
-        # Regras heurísticas de demonstração para o mock de desenvolvimento
-        transcript_lower = request.transcript.lower()
+                claims.append(
+                    Claim(
+                        id=claim_id,
+                        text=claim_text,
+                        temporalContext=temporal_ctx,
+                        evidence=evidence_list,
+                        uncertainty=uncertainty,
+                        reflectionQuestions=[],
+                    )
+                )
 
-        claims: List[VerificationClaim] = [
-            VerificationClaim(
-                id="clm-01",
-                text="Alegação principal extraída da fala do conteúdo do vídeo.",
-                status="apoiada" if "estudo" in transcript_lower or "dados" in transcript_lower else "contraditada",
-                evidenceSummary="Relatórios institucionais e publicações científicas de referência foram consultados.",
-                confidence=0.92,
-            ),
-            VerificationClaim(
-                id="clm-02",
-                text="Afirmação secundária com correlação temporal ou estatística.",
-                status="inconclusiva" if "talvez" in transcript_lower or "possível" in transcript_lower else "apoiada",
-                evidenceSummary="Há evidências preliminares, mas com divergência metodológica na literatura.",
-                confidence=0.78,
-            ),
-        ]
+            # 4. Geração de perguntas reflexivas não-dogmáticas via LLMProvider (HU15)
+            try:
+                all_evidence_refs: List[ProviderEvidence] = []
+                reflections = await provider.generate_reflection(provider_claims, all_evidence_refs)
+                if claims:
+                    claims[0].reflectionQuestions = self._normalize_reflection_questions(reflections)
+            except Exception as ref_exc:
+                logger.debug(f"Perguntas reflexivas não geradas: {ref_exc}")
 
-        # Fontes de evidência auditáveis com HTTPS
-        sources: List[FactCheckingSource] = [
-            FactCheckingSource(
-                id="src-01",
-                title="Repositório Institucional de Evidências Factual",
-                url="https://www.scielo.br/",
-                domain="scielo.br",
-                reliabilityScore=0.96,
-                publishedAt="2026-01-15T00:00:00Z",
-            ),
-            FactCheckingSource(
-                id="src-02",
-                title="Agência Pública de Checagem e Jornalismo",
-                url="https://apublica.org/",
-                domain="apublica.org",
-                reliabilityScore=0.91,
-                publishedAt="2026-03-20T00:00:00Z",
-            ),
-        ]
-
-        # Calcula score e classificação
-        supported_count = sum(1 for c in claims if c.status == "apoiada")
-        contradicted_count = sum(1 for c in claims if c.status == "contraditada")
-
-        if contradicted_count > 0 and supported_count == 0:
-            score = 25
-            classification: VerificationClassification = "falso"
-            summary = "O vídeo apresenta afirmações que não encontram respaldo em dados consolidados e foram contraditas pelas evidências examinadas."
-        elif supported_count > 0 and contradicted_count == 0:
-            score = 85
-            classification = "verdadeiro"
-            summary = "As principais afirmações apresentadas no vídeo coincidem com dados de fontes confiáveis e relatórios consolidados."
+        # 5. Processamento no modo Evidence-Only (Fallback sem LLM)
         else:
-            score = 58
-            classification = "moderado"
-            summary = "O conteúdo mistura premissas verdadeiras com interpretações exageradas ou projeções não confirmadas. Recomenda-se cautela."
+            analysis_mode = "evidence_only"
+            matched = brazilian_fact_matcher.find_match(request.transcript)
+            if not matched:
+                matched = brazilian_fact_matcher.find_match(request.videoTitle)
+
+            if matched and matched.get("evidence"):
+                evidence_list = [matched["evidence"]]
+                rel = matched.get("relation", "contextualizes")
+                uncertainty = (
+                    "supported"
+                    if rel == "supports"
+                    else ("contradicted" if rel == "contradicts" else "contextualized")
+                )
+                claims.append(
+                    Claim(
+                        id="clm-01",
+                        text=matched.get("claim", request.videoTitle),
+                        temporalContext=temporal_ctx,
+                        evidence=evidence_list,
+                        uncertainty=uncertainty,
+                        reflectionQuestions=[],
+                    )
+                )
+            else:
+                claims.append(
+                    Claim(
+                        id="clm-01",
+                        text=f"Afirmação do vídeo: {request.videoTitle}",
+                        temporalContext=temporal_ctx,
+                        evidence=[],
+                        uncertainty="insufficient_evidence",
+                        reflectionQuestions=[],
+                    )
+                )
+
+        if claims and not any(claim.reflectionQuestions for claim in claims):
+            claims[0].reflectionQuestions = self.FALLBACK_REFLECTION_QUESTIONS.copy()
 
         elapsed_ms = int((time.perf_counter() - start_time) * 1000)
 
         return AnalyzeResponse(
-            analysisMode="demo",
             videoId=request.videoId,
-            analyzedAt=datetime.now(timezone.utc).isoformat(),
-            score=score,
-            classification=classification,
-            summary=summary,
-            claims=claims,
-            sources=sources,
+            analysisMode=analysis_mode,
+            videoTitle=request.videoTitle,
+            channelName=request.channelName,
+            publishedAt=published_at,
             processingTimeMs=elapsed_ms,
+            claims=claims,
+            limitations=limitations,
         )
 
 

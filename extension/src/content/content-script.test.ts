@@ -21,9 +21,9 @@ beforeEach(() => {
   vi.spyOn(window, "addEventListener").mockImplementation((type, listener, options) => { listeners.push([type, listener]); realAdd(type, listener, options); });
   history.replaceState({}, "", "/watch?v=video");
   document.body.innerHTML = '<h1 class="ytd-watch-metadata">Título</h1><div id="channel-name">Canal</div><div id="above-the-fold"></div>';
-  sendMessage.mockReset().mockResolvedValue({ success: true, data: { score: 85 } });
-  vi.mocked(detectCaptionTracks).mockReset().mockResolvedValue([{ baseUrl: "https://www.youtube.com/api/timedtext", languageCode: "pt" }]);
-  vi.mocked(extractCaptionsFromPage).mockReset().mockResolvedValue({ videoId: "video", transcript: "texto", language: "pt" });
+  sendMessage.mockReset().mockResolvedValue({ success: true, data: { claims: [] } });
+  vi.mocked(detectCaptionTracks).mockReset().mockResolvedValue({ tracks: [{ baseUrl: "https://www.youtube.com/api/timedtext", languageCode: "pt" }] });
+  vi.mocked(extractCaptionsFromPage).mockReset().mockResolvedValue({ videoId: "video", transcript: "texto", language: "pt", videoTitle: "Título", channelName: "Canal", uploadDate: "2021-04-15T00:00:00Z", durationSeconds: 120 });
   vi.stubGlobal("chrome", { runtime: { getURL: (path: string) => `https://extension.test/${path}`, sendMessage } });
 });
 afterEach(() => {
@@ -43,7 +43,7 @@ it("confirma de forma síncrona e evita requisições repetidas", async () => {
   expect(button().getAttribute("aria-disabled")).toBe("true");
   button().dispatchEvent(new MouseEvent("click"));
   await flush();
-  expect(button().textContent).toContain("85%");
+  expect(button().textContent).toContain("Checagem concluída");
   expect(extractCaptionsFromPage).not.toHaveBeenCalled();
   expect(sendMessage).toHaveBeenCalledTimes(1);
 });
@@ -55,7 +55,7 @@ it("entrega estado pendente quando o iframe fica pronto e valida remetente", asy
   panelMessage("PANEL_READY", "https://extension.test", null);
   expect(post).not.toHaveBeenCalled();
   panelMessage("PANEL_READY");
-  expect(post).toHaveBeenCalledWith({ type: "ANALYSIS_SUCCESS", data: { score: 85 } }, "https://extension.test");
+  expect(post).toHaveBeenCalledWith({ type: "ANALYSIS_SUCCESS", data: { claims: [] } }, "https://extension.test");
   panelMessage("UNKNOWN");
   panelMessage("CLOSE_PANEL");
   expect(frame().style.display).toBe("none");
@@ -68,10 +68,10 @@ it("entrega estado pendente quando o iframe fica pronto e valida remetente", asy
 });
 it("propaga orçamento total no cache miss", async () => {
   await import("./content-script"); panelMessage("PANEL_READY");
-  sendMessage.mockResolvedValueOnce({ success: true, data: null }).mockResolvedValueOnce({ success: true, data: { score: 70 } });
+  sendMessage.mockResolvedValueOnce({ success: true, data: null }).mockResolvedValueOnce({ success: true, data: { claims: [] } });
   const start = Date.now(); button().click(); await flush();
-  expect(button().textContent).toContain("70%");
-  expect(sendMessage.mock.calls[1][0]).toMatchObject({ deadline: start + 9500, payload: { videoTitle: "Título", channelName: "Canal" } });
+  expect(button().textContent).toContain("Checagem concluída");
+  expect(sendMessage.mock.calls[1][0]).toMatchObject({ deadline: start + 9500, payload: { videoTitle: "Título", channelName: "Canal", uploadDate: "2021-04-15T00:00:00Z", durationSeconds: 120 } });
 });
 it.each([undefined, { success: false, error: "Falhou" }])("erro do worker permite nova tentativa %s", async reply => {
   await import("./content-script");
@@ -84,7 +84,7 @@ it("ausência de legendas encerra carregamento; erro inesperado tem fallback", a
   panelMessage("PANEL_READY");
   const post = vi.spyOn(frame().contentWindow!, "postMessage");
   sendMessage.mockResolvedValue({ success: true, data: null });
-  vi.mocked(detectCaptionTracks).mockResolvedValueOnce([]);
+  vi.mocked(detectCaptionTracks).mockResolvedValueOnce({ tracks: [] });
   button().click(); await flush();
   expect(button().textContent).toContain("Sem legendas");
   expect(sendMessage).not.toHaveBeenCalled();
@@ -97,11 +97,17 @@ it("ausência de legendas encerra carregamento; erro inesperado tem fallback", a
 });
 it("timeout aborta a extração e rejeita resposta tardia", async () => {
   await import("./content-script");
+  panelMessage("PANEL_READY");
+  const post = vi.spyOn(frame().contentWindow!, "postMessage");
   let resolve!: (value: unknown) => void;
   sendMessage.mockReturnValueOnce(new Promise(r => { resolve = r; }));
   button().click(); await vi.advanceTimersByTimeAsync(9500);
   expect(button().getAttribute("aria-disabled")).toBe("false");
-  resolve({ success: true, data: { score: 99 } }); await flush();
+  expect(post).toHaveBeenCalledWith(
+    { type: "ANALYSIS_ERROR", error: "A checagem demorou mais do que o esperado. Tente de novo em instantes." },
+    "https://extension.test",
+  );
+  resolve({ success: true, data: { claims: [] } }); await flush();
   expect(button().textContent).not.toContain("99%");
 });
 it("navegação invalida análise antiga e remove o botão fora do watch", async () => {
@@ -109,8 +115,8 @@ it("navegação invalida análise antiga e remove o botão fora do watch", async
   let resolve!: (value: unknown) => void;
   sendMessage.mockReturnValueOnce(new Promise(r => { resolve = r; }));
   button().click(); navigate("/watch?v=next");
-  resolve({ success: true, data: { score: 99 } }); await flush();
-  expect(button().textContent).toContain("Verificar");
+  resolve({ success: true, data: { claims: [] } }); await flush();
+  expect(button().textContent).toContain("Checar Alegações");
   navigate("/"); expect(document.querySelector("#evidencia-badge-host")).toBeNull();
   navigate("/watch"); expect(document.querySelector("#evidencia-badge-host")).toBeNull();
 });
@@ -130,7 +136,7 @@ it("HU10: ausência em até 1s ignora cache lento e encerra carregamento", async
   await import("./content-script"); panelMessage("PANEL_READY");
   const post = vi.spyOn(frame().contentWindow!, "postMessage");
   sendMessage.mockReturnValue(new Promise(() => {}));
-  vi.mocked(detectCaptionTracks).mockImplementationOnce(() => new Promise(resolve => setTimeout(() => resolve([]), 900)));
+  vi.mocked(detectCaptionTracks).mockImplementationOnce(() => new Promise(resolve => setTimeout(() => resolve({ tracks: [] }), 900)));
   button().click();
   await vi.advanceTimersByTimeAsync(900);
   expect(post).toHaveBeenCalledWith({ type: "NO_CAPTIONS" }, "https://extension.test");
@@ -143,8 +149,17 @@ it("HU10: falha de detecção permite recuperação pelo painel", async () => {
   const post = vi.spyOn(frame().contentWindow!, "postMessage");
   vi.mocked(detectCaptionTracks).mockRejectedValueOnce(new Error("Falha temporária"));
   button().click(); await flush();
-  expect(post).toHaveBeenCalledWith({ type: "ANALYSIS_ERROR", error: "Falha temporária" }, "https://extension.test");
+  expect(post).toHaveBeenCalledWith({ type: "ANALYSIS_ERROR", error: "Não conseguimos checar este vídeo agora. Tente de novo em instantes." }, "https://extension.test");
   expect(sendMessage).not.toHaveBeenCalled();
   panelMessage("RETRY_ANALYSIS"); await flush();
-  expect(button().textContent).toContain("85%");
+  expect(button().textContent).toContain("Checagem concluída");
+});
+it("mostra no painel um aviso simples em vez do erro técnico", async () => {
+  await import("./content-script"); panelMessage("PANEL_READY");
+  const post = vi.spyOn(frame().contentWindow!, "postMessage");
+  sendMessage.mockResolvedValueOnce({ success: false }).mockResolvedValueOnce({ success: false, error: "Falha no servidor intermediário: HTTP 503" });
+  button().click(); await flush();
+  const error = post.mock.calls.map(([msg]) => msg as { type: string; error?: string }).find(msg => msg.type === "ANALYSIS_ERROR")?.error;
+  expect(error).toBe("Não conseguimos checar este vídeo agora. Tente de novo em instantes.");
+  expect(error).not.toMatch(/HTTP|servidor/);
 });

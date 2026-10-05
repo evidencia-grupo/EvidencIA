@@ -1,0 +1,82 @@
+[
+  {
+    "claim": "A vacina contra COVID-19 causa autismo em crianças menores de 5 anos.",
+    "label": "Falso",
+    "explanation": "Não há evidência científica que relacione vacinas contra COVID-19 ao autismo. Estudos de larga escala com milhões de participantes descartaram essa associação.",
+    "source": "Aos Fatos",
+    "url": "https://www.aosfatos.org/noticias/vacina-covid-autismo",
+    "date": "2024-03-15"
+  },
+  {
+    "claim": "O Brasil é o segundo maior produtor de soja do mundo.",
+    "label": "Verdadeiro",
+    "explanation": "Dados da FAO e do USDA confirmam que o Brasil ocupa consistentemente a segunda posição na produção mundial de soja, atrás dos Estados Unidos.",
+    "source": "Lupa",
+    "url": "https://lupa.uol.com.br/jornalismo/2024/brasil-soja",
+    "date": "2024-01-20"
+  },
+  {
+    "claim": "Hidroxicloroquina previne e cura COVID-19 com eficácia comprovada.",
+    "label": "Falso",
+    "explanation": "Ensaios clínicos randomizados de larga escala, incluindo o estudo Recovery e Solidarity, demonstraram que hidroxicloroquina não tem eficácia para prevenção ou tratamento de COVID-19.",
+    "source": "Boatos.org",
+    "url": "https://www.boatos.org/saude/hidroxicloroquina-covid",
+    "date": "2024-02-10"
+  },
+  {
+    "claim": "A inflação brasileira atingiu 4,5% ao ano em 2025.",
+    "label": "Verdadeiro",
+    "explanation": "O IPCA divulgado pelo IBGE registrou inflação de 4,5% ao ano em 2025, dentro do intervalo da meta estabelecida pelo Conselho Monetário Nacional.",
+    "source": "Aos Fatos",
+    "url": "https://www.aosfatos.org/noticias/inflacao-2025",
+    "date": "2026-01-10"
+  },
+  {
+    "claim": "Bebendo água com limão em jejum elimina vírus e cura qualquer doença.",
+    "label": "Enganoso",
+    "explanation": "Água com limão tem propriedades nutricionais, mas não cura doenças nem elimina vírus. A afirmação exagera efeitos reais e pode levar pessoas a abandonar tratamentos médicos.",
+    "source": "Lupa",
+    "url": "https://lupa.uol.com.br/jornalismo/2024/agua-limao",
+    "date": "2024-04-05"
+  },
+  {
+    "claim": "O Enem 2025 teve recorde de inscrições com 7,9 milhões de participantes.",
+    "label": "Verdadeiro",
+    "explanation": "O INEP confirmou 7,9 milhões de inscrições no Enem 2025, maior número registrado na história do exame.",
+    "source": "Boatos.org",
+    "url": "https://www.boatos.org/educacao/enem-2025-inscricoes",
+    "date": "2025-06-01"
+  },
+  {
+    "claim": "5G causa câncer e destrói o sistema imunológico humano.",
+    "label": "Falso",
+    "explanation": "Organizações de saúde como OMS e ICNIRP concluíram que não há evidências de que radiações de redes 5G, dentro dos limites de exposição estabelecidos, causem danos à saúde humana.",
+    "source": "Aos Fatos",
+    "url": "https://www.aosfatos.org/noticias/5g-saude",
+    "date": "2024-09-20"
+  },
+  {
+    "claim": "O salário mínimo brasileiro foi reajustado para R$ 1.518 em 2025.",
+    "label": "Verdadeiro",
+    "explanation": "O governo federal anunciou e implementou o reajuste do salário mínimo para R$ 1.518 em janeiro de 2025, conforme decreto presidencial publicado no Diário Oficial.",
+    "source": "Lupa",
+    "url": "https://lupa.uol.com.br/jornalismo/2025/salario-minimo",
+    "date": "2025-01-03"
+  },
+  {
+    "claim": "Desodorante causa câncer de mama comprovadamente.",
+    "label": "Sem evidência",
+    "explanation": "Apesar de estudos preliminares especularem sobre uma possível associação, revisões sistemáticas e órgãos como o NCI concluíram que não há evidência suficiente para afirmar causalidade entre uso de desodorante e câncer de mama.",
+    "source": "Boatos.org",
+    "url": "https://www.boatos.org/saude/desodorante-cancer",
+    "date": "2024-07-15"
+  },
+  {
+    "claim": "A Amazônia é responsável por 20% do oxigênio produzido no mundo.",
+    "label": "Impreciso",
+    "explanation": "A Amazônia produz cerca de 20% do oxigênio terrestre, mas também consome quantidade similar por decomposição. O saldo líquido de oxigênio para a atmosfera é próximo de zero, tornando a afirmação enganosa ao omitir essa nuance.",
+    "source": "Aos Fatos",
+    "url": "https://www.aosfatos.org/noticias/amazonia-oxigenio",
+    "date": "2024-11-01"
+  }
+]

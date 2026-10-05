@@ -77,7 +77,7 @@ async function setupPage(context: BrowserContext, videoId = "video-carlos", capt
 
   const page = await context.newPage();
   await page.goto(`https://www.youtube.com/watch?v=${videoId}`);
-  const button = page.getByRole("button", { name: "Verificar Veracidade" });
+  const button = page.getByRole("button", { name: "Checar Alegações" });
   await expect(button).toBeVisible();
   const panel = page.frameLocator("#evidencia-side-panel");
   await expect(panel.getByRole("button", { name: /Fechar painel/, includeHidden: true })).toBeAttached();
@@ -100,31 +100,44 @@ async function measureRender(page: import("@playwright/test").Page) {
 }
 
 const mockValidEntry: LocalCacheEntry = {
-  analysisMode: "demo",
+  analysisMode: "evidence_first",
   videoId: "video-carlos",
-  analyzedAt: "2026-09-30T10:00:00Z",
-  score: 92,
-  classification: "verdadeiro",
-  summary: "Checagem de Carlos Augusto recuperada instantaneamente via cache local.",
+  videoTitle: "Vídeo de Teste Carlos Augusto",
+  channelName: "Canal de Testes",
+  publishedAt: "2026-01-15T00:00:00Z",
+  processingTimeMs: 120,
+  limitations: [],
   claims: [
     {
       id: "claim-carlos-1",
       text: "Alegação verificada em cache",
-      status: "apoiada",
-      evidenceSummary: "Evidência confirmada em base documental",
-      confidence: 0.94,
+      uncertainty: "supported",
+      temporalContext: {
+        videoPublishedAt: "2026-01-15T00:00:00Z",
+        note: "As alegações foram apresentadas em 2026.",
+      },
+      evidence: [
+        {
+          sourceId: "ev-carlos-1",
+          relation: "supports",
+          title: "Fonte de Auditoria",
+          url: "https://auditoria.org/relatorio",
+          publisher: "auditoria.org",
+          publishedAt: "2026-01-20",
+          snippet: "Evidência confirmada em base documental",
+          provenance: {
+            dataset: "factchecks_br",
+            indexedAt: "2026-09-30T10:00:00Z",
+          },
+        },
+      ],
+      reflectionQuestions: [
+        "A metodologia da auditoria é independente?",
+        "Quais fontes primárias sustentam essa checagem?",
+        "Que contexto ou evidência adicional ajudaria a avaliar a alegação?",
+      ],
     },
   ],
-  sources: [
-    {
-      id: "source-1",
-      title: "Fonte de Auditoria",
-      domain: "auditoria.org",
-      url: "https://auditoria.org/relatorio",
-      reliabilityScore: 0.96,
-    },
-  ],
-  processingTimeMs: 120,
   timestamp: Date.now() - 3600000, // 1 hora atrás (válido, < 24h)
   ttl: 86400000,
 };
@@ -152,9 +165,8 @@ test("HU06: Cenário 1 — Cache válido disponível exibe resultado em <1s sem 
   await button.click();
 
   // Valida que o resultado renderiza imediatamente
-  await expect(panel.getByText(mockValidEntry.summary)).toBeVisible();
   await expect(panel.getByText("Alegação verificada em cache")).toBeVisible();
-  await expect(panel.getByText(/Demonstração: resultado simulado/)).toBeVisible();
+  await expect(panel.getByText("Fonte de Auditoria")).toBeVisible();
 
   // Verifica ausência absoluta de chamadas externas de legendas e backend
   expect(captionCalls()).toBe(0);
@@ -189,13 +201,13 @@ test("HU06: Cenário 1b — Cache continua funcionando após recarregar a págin
 
   // Recarrega a página simulando nova navegação/reabertura do mesmo vídeo
   await page.reload();
-  await expect(page.getByRole("button", { name: "Verificar Veracidade" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Checar Alegações" })).toBeVisible();
   await expect(panel.getByRole("button", { name: /Fechar painel/, includeHidden: true })).toBeAttached();
   const reopenedFrame = await measureRender(page);
 
   await button.click();
 
-  await expect(panel.getByText(mockValidEntry.summary)).toBeVisible();
+  await expect(panel.getByText("Alegação verificada em cache")).toBeVisible();
   expect(captionCalls()).toBe(0);
   expect(await extension.worker.evaluate(() => (globalThis as any).cacheFetchCalls)).toBe(0);
 
@@ -213,7 +225,12 @@ test("HU06: Cenário 2 — Cache expirado é descartado e inicia nova análise c
   // Injeta cache expirado (exatamente 24h atrás: idade = 86400000 ms)
   const expiredEntry: LocalCacheEntry = {
     ...mockValidEntry,
-    summary: "Conteúdo antigo e obsoleto",
+    claims: [
+      {
+        ...mockValidEntry.claims[0],
+        text: "Conteúdo antigo e obsoleto",
+      },
+    ],
     timestamp: Date.now() - 86400000, // Exatamente 24h
   };
   await extension.worker.evaluate(async (entry) => {
@@ -225,8 +242,7 @@ test("HU06: Cenário 2 — Cache expirado é descartado e inicia nova análise c
   await button.click();
 
   // Espera a nova análise (que usará extração e backend mock)
-  await expect(panel.getByText("Por que essa classificação?")).toBeVisible();
-  await expect(panel.getByText(/Demonstração: resultado simulado/)).toBeVisible();
+  await expect(panel.getByText("Alegações Analisadas")).toBeVisible();
 
   // Confirma que o conteúdo obsoleto foi descartado
   await expect(panel.getByText("Conteúdo antigo e obsoleto")).toHaveCount(0);
@@ -239,7 +255,7 @@ test("HU06: Cenário 2 — Cache expirado é descartado e inicia nova análise c
     .poll(async () => {
       return extension.worker.evaluate(async () => {
         const stored = (await chrome.storage.local.get("video-carlos"))["video-carlos"] as LocalCacheEntry;
-        return stored && stored.timestamp > Date.now() - 10000 && stored.summary !== "Conteúdo antigo e obsoleto";
+        return stored && stored.timestamp > Date.now() - 10000 && stored.claims?.[0]?.text !== "Conteúdo antigo e obsoleto";
       });
     })
     .toBe(true);
@@ -253,7 +269,6 @@ test("HU06: Cenário 2b — Cache corrompido, timestamp futuro ou videoId diverg
     await chrome.storage.local.set({
       "video-carlos": {
         videoId: "outro-video-divergente", // videoId divergente da chave
-        summary: "Divergente",
         timestamp: Date.now() + 60000, // Timestamp futuro
       },
     });
@@ -264,7 +279,7 @@ test("HU06: Cenário 2b — Cache corrompido, timestamp futuro ou videoId diverg
   await button.click();
 
   // Inicia nova análise completa
-  await expect(panel.getByText("Por que essa classificação?")).toBeVisible();
+  await expect(panel.getByText("Alegações Analisadas")).toBeVisible();
   expect(captionCalls()).toBe(1);
 
   // O registro divergente foi descartado e substituído pelo novo resultado do vídeo correto
@@ -272,7 +287,7 @@ test("HU06: Cenário 2b — Cache corrompido, timestamp futuro ou videoId diverg
     .poll(async () => {
       return extension.worker.evaluate(async () => {
         const stored = (await chrome.storage.local.get("video-carlos"))["video-carlos"] as LocalCacheEntry;
-        return stored && stored.videoId === "video-carlos" && stored.score >= 0;
+        return stored && stored.videoId === "video-carlos" && Array.isArray(stored.claims);
       });
     })
     .toBe(true);
@@ -291,7 +306,7 @@ test("HU06: Análise com erro não é salva no cache e permite nova tentativa", 
 
   await button.click();
 
-  await expect(panel.getByRole("alert")).toContainText("Legendas Indisponíveis");
+  await expect(panel.getByRole("alert")).toContainText("Este vídeo não tem legendas");
 
   // Confirma que nenhuma entrada de sucesso foi salva no storage para esse vídeo
   const stored = await extension.worker.evaluate(async () => {

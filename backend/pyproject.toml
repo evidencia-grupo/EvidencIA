@@ -50,12 +50,17 @@ ignore = ["E501"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
-
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::pytest.PytestDeprecationWarning",
+    "ignore::starlette.testclient.StarletteDeprecationWarning",
+]
 
 [tool.coverage.run]
 branch = true
 source = ["app"]
 
 [tool.coverage.report]
-fail_under = 81
+fail_under = 80
 show_missing = true

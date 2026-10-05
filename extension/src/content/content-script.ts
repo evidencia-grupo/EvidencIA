@@ -1,4 +1,5 @@
 import { detectCaptionTracks, extractCaptionsFromPage } from "./caption-parser";
+import { toFriendlyMessage } from "./friendly-messages";
 import type { AnalyzeRequest } from "../../../shared/types/api";
 
 let currentVideoId: string | null = null;
@@ -151,7 +152,7 @@ function injectTriggerBadge() {
   button.className = "evidencia-btn";
   button.innerHTML = `
     <svg aria-hidden="true" class="evidencia-icon" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-    <span>Verificar Veracidade</span>
+    <span>Checar Alegações</span>
   `;
 
   // Impede que atalhos globais do player também consumam Enter/Espaço.
@@ -181,13 +182,14 @@ function injectTriggerBadge() {
     publish({ type: "ANALYSIS_START" });
     let timer: ReturnType<typeof setTimeout> | undefined;
     const checkActive = () => {
-      if (!active() || Date.now() >= deadline) throw new Error("Checagem encerrada. Tente novamente.");
+      if (!active()) throw new Error("Checagem encerrada. Tente novamente.");
+      if (Date.now() >= deadline) throw new Error("Tempo limite de 10 segundos excedido. Tente novamente.");
     };
     try {
       const work = async () => {
         const tracks = await detectCaptionTracks(videoId, controller.signal);
         checkActive();
-        if (!tracks.length) return null;
+        if (!tracks.tracks.length) return null;
         const cached = await chrome.runtime.sendMessage({ type: "GET_CACHE", videoId });
         checkActive();
         if (cached?.success && cached.data) return cached.data;
@@ -196,8 +198,10 @@ function injectTriggerBadge() {
         if (!captions) return null;
         const payload: AnalyzeRequest = {
           videoId,
-          videoTitle: document.querySelector("h1.ytd-watch-metadata")?.textContent?.trim() || document.title,
-          channelName: document.querySelector("#channel-name")?.textContent?.trim() || "Canal YouTube",
+          videoTitle: captions.videoTitle,
+          channelName: captions.channelName,
+          uploadDate: captions.uploadDate,
+          durationSeconds: captions.durationSeconds,
           transcript: captions.transcript,
           language: captions.language,
         };
@@ -214,11 +218,11 @@ function injectTriggerBadge() {
       ]);
       if (!active()) return;
       publish(data ? { type: "ANALYSIS_SUCCESS", data } : { type: "NO_CAPTIONS" });
-      button.querySelector("span")!.textContent = data ? `Veracidade: ${data.score}%` : "Sem legendas — tentar novamente";
+      button.querySelector("span")!.textContent = data ? "Checagem concluída" : "Sem legendas — tentar novamente";
       status.textContent = data ? "Checagem concluída" : "Legendas indisponíveis";
     } catch (error) {
       if (!active()) return;
-      publish({ type: "ANALYSIS_ERROR", error: error instanceof Error ? error.message : "Falha na checagem. Tente novamente." });
+      publish({ type: "ANALYSIS_ERROR", error: toFriendlyMessage(error) });
       button.querySelector("span")!.textContent = "Tentar novamente";
       status.textContent = "Falha na checagem";
     } finally {

@@ -1,0 +1,122 @@
+[
+  {
+    "id": "bf-01",
+    "claim": "Chá de casca de banana cura diabetes e zera a glicose no sangue em 3 dias",
+    "claimant": "Vídeos em redes sociais e canais de receitas caseiras",
+    "status": "contraditada",
+    "rating_text": "Falso",
+    "publisher": "Agência Lupa",
+    "review_url": "https://lupa.uol.com.br/verificacao/cha-banana-diabetes",
+    "domain": "lupa.uol.com.br",
+    "evidence_summary": "Não existem ensaios clínicos controlados ou respaldo da Sociedade Brasileira de Diabetes que atestem cura da doença com infusão de casca de banana.",
+    "category": "saúde"
+  },
+  {
+    "id": "bf-02",
+    "claim": "Consumir água morna com limão pela manhã neutraliza o pH do corpo e previne infecções virais",
+    "claimant": "Mensagens de WhatsApp e vídeos curtos",
+    "status": "contraditada",
+    "rating_text": "Falso",
+    "publisher": "Aos Fatos",
+    "review_url": "https://www.aosfatos.org/noticias/agua-limao-ph-sangue",
+    "domain": "aosfatos.org",
+    "evidence_summary": "O organismo humano possui mecanismos fisiológicos e renais próprios que mantêm o pH sanguíneo estável entre 7,35 e 7,45, independentemente dos alimentos ingeridos.",
+    "category": "saúde"
+  },
+  {
+    "id": "bf-03",
+    "claim": "Vacinas passam por três fases de ensaios clínicos prévios antes de aprovação definitiva pela Anvisa",
+    "claimant": "Canais de divulgação científica e especialistas de saúde pública",
+    "status": "apoiada",
+    "rating_text": "Verdadeiro",
+    "publisher": "UOL Confere",
+    "review_url": "https://noticias.uol.com.br/confere/fases-ensaios-vacinas",
+    "domain": "uol.com.br",
+    "evidence_summary": "Normativas da Agência Nacional de Vigilância Sanitária (Anvisa) e OMS exigem cumprimento obrigatório de fases 1, 2 e 3 com monitoramento contínuo.",
+    "category": "ciência"
+  },
+  {
+    "id": "bf-04",
+    "claim": "O uso de suplementos de vitamina D reduz a mortalidade em pacientes hospitalizados com formas graves de infecção",
+    "claimant": "Debates médicos e publicações preliminares",
+    "status": "inconclusiva",
+    "rating_text": "Sem comprovação",
+    "publisher": "Aos Fatos",
+    "review_url": "https://www.aosfatos.org/noticias/vitamina-d-pacientes-graves",
+    "domain": "aosfatos.org",
+    "evidence_summary": "A literatura científica apresenta resultados divergentes e metanálises recentes não comprovaram benefício clínico estatisticamente significativo.",
+    "category": "ciência"
+  },
+  {
+    "id": "bf-05",
+    "claim": "O Brasil registrou balança comercial recorde com liderança de exportações do agronegócio e energia",
+    "claimant": "Noticiário econômico e comunicados ministeriais",
+    "status": "apoiada",
+    "rating_text": "Fato",
+    "publisher": "G1 Fato ou Fake",
+    "review_url": "https://g1.globo.com/fato-ou-fake/balanca-comercial-exportacoes",
+    "domain": "g1.globo.com",
+    "evidence_summary": "Dados consolidados da Secretaria de Comércio Exterior (Secex/MDIC) e IBGE confirmam o superávit recorde impulsionado pelo setor agroexportador.",
+    "category": "economia"
+  },
+  {
+    "id": "bf-06",
+    "claim": "Aumento do consumo diário de café altera a longevidade média da população em mais de dez anos",
+    "claimant": "Artigos em blogs de saúde preventiva",
+    "status": "inconclusiva",
+    "rating_text": "Exagerado",
+    "publisher": "Boatos.org",
+    "review_url": "https://www.boatos.org/saude/cafe-longevidade-10-anos.html",
+    "domain": "boatos.org",
+    "evidence_summary": "Existem correlações observacionais positivas com certos desfechos cardiovasculares, mas não há relação de causalidade comprovada para aumento de 10 anos na expectativa de vida.",
+    "category": "saúde"
+  },
+  {
+    "id": "bf-07",
+    "claim": "Mistura de bicarbonato e vinagre elimina 100% de bactérias e substitui antibióticos convencionais",
+    "claimant": "Canais de receitas caseiras e medicina alternativa",
+    "status": "contraditada",
+    "rating_text": "Falso",
+    "publisher": "Agência Lupa",
+    "review_url": "https://lupa.uol.com.br/verificacao/bicarbonato-vinagre-antibiotico",
+    "domain": "lupa.uol.com.br",
+    "evidence_summary": "A reação química entre ácido acético e bicarbonato de sódio resulta em água e acetato de sódio, não possuindo espectro bactericida eficaz para infecções clínicas.",
+    "category": "saúde"
+  },
+  {
+    "id": "bf-08",
+    "claim": "O desmatamento na Amazônia monitorado pelo sistema Prodes/INPE utiliza imagens de satélite calibradas",
+    "claimant": "Pesquisadores ambientais e acadêmicos",
+    "status": "apoiada",
+    "rating_text": "Verdadeiro",
+    "publisher": "Aos Fatos",
+    "review_url": "https://www.aosfatos.org/noticias/inpe-prodes-satelite-metodologia",
+    "domain": "aosfatos.org",
+    "evidence_summary": "O Instituto Nacional de Pesquisas Espaciais utiliza metodologia revisada por pares com verificação independente por múltiplos consórcios internacionais.",
+    "category": "ciência"
+  },
+  {
+    "id": "bf-09",
+    "claim": "Imunidade natural após infecção substitui integralmente a necessidade de qualquer reforço de vacina",
+    "claimant": "Postagens em fóruns de discussão",
+    "status": "inconclusiva",
+    "rating_text": "Distorcido",
+    "publisher": "UOL Confere",
+    "review_url": "https://noticias.uol.com.br/confere/imunidade-hibrida-vacinas",
+    "domain": "uol.com.br",
+    "evidence_summary": "A chamada imunidade híbrida (infecção prévia somada à imunização ativa) oferece maior proteção contra variantes do que a imunidade natural isolada.",
+    "category": "saúde"
+  },
+  {
+    "id": "bf-10",
+    "claim": "O Pix cobra taxa oculta de cinco por cento sobre transferências entre pessoas físicas",
+    "claimant": "Correntes de WhatsApp",
+    "status": "contraditada",
+    "rating_text": "Falso",
+    "publisher": "Boatos.org",
+    "review_url": "https://www.boatos.org/economia/pix-taxa-cinco-por-cento.html",
+    "domain": "boatos.org",
+    "evidence_summary": "Regulamentação expressa do Banco Central do Brasil garante gratuidade integral de transações Pix para pessoas físicas e microempreendedores individuais.",
+    "category": "economia"
+  }
+]
