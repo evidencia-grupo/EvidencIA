@@ -1,8 +1,11 @@
 import type { Claim, UncertaintyState } from "../../../../shared/types/api";
+import { ReflectionQuestions } from "./ReflectionQuestions";
 import { EvidenceCard } from "./EvidenceCard";
 
 interface ClaimCardProps {
   claim: Claim;
+  expanded?: boolean;
+  onSelect?: () => void;
 }
 
 const UNCERTAINTY_BADGES: Record<
@@ -46,7 +49,7 @@ const UNCERTAINTY_BADGES: Record<
   },
 };
 
-export function ClaimCard({ claim }: ClaimCardProps) {
+export function ClaimCard({ claim, expanded = false, onSelect }: ClaimCardProps) {
   const badge = UNCERTAINTY_BADGES[claim.uncertainty] || UNCERTAINTY_BADGES.insufficient_evidence;
 
   return (
@@ -81,7 +84,9 @@ export function ClaimCard({ claim }: ClaimCardProps) {
         class="claim-text"
         style={{ fontWeight: "600", fontSize: "14px", marginBottom: "8px", color: "var(--color-text-primary)" }}
       >
-        "{claim.text}"
+        <button type="button" class="claim-toggle" aria-expanded={expanded} aria-controls={`claim-details-${claim.id}`} onClick={onSelect}>
+          "{claim.text}"
+        </button>
       </h3>
 
       {claim.temporalContext?.note && (
@@ -101,6 +106,7 @@ export function ClaimCard({ claim }: ClaimCardProps) {
         </aside>
       )}
 
+      {expanded && <div id={`claim-details-${claim.id}`}>
       {/* Seção de Evidências */}
       <section class="claim-evidences" aria-label={`Evidências para: ${claim.text}`}>
         {claim.evidence && claim.evidence.length > 0 ? (
@@ -126,6 +132,8 @@ export function ClaimCard({ claim }: ClaimCardProps) {
           </p>
         )}
       </section>
+      <ReflectionQuestions questions={claim.reflectionQuestions} headingId={`reflection-heading-${claim.id}`} />
+      </div>}
     </article>
   );
 }

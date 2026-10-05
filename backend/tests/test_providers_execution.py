@@ -9,7 +9,7 @@ import pytest
 
 from app.providers.ollama import OllamaProvider
 from app.providers.remote import RemoteLLMProvider
-from app.providers.types import ProviderUnavailableError
+from app.providers.types import Claim, ProviderUnavailableError
 
 
 @pytest.mark.asyncio
@@ -69,8 +69,7 @@ async def test_ollama_extract_claims_empty_claims():
 
     with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
         mock_post.return_value = mock_resp
-        with pytest.raises(ProviderUnavailableError, match="Nenhuma alegação extraída"):
-            await provider.extract_claims("Transcrição", "Título")
+        assert await provider.extract_claims("Transcrição", "Título") == []
 
 
 @pytest.mark.asyncio
@@ -86,7 +85,7 @@ async def test_ollama_extract_claims_connection_failure():
 @pytest.mark.asyncio
 async def test_ollama_generate_reflection():
     provider = OllamaProvider()
-    questions = await provider.generate_reflection([], [])
+    questions = await provider.generate_reflection([Claim(text="Afirmação específica")], [])
     assert len(questions) >= 3
     assert any("fontes primárias" in q for q in questions)
 
@@ -145,8 +144,7 @@ async def test_remote_extract_claims_empty_or_malformed():
 
     with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
         mock_post.return_value = mock_resp
-        with pytest.raises(ProviderUnavailableError, match="Nenhuma alegação válida"):
-            await provider.extract_claims("Transcrição", "Título")
+        assert await provider.extract_claims("Transcrição", "Título") == []
 
 
 @pytest.mark.asyncio
@@ -162,5 +160,5 @@ async def test_remote_extract_claims_network_failure():
 @pytest.mark.asyncio
 async def test_remote_generate_reflection():
     provider = RemoteLLMProvider()
-    questions = await provider.generate_reflection([], [])
+    questions = await provider.generate_reflection([Claim(text="Afirmação específica")], [])
     assert len(questions) >= 3

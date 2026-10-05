@@ -62,6 +62,7 @@ it("sincroniza início, sucesso, erros e limpa resultado anterior", () => {
   expect(document.body.textContent).toContain("Canal de teste");
   expect(document.body.textContent).toContain("15 de abril de 2021");
   expect(document.body.textContent).toContain("Contexto de 2021");
+  act(() => document.querySelector<HTMLButtonElement>(".claim-toggle")!.click());
   const reflection = document.querySelector(".reflection-section");
   expect(reflection?.querySelectorAll("li")).toHaveLength(3);
   expect(reflection?.textContent).not.toMatch(/certo|errado/i);
@@ -82,6 +83,7 @@ it("sincroniza início, sucesso, erros e limpa resultado anterior", () => {
 it("exibe três perguntas neutras de fallback quando não há reflexão no claim", () => {
   const claims = [{ ...data.claims[0], reflectionQuestions: undefined }];
   message({ type: "ANALYSIS_SUCCESS", data: { ...data, claims } });
+  act(() => document.querySelector<HTMLButtonElement>(".claim-toggle")!.click());
   const reflection = document.querySelector(".reflection-section");
   expect(reflection?.querySelectorAll("li")).toHaveLength(3);
   expect(reflection?.textContent).not.toMatch(/certo|errado/i);
@@ -182,6 +184,34 @@ it("avisos de carregamento, erro e falta de legendas não usam termos técnicos"
   expect(document.body.textContent).not.toMatch(jargon);
 });
 
+it("expande apenas evidências e perguntas da alegação selecionada sem score global", () => {
+  const other = { ...data.claims[0], id: "other", text: "Outra alegação", reflectionQuestions: ["Pergunta exclusiva 1?", "Pergunta exclusiva 2?", "Pergunta exclusiva 3?"], evidence: [{ ...data.claims[0].evidence[0], sourceId: "other-source", title: "Fonte exclusiva" }] };
+  message({ type: "ANALYSIS_SUCCESS", data: { ...data, claims: [...data.claims, other] } });
+  expect(document.querySelectorAll(".claim-card")).toHaveLength(2);
+  expect(document.querySelectorAll(".claim-evidences")).toHaveLength(0);
+  const buttons = document.querySelectorAll<HTMLButtonElement>(".claim-toggle");
+  act(() => buttons[0].click());
+  expect(document.body.textContent).toContain("Fonte de teste");
+  expect(document.body.textContent).not.toContain("Fonte exclusiva");
+  act(() => buttons[1].click());
+  expect(buttons[0].getAttribute("aria-expanded")).toBe("false");
+  expect(buttons[1].getAttribute("aria-expanded")).toBe("true");
+  expect(document.body.textContent).not.toContain("Fonte de teste");
+  expect(document.body.textContent).toContain("Fonte exclusiva");
+  expect(document.body.textContent).toContain("Pergunta exclusiva 1?");
+  expect(document.querySelectorAll(".reflection-section")).toHaveLength(1);
+  expect(document.querySelector('[role="meter"], .gauge')).toBeNull();
+  expect(document.body.textContent).not.toMatch(/\d+%|veracidade/i);
+  act(() => buttons[1].click());
+  expect(document.querySelectorAll(".claim-evidences")).toHaveLength(0);
+});
+it("informa ausência de alegações sem perguntas, nota ou veredito", () => {
+  message({ type: "ANALYSIS_SUCCESS", data: { ...data, claims: [] } });
+  expect(document.body.textContent).toContain("Não foram identificadas alegações checáveis");
+  expect(document.querySelector(".claim-card, .reflection-section")).toBeNull();
+  message({ type: "ANALYSIS_SUCCESS", data: { ...data, claims: [], analysisMode: "evidence_only" } });
+  expect(document.body.textContent).toContain("Não foi possível identificar");
+});
 it("exibe seção discreta de feedback anônimo após carregar os resultados da análise", () => {
   message({ type: "ANALYSIS_SUCCESS", data });
   const feedbackSection = document.querySelector(".feedback-section");
@@ -190,4 +220,3 @@ it("exibe seção discreta de feedback anônimo após carregar os resultados da 
   expect(feedbackSection?.querySelector('button[aria-label="Avaliar análise como útil"]')).not.toBeNull();
   expect(feedbackSection?.querySelector('button[aria-label="Avaliar análise como não útil"]')).not.toBeNull();
 });
-

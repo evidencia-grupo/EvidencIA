@@ -1,5 +1,5 @@
 from typing import List, Literal, Optional, Dict
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 EvidenceRelation = Literal["supports", "contradicts", "contextualizes"]
 UncertaintyState = Literal[
@@ -54,6 +54,7 @@ class AnalyzeRequest(BaseModel):
 
 
 class AnalyzeResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     videoId: str
     analysisMode: Literal["evidence_first", "evidence_only"]
     videoTitle: str

@@ -406,6 +406,9 @@ button:focus-visible, a:focus-visible { outline: 3px solid #FBC02D; outline-offs
   color: var(--color-text-secondary);
 }
 
+.claim-toggle { font: inherit; color: inherit; text-align: left; background: transparent; border: none; padding: 6px 0; width: 100%; cursor: pointer; }
+.claim-toggle:focus-visible { outline: 3px solid #FBC02D; outline-offset: 3px; }
+
 /* Seção de Avaliação Anônima (HU12 / RF-10 / RNF-05) */
 .feedback-section {
   background: var(--color-bg-card);
@@ -550,4 +553,3 @@ button:focus-visible, a:focus-visible { outline: 3px solid #FBC02D; outline-offs
   margin: 0;
   font-weight: 500;
 }
-

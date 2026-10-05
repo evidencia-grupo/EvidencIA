@@ -7,7 +7,7 @@ from typing import List, Optional
 
 from app.config import settings
 from app.providers.factory import get_provider, ProviderUnavailableError
-from app.providers.types import Claim as ProviderClaim, Evidence as ProviderEvidence
+from app.providers.types import Claim as ProviderClaim, EvidenceRef as ProviderEvidenceRef
 from app.schemas import (
     AnalyzeRequest,
     AnalyzeResponse,
@@ -35,7 +35,7 @@ class FactCheckerService:
     """
 
     FALLBACK_REFLECTION_QUESTIONS = [
-        "Que evidências independentes poderiam ajudar a avaliar as alegações apresentadas?",
+        "Que evidências independentes poderiam ajudar a avaliar esta alegação?",
         "Quais aspectos das fontes, como autoria, data e método, vale a pena verificar?",
         "Que contexto ou evidência adicional ajudaria você a formar sua própria interpretação?",
     ]
@@ -108,9 +108,9 @@ class FactCheckerService:
         claims: List[Claim] = []
 
         # 3. Processamento no modo Evidence-First
-        if analysis_mode == "evidence_first" and provider_claims:
+        if analysis_mode == "evidence_first":
             for idx, p_claim in enumerate(provider_claims):
-                claim_id = p_claim.id or f"clm-{idx + 1:02d}"
+                claim_id = f"clm-{idx + 1:02d}"
                 claim_text = p_claim.text
                 evidence_list: List[Evidence] = []
                 uncertainty: UncertaintyState = "insufficient_evidence"
@@ -174,14 +174,26 @@ class FactCheckerService:
                     )
                 )
 
-            # 4. Geração de perguntas reflexivas não-dogmáticas via LLMProvider (HU15)
-            try:
-                all_evidence_refs: List[ProviderEvidence] = []
-                reflections = await provider.generate_reflection(provider_claims, all_evidence_refs)
-                if claims:
-                    claims[0].reflectionQuestions = self._normalize_reflection_questions(reflections)
-            except Exception as ref_exc:
-                logger.debug(f"Perguntas reflexivas não geradas: {ref_exc}")
+            # Perguntas e evidências pertencem somente à alegação investigada.
+            for p_claim, claim in zip(provider_claims, claims):
+                evidence_refs = [
+                    ProviderEvidenceRef(
+                        evidence_id=item.sourceId,
+                        claim_text=claim.text,
+                        summary=item.snippet,
+                        source_url=item.url,
+                    )
+                    for item in claim.evidence
+                ]
+                try:
+                    reflections = await asyncio.wait_for(
+                        provider.generate_reflection([p_claim], evidence_refs),
+                        timeout=timeout_limit,
+                    )
+                    claim.reflectionQuestions = self._normalize_reflection_questions(reflections)
+                except Exception as ref_exc:
+                    logger.debug(f"Perguntas reflexivas não geradas: {ref_exc}")
+                    claim.reflectionQuestions = self.FALLBACK_REFLECTION_QUESTIONS.copy()
 
         # 5. Processamento no modo Evidence-Only (Fallback sem LLM)
         else:
@@ -209,19 +221,11 @@ class FactCheckerService:
                     )
                 )
             else:
-                claims.append(
-                    Claim(
-                        id="clm-01",
-                        text=f"Afirmação do vídeo: {request.videoTitle}",
-                        temporalContext=temporal_ctx,
-                        evidence=[],
-                        uncertainty="insufficient_evidence",
-                        reflectionQuestions=[],
-                    )
-                )
+                limitations.append("Não foi possível identificar alegações verificáveis durante a falha de extração.")
 
-        if claims and not any(claim.reflectionQuestions for claim in claims):
-            claims[0].reflectionQuestions = self.FALLBACK_REFLECTION_QUESTIONS.copy()
+        for claim in claims:
+            if not claim.reflectionQuestions:
+                claim.reflectionQuestions = self.FALLBACK_REFLECTION_QUESTIONS.copy()
 
         elapsed_ms = int((time.perf_counter() - start_time) * 1000)
 

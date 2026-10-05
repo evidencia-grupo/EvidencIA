@@ -41,7 +41,7 @@ class OllamaService:
         """
         system_prompt = (
             "Você é um especialista em checagem de fatos e análise de desinformação em português do Brasil. "
-            "Sua tarefa é ler a transcrição de um vídeo e extrair de 2 a 4 alegações factuais atômicas centrais. "
+            "Sua tarefa é ler a transcrição de um vídeo e extrair de 0 a 4 alegações factuais atômicas centrais. "
             "Diretrizes (baseadas no padrão ClaimPT e agências brasileiras IFCN):\n"
             "1. Ignore saudações, pedidos de inscrição, opiniões subjetivas ou conversas fiadas.\n"
             "2. Isole somente afirmações sobre fatos, dados, saúde, ciência ou economia que possam ser comprovadas ou desmentidas.\n"
@@ -91,7 +91,7 @@ class OllamaService:
                 content = response_json.get("message", {}).get("content", "")
                 parsed = json.loads(content)
                 claims = parsed.get("claims", [])
-                if isinstance(claims, list) and len(claims) > 0:
+                if isinstance(claims, list):
                     return claims
                 return None
         except Exception as exc:
@@ -101,8 +101,6 @@ class OllamaService:
     async def generate_accessible_summary_with_qwen(
         self,
         claims: List[Dict],
-        classification: str,
-        score: int,
         video_title: str,
     ) -> Optional[str]:
         """
@@ -113,7 +111,7 @@ class OllamaService:
             "em português do Brasil de maneira simples, acolhedora e direta para pessoas leigas (persona Dona Lurdes). "
             "Regras obrigatórias:\n"
             "1. NUNCA use jargões técnicos como 'algoritmo', 'inferência', 'bayesiano', 'overfitting' ou termos acadêmicos complexos.\n"
-            "2. Explique com clareza o que é verdade, o que foi desmentido e se é seguro compartilhar.\n"
+            "2. Oriente a investigação separada de cada alegação; não atribua nota, porcentagem ou veredito global ao vídeo.\n"
             "3. Mantenha o texto com 2 a 4 frases objetivas."
         )
 
@@ -124,7 +122,6 @@ class OllamaService:
 
         user_content = (
             f"Título do Vídeo: {video_title}\n"
-            f"Classificação Geral: {classification} (Nota: {score}/100)\n\n"
             f"Alegações examinadas:\n{claims_summary}\n\n"
             "Escreva a síntese acessível em linguagem simples:"
         )
