@@ -161,6 +161,16 @@ it("ignora remetentes externos, confirma foco e fecha pelo botão/Escape", () =>
   expect(post).toHaveBeenCalledWith({ type: "CLOSE_PANEL" }, "https://www.youtube.com");
   post.mockRestore();
 });
+it("permite acionar nova tentativa pelo painel em caso de falha ou ausência de legendas (HU10)", () => {
+  const post = vi.spyOn(window.parent, "postMessage");
+  message({ type: "NO_CAPTIONS" });
+  expect(document.body.textContent).toContain("Este vídeo não tem legendas");
+  const retryBtn = document.querySelector<HTMLButtonElement>(".retry-btn");
+  expect(retryBtn).not.toBeNull();
+  act(() => retryBtn!.click());
+  expect(post).toHaveBeenCalledWith({ type: "RETRY_ANALYSIS" }, "https://www.youtube.com");
+  post.mockRestore();
+});
 
 it("avisos de carregamento, erro e falta de legendas não usam termos técnicos", () => {
   const jargon = /HTTP|SLA|servidor|transcri|instabilidade|extraindo|fetch|timeout|\berro\b \d/i;

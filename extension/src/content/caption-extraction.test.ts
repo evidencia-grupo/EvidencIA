@@ -39,6 +39,15 @@ it("distingue HTTP, transcrição vazia e cancelamento", async () => {
   const controller = new AbortController(); controller.abort();
   await expect(extractCaptionsFromPage("video", controller.signal)).rejects.toThrow();
 });
+it("limita tempo de deteccao de faixas a 1 segundo (HU10 / RNF-01)", async () => {
+  vi.useFakeTimers();
+  sendMessage.mockReturnValueOnce(new Promise(() => {}));
+  const promise = extractCaptionsFromPage("video");
+  const expectation = expect(promise).rejects.toThrow("Tempo limite de 1 segundo");
+  await vi.advanceTimersByTimeAsync(1001);
+  await expectation;
+  vi.useRealTimers();
+});
 
 it("processa JSON3 real preservando palavras do mesmo evento", () => {
   const body = JSON.stringify({
@@ -118,4 +127,19 @@ it("remove marcador de troca de locutor sem remover a fala", () => {
   });
 
   expect(parseCaptionBody(body)).toBe("Tudo bem?");
+});
+
+
+it("cancela detecção pendente e ignora resposta tardia sem baixar legendas", async () => {
+  let resolveTracks!: (value: unknown) => void;
+  sendMessage.mockReturnValueOnce(new Promise(resolve => { resolveTracks = resolve; }));
+  const controller = new AbortController();
+  const extraction = extractCaptionsFromPage("video", controller.signal);
+  const rejection = expect(extraction).rejects.toThrow("Checagem cancelada");
+  await Promise.resolve();
+  controller.abort(new Error("Checagem cancelada"));
+  await rejection;
+  resolveTracks({ success: true, data: { tracks: [{ baseUrl: "https://www.youtube.com/api/timedtext", languageCode: "pt" }], metadata } });
+  await Promise.resolve();
+  expect(fetch).not.toHaveBeenCalled();
 });

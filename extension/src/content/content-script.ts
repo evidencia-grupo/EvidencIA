@@ -1,4 +1,4 @@
-import { extractCaptionsFromPage } from "./caption-parser";
+import { detectCaptionTracks, extractCaptionsFromPage } from "./caption-parser";
 import { toFriendlyMessage } from "./friendly-messages";
 import type { AnalyzeRequest } from "../../../shared/types/api";
 
@@ -28,7 +28,14 @@ window.addEventListener("message", (event) => {
     panelReady = true;
     if (panelState) publish(panelState);
     if (panelIframe?.style.display === "block") panelIframe.contentWindow?.postMessage({ type: "FOCUS_PANEL" }, panelOrigin);
-  } else if (event.data?.type === "CLOSE_PANEL") closePanel();
+  } else if (event.data?.type === "CLOSE_PANEL") {
+    closePanel();
+  } else if (event.data?.type === "RETRY_ANALYSIS") {
+    const btn = badgeContainer?.shadowRoot?.querySelector<HTMLButtonElement>("button");
+    if (btn && btn.getAttribute("aria-disabled") !== "true") {
+      btn.click();
+    }
+  }
 });
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && panelIframe?.style.display === "block") closePanel();
@@ -180,10 +187,13 @@ function injectTriggerBadge() {
     };
     try {
       const work = async () => {
+        const tracks = await detectCaptionTracks(videoId, controller.signal);
+        checkActive();
+        if (!tracks.tracks.length) return null;
         const cached = await chrome.runtime.sendMessage({ type: "GET_CACHE", videoId });
         checkActive();
         if (cached?.success && cached.data) return cached.data;
-        const captions = await extractCaptionsFromPage(videoId, controller.signal);
+        const captions = await extractCaptionsFromPage(videoId, controller.signal, tracks);
         checkActive();
         if (!captions) return null;
         const payload: AnalyzeRequest = {
@@ -207,7 +217,7 @@ function injectTriggerBadge() {
         }),
       ]);
       if (!active()) return;
-      publish(data ? { type: "ANALYSIS_SUCCESS", data } : { type: "NO_CAPTIONS_AVAILABLE" });
+      publish(data ? { type: "ANALYSIS_SUCCESS", data } : { type: "NO_CAPTIONS" });
       button.querySelector("span")!.textContent = data ? "Checagem concluída" : "Sem legendas — tentar novamente";
       status.textContent = data ? "Checagem concluída" : "Legendas indisponíveis";
     } catch (error) {

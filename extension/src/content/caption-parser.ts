@@ -63,8 +63,32 @@ export function parseCaptionBody(body: string): string {
   );
 }
 
-export async function extractCaptionsFromPage(videoId: string, signal?: AbortSignal): Promise<ExtractedCaptions | null> {
-  const result = await chrome.runtime.sendMessage({ type: "GET_CAPTION_TRACKS", videoId });
+export interface CaptionTrack { baseUrl: string; languageCode: string }
+
+export interface CaptionAvailability {
+  tracks: CaptionTrack[];
+  metadata?: Pick<ExtractedCaptions, "videoTitle" | "channelName" | "uploadDate" | "durationSeconds">;
+}
+
+export async function detectCaptionTracks(videoId: string, signal?: AbortSignal): Promise<CaptionAvailability> {
+  signal?.throwIfAborted();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const detectionPromise = Promise.resolve().then(() => chrome.runtime.sendMessage({ type: "GET_CAPTION_TRACKS", videoId }));
+  let onAbort: (() => void) | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("Tempo limite de 1 segundo para detecção de legendas excedido. Tente novamente.")), 1000);
+    onAbort = () => reject(signal?.reason ?? new DOMException("Aborted", "AbortError"));
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+
+  let result: any;
+  try {
+    result = await Promise.race([detectionPromise, timeoutPromise]);
+  } finally {
+    clearTimeout(timer);
+    if (onAbort) signal?.removeEventListener("abort", onAbort);
+  }
+
   signal?.throwIfAborted();
   if (!result?.success) throw new Error(result?.error || "Não foi possível acessar as legendas. Tente novamente.");
   const payload = result.data as {
@@ -73,6 +97,13 @@ export async function extractCaptionsFromPage(videoId: string, signal?: AbortSig
   };
   const tracks = payload?.tracks;
   if (!Array.isArray(tracks)) throw new Error("Resposta de legendas inválida.");
+  return { tracks, metadata: payload.metadata };
+}
+
+export async function extractCaptionsFromPage(videoId: string, signal?: AbortSignal, detectedTracks?: CaptionAvailability): Promise<ExtractedCaptions | null> {
+  const payload = detectedTracks ?? await detectCaptionTracks(videoId, signal);
+  const tracks = payload.tracks;
+  signal?.throwIfAborted();
   if (!tracks.length) return null;
   const track = tracks.find(item => item.languageCode.startsWith("pt")) ?? tracks[0];
   const url = new URL(track.baseUrl);
