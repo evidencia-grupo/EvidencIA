@@ -106,3 +106,26 @@ class ClassifyResponse(BaseModel):
     probabilities: Dict[str, float] = Field(..., description="P(fake) e P(true)")
     top_features: List[List[Any]] = Field(default_factory=list, description="Features mais discriminativas")
 
+
+class AuthTokenRequest(BaseModel):
+    installationId: str = Field(..., min_length=8, description="Identificador único anônimo da instalação da extensão")
+    clientVersion: Optional[str] = Field("1.0.0", description="Versão do cliente da extensão")
+
+
+class AuthTokenResponse(BaseModel):
+    token: str = Field(..., description="Token de acesso efêmero (JWT/HMAC)")
+    tokenType: str = Field("Bearer", description="Tipo do token de autenticação")
+    expiresIn: int = Field(86400, description="Tempo de vida útil em segundos (24 horas)")
+
+
+class LivenessResponse(BaseModel):
+    status: Literal["alive"] = "alive"
+    timestamp: str
+
+
+class ReadinessResponse(BaseModel):
+    status: Literal["ready", "not_ready"]
+    components: Dict[str, str]
+    timestamp: str
+
+

@@ -89,7 +89,7 @@ class FactCheckerService:
         temporal_ctx = self._build_temporal_context(request.uploadDate)
 
         # 1. Obtenção do provedor via Factory (lança MockInProductionError se configurado indevidamente)
-        provider = self.provider or get_provider(
+        provider = get_provider(
             provider_name=getattr(settings, "LLM_PROVIDER", None),
             app_env=settings.ENV or settings.ENVIRONMENT,
         )

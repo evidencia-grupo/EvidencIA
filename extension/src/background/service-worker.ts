@@ -8,8 +8,48 @@ import type { AnalyzeRequest, AnalyzeResponse, FeedbackRequest, FeedbackResponse
 const API_BASE = (import.meta.env?.VITE_API_BASE_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 const BACKEND_URL = `${API_BASE}/api/v1/analyze`;
 const FEEDBACK_URL = `${API_BASE}/api/v1/feedback`;
+const AUTH_URL = `${API_BASE}/api/v1/auth/token`;
 
 export { getCachedResult, saveCachedResult, CACHE_TTL_MS };
+
+let inMemoryToken: string | null = null;
+
+export async function getAuthToken(): Promise<string | null> {
+  if (inMemoryToken) return inMemoryToken;
+  try {
+    const stored = await chrome.storage?.local?.get("evidencia_auth_token");
+    if (stored?.evidencia_auth_token) {
+      inMemoryToken = stored.evidencia_auth_token;
+      return inMemoryToken;
+    }
+  } catch {
+    // Ignora falha de storage em ambiente de teste ou isolado
+  }
+  return null;
+}
+
+export async function refreshAuthToken(): Promise<string | null> {
+  try {
+    const stored = await chrome.storage?.local?.get("evidencia_inst_id");
+    const instId = stored?.evidencia_inst_id || `inst-${crypto.randomUUID()}`;
+    await chrome.storage?.local?.set({ evidencia_inst_id: instId });
+
+    const res = await fetch(AUTH_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ installationId: instId, clientVersion: "1.0.0" }),
+    });
+    if (res.ok) {
+      const data = (await res.json()) as { token: string };
+      inMemoryToken = data.token;
+      await chrome.storage?.local?.set({ evidencia_auth_token: data.token });
+      return data.token;
+    }
+  } catch {
+    // Falha silenciosa em dev/offline
+  }
+  return null;
+}
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (sender.id !== chrome.runtime.id || !sender.url?.startsWith("https://www.youtube.com/")) return;
@@ -32,9 +72,16 @@ export async function handleAnalyzeRequest(payload: AnalyzeRequest, deadline = D
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), remaining);
   try {
+    const token = await getAuthToken();
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "X-Client-Version": "1.0.0",
+    };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
     const response = await fetch(BACKEND_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Client-Version": "1.0.0" },
+      headers,
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
@@ -52,9 +99,16 @@ export async function handleAnalyzeRequest(payload: AnalyzeRequest, deadline = D
 }
 
 export async function handleFeedbackRequest(payload: FeedbackRequest): Promise<FeedbackResponse> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "X-Client-Version": "1.0.0",
+  };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
   const response = await fetch(FEEDBACK_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-Client-Version": "1.0.0" },
+    headers,
     body: JSON.stringify(payload),
   });
   if (!response.ok) throw new Error(`Falha ao registrar feedback: HTTP ${response.status}`);

@@ -9,6 +9,7 @@ from slowapi.errors import RateLimitExceeded
 from app.config import settings
 from app.api.v1.endpoints import router as api_v1_router
 from app.services.fact_checker import fact_checker_service
+from app.limiter import limiter
 
 
 @asynccontextmanager
@@ -19,9 +20,6 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         fact_checker_service.provider = None
-
-# Rate limiter por endereço remoto (RNF-04)
-limiter = Limiter(key_func=get_remote_address, default_limits=[f"{settings.RATE_LIMIT_MAX_PER_MINUTE}/minute"])
 
 app = FastAPI(
     lifespan=lifespan,
@@ -36,13 +34,23 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configuração de CORS restrito
+env_name = (settings.ENV or settings.ENVIRONMENT or "").lower()
+is_production = env_name in ("production", "prod", "staging")
+
 raw_origins = [o.strip() for o in settings.CORS_ALLOWED_ORIGINS.split(",") if o.strip()]
-exact_origins = [o for o in raw_origins if not o.startswith("chrome-extension://")]
+
+if is_production and "*" in raw_origins:
+    raise RuntimeError("CORS wildcard '*' é estritamente proibido em ambiente de produção (ADR-002, RNF-01).")
+
+exact_origins = [o for o in raw_origins if o != "*" and not o.startswith("chrome-extension://")]
 allow_extension = any(o.startswith("chrome-extension://") for o in raw_origins)
+
+if not is_production and "*" in raw_origins:
+    exact_origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=exact_origins if "*" not in raw_origins else ["*"],
+    allow_origins=exact_origins,
     allow_origin_regex=r"^chrome-extension://[a-zA-Z0-9]+$" if allow_extension else None,
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
