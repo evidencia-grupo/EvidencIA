@@ -93,3 +93,37 @@ def test_analyze_video_missing_fields():
     }
     response = client.post("/api/v1/analyze", json=payload)
     assert response.status_code == 422
+
+
+def test_cors_preflight_allows_chrome_extension():
+    """Valida permissão de preflight OPTIONS para extensões Chrome."""
+    response = client.options(
+        "/api/v1/analyze",
+        headers={
+            "Origin": "chrome-extension://abcdefghijklmnopabcdefghijklmnop",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "Content-Type,X-Client-Version",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == "chrome-extension://abcdefghijklmnopabcdefghijklmnop"
+
+
+def test_classify_claim_endpoint():
+    """Valida o endpoint POST /api/v1/classify para classificação ML."""
+    # Teste de afirmação com forte teor de fake
+    res_fake = client.post("/api/v1/classify", json={"text": "Chá milagroso caseiro cura diabetes em 3 dias"})
+    assert res_fake.status_code == 200
+    data_fake = res_fake.json()
+    assert data_fake["dominant_label"] == "fake"
+    assert "fake" in data_fake["probabilities"]
+    assert "true" in data_fake["probabilities"]
+    assert data_fake["confidence"] >= 0.50
+
+    # Teste com limiar rigoroso provocando abstenção
+    res_strict = client.post("/api/v1/classify", json={"text": "Afirmação genérica sem termos fortes", "threshold": 0.99})
+    assert res_strict.status_code == 200
+    data_strict = res_strict.json()
+    assert data_strict["accepted"] is False
+    assert data_strict["label"] == "unverified"
+

@@ -1,7 +1,7 @@
 /** Executada no mundo MAIN. Não captura variáveis externas nem acessa segredos. */
 export function readPlayerCaptions(videoId: string) {
   type PlayerResponse = {
-    videoDetails?: { videoId?: string; title?: string; author?: string; lengthSeconds?: string };
+    videoDetails?: { videoId?: string; title?: string; author?: string; lengthSeconds?: string; shortDescription?: string };
     microformat?: {
       playerMicroformatRenderer?: { publishDate?: string; uploadDate?: string; ownerChannelName?: string };
     };
@@ -30,6 +30,7 @@ export function readPlayerCaptions(videoId: string) {
         ?? document.querySelector("#channel-name")?.textContent?.trim() ?? "Canal YouTube",
       uploadDate,
       durationSeconds: Number.isFinite(durationSeconds) && durationSeconds >= 0 ? durationSeconds : undefined,
+      description: details.shortDescription ?? document.querySelector("#description")?.textContent?.trim() ?? undefined,
     },
   };
 }

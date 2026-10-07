@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional, Dict
+from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field, ConfigDict
 
 EvidenceRelation = Literal["supports", "contradicts", "contextualizes"]
@@ -31,12 +31,16 @@ class Evidence(BaseModel):
     publishedAt: str = Field(..., description="Data de publicação original")
     publisher: str = Field(..., description="Instituição ou agência publicadora")
     snippet: Optional[str] = Field(None, description="Trecho textual relevante da checagem")
+    matchReason: Optional[str] = Field(None, description="Explicação objetiva de por que a fonte foi recuperada")
     provenance: EvidenceProvenance = Field(..., description="Metadados de auditoria e proveniência")
 
 
 class Claim(BaseModel):
     id: str = Field(..., description="Identificador único da alegação")
     text: str = Field(..., min_length=1, description="Texto da alegação extraída")
+    transcriptSnippet: Optional[str] = Field(None, description="Trecho textual da transcrição onde a alegação ocorre")
+    timestampStart: Optional[float] = Field(None, ge=0, description="Segundo de início no vídeo")
+    timestampEnd: Optional[float] = Field(None, ge=0, description="Segundo de término no vídeo")
     temporalContext: TemporalContext = Field(..., description="Contexto temporal da alegação")
     evidence: List[Evidence] = Field(default_factory=list, description="Evidências relacionadas")
     uncertainty: UncertaintyState = Field(..., description="Estado de certeza analítica")
@@ -89,4 +93,45 @@ class FeedbackRequest(BaseModel):
 class FeedbackResponse(BaseModel):
     status: Literal["received"] = "received"
     message: str = "Feedback anônimo registrado com sucesso."
+
+
+class ClassifyRequest(BaseModel):
+    text: str = Field(..., min_length=3, description="Texto ou proposição a ser classificada")
+    threshold: Optional[float] = Field(None, ge=0.0, le=1.0, description="Limiar de aceitação (default: 0.65)")
+
+
+class ClassifyResponse(BaseModel):
+    label: str = Field(..., description="fake, true ou unverified")
+    dominant_label: str = Field(..., description="fake ou true")
+    verdict_pt: str = Field(..., description="Veredito textual em português")
+    confidence: float = Field(..., description="Score de confiança [0.5, 1.0]")
+    accepted: bool = Field(..., description="Se a confiança superou o limiar de aceitação")
+    threshold: float = Field(..., description="Limiar adotado")
+    probabilities: Dict[str, float] = Field(..., description="P(fake) e P(true)")
+    top_features: List[List[Any]] = Field(default_factory=list, description="Features mais discriminativas")
+    heuristic_reasons: List[str] = Field(default_factory=list, description="Gatilhos linguísticos identificados")
+    epistemic_tone: str = Field("neutral", description="Tom epistêmico da alegação")
+
+
+class AuthTokenRequest(BaseModel):
+    installationId: str = Field(..., min_length=8, description="Identificador único anônimo da instalação da extensão")
+    clientVersion: Optional[str] = Field("1.0.0", description="Versão do cliente da extensão")
+
+
+class AuthTokenResponse(BaseModel):
+    token: str = Field(..., description="Token de acesso efêmero (JWT/HMAC)")
+    tokenType: str = Field("Bearer", description="Tipo do token de autenticação")
+    expiresIn: int = Field(86400, description="Tempo de vida útil em segundos (24 horas)")
+
+
+class LivenessResponse(BaseModel):
+    status: Literal["alive"] = "alive"
+    timestamp: str
+
+
+class ReadinessResponse(BaseModel):
+    status: Literal["ready", "not_ready"]
+    components: Dict[str, str]
+    timestamp: str
+
 

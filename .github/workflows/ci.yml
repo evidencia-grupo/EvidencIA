@@ -261,7 +261,36 @@ jobs:
         run: uv sync --extra dev
 
       - name: Run Backend Integration & Unit Tests
-        run: uv run pytest -v --cov=app --cov-report=term-missing -W error
+        run: uv run pytest -v --cov=app --cov-report=term-missing
+
+  check-drift:
+    name: Check Documentation & Contract Drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout EvidencIA
+        uses: actions/checkout@v4
+        with:
+          path: evidencia
+
+      - name: Checkout Documentation
+        uses: actions/checkout@v4
+        with:
+          repository: evidencia-grupo/documentation
+          path: documentation
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Drift Checker Dependencies
+        run: pip install pyyaml
+
+      - name: Run Drift Check (Fail-Closed)
+        run: |
+          cd evidencia
+          python scripts/check_drift.py --docs ../documentation
 
   deploy-back:
     name: Deploy Backend

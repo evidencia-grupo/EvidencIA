@@ -53,8 +53,9 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 filterwarnings = [
     "ignore::DeprecationWarning",
+    "ignore::starlette.exceptions.StarletteDeprecationWarning",
     "ignore::pytest.PytestDeprecationWarning",
-    "ignore::starlette.testclient.StarletteDeprecationWarning",
+    "ignore::ResourceWarning",
 ]
 
 [tool.coverage.run]

@@ -1,0 +1,40 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/aluno1/Documents/challenge fake news/evidencia
+configfile: pyproject.toml
+testpaths: backend/tests
+plugins: asyncio-1.4.0, anyio-4.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 139 items
+
+backend/tests/test_api.py .......                                        [  5%]
+backend/tests/test_atomic_investigation.py ....                          [  7%]
+backend/tests/test_auth_service.py ..                                    [  9%]
+backend/tests/test_claim_extraction.py ..........                        [ 16%]
+backend/tests/test_cors.py ...                                           [ 18%]
+backend/tests/test_empathic_synthesis.py ....                            [ 21%]
+backend/tests/test_fact_checker.py .....                                 [ 25%]
+backend/tests/test_feedback.py .....                                     [ 28%]
+backend/tests/test_health_probes.py ...                                  [ 30%]
+backend/tests/test_ingestion.py .....                                    [ 34%]
+backend/tests/test_llm_acceptance.py ................................... [ 59%]
+...                                                                      [ 61%]
+backend/tests/test_ml_classifier.py .......                              [ 66%]
+backend/tests/test_ml_datasets.py ....                                   [ 69%]
+backend/tests/test_no_mock_in_production.py ....                         [ 72%]
+backend/tests/test_no_silent_mock_fallback.py .                          [ 73%]
+backend/tests/test_normalization.py .......                              [ 78%]
+backend/tests/test_ollama_service.py ......                              [ 82%]
+backend/tests/test_provider_contract.py .....                            [ 86%]
+backend/tests/test_provider_failure.py ..                                [ 87%]
+backend/tests/test_providers_execution.py ............                   [ 96%]
+backend/tests/test_rate_limit.py .                                       [ 97%]
+backend/tests/test_retrieval.py ...s                                     [100%]
+
+=============================== warnings summary ===============================
+../../../../../Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88
+  /Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    return _bootstrap._gcd_import(name[level:], package, level)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================== 138 passed, 1 skipped, 1 warning in 0.89s ===================

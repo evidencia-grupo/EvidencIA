@@ -15,11 +15,14 @@ from app.schemas import (
     AnalyzeResponse,
     Claim,
     Evidence,
+    EvidenceProvenance,
     TemporalContext,
     UncertaintyState,
 )
 from app.services.brazilian_fact_matcher import brazilian_fact_matcher
+from app.services.classifier_service import classifier_service
 from app.services.fact_check_client import fact_check_client
+from ml.classifier.claim_extractor import extract_candidate_claims
 
 logger = logging.getLogger(__name__)
 
@@ -83,13 +86,49 @@ class FactCheckerService:
             return normalized
         return cls.FALLBACK_REFLECTION_QUESTIONS.copy()
 
+    @staticmethod
+    def _extract_snippet_and_timestamps(
+        transcript: str,
+        claim_text: str,
+        duration_seconds: Optional[int],
+    ) -> tuple[Optional[str], Optional[float], Optional[float]]:
+        if not transcript or not claim_text:
+            return None, None, None
+
+        lower_transcript = transcript.lower()
+        search_terms = re.findall(r"\b[a-zA-ZáéíóúãõçÁÉÍÓÚÃÕÇ]{4,}\b", claim_text.lower())
+        pos = -1
+
+        sub = claim_text[: min(30, len(claim_text))].lower()
+        pos = lower_transcript.find(sub)
+        if pos == -1 and search_terms:
+            for term in search_terms:
+                pos = lower_transcript.find(term)
+                if pos != -1:
+                    break
+
+        if pos == -1:
+            return None, None, None
+
+        start_char = max(0, pos - 20)
+        end_char = min(len(transcript), pos + len(claim_text) + 40)
+        snippet = transcript[start_char:end_char].strip()
+
+        t_start = None
+        t_end = None
+        if duration_seconds and duration_seconds > 0 and len(transcript) > 0:
+            t_start = round((pos / len(transcript)) * duration_seconds, 1)
+            t_end = round(min(duration_seconds, t_start + 15.0), 1)
+
+        return snippet, t_start, t_end
+
     async def analyze(self, request: AnalyzeRequest) -> AnalyzeResponse:
         start_time = time.perf_counter()
         published_at = request.uploadDate or datetime.now(timezone.utc).isoformat()
         temporal_ctx = self._build_temporal_context(request.uploadDate)
 
         # 1. Obtenção do provedor via Factory (lança MockInProductionError se configurado indevidamente)
-        provider = self.provider or get_provider(
+        provider = get_provider(
             provider_name=getattr(settings, "LLM_PROVIDER", None),
             app_env=settings.ENV or settings.ENVIRONMENT,
         )
@@ -156,6 +195,7 @@ class FactCheckerService:
                             if rel == "supports"
                             else ("contradicted" if rel == "contradicts" else "contextualized")
                         )
+                        publisher_display = src.publisher or src.domain
                         evidence_list.append(
                             Evidence(
                                 sourceId=src.id,
@@ -163,23 +203,41 @@ class FactCheckerService:
                                 title=src.title,
                                 url=src.url,
                                 publishedAt=src.publishedAt or published_at,
-                                publisher=src.domain,
+                                publisher=publisher_display,
                                 snippet=item.get("evidence_summary"),
-                                provenance={
-                                    "dataset": "google_fact_check",
-                                    "indexedAt": datetime.now(timezone.utc).isoformat(),
-                                },
+                                matchReason=f"Correspondência temática com a checagem apurada por {publisher_display}.",
+                                provenance=EvidenceProvenance(
+                                    dataset="google_fact_check",
+                                    indexedAt=datetime.now(timezone.utc).isoformat(),
+                                ),
                             )
                         )
                     else:
                         # Prioridade 3: Estado explícito de evidência insuficiente (RF-12, ADR-006)
                         evidence_list = []
                         uncertainty = "insufficient_evidence"
+                        ml_diag = classifier_service.classify(claim_text)
+                        if ml_diag.get("heuristic_reasons"):
+                            reasons = "; ".join(ml_diag["heuristic_reasons"])
+                            ml_note = f"Análise linguística (ML): {reasons}"
+                            existing_note = temporal_ctx.note
+                            temporal_ctx = TemporalContext(
+                                claimDate=temporal_ctx.claimDate,
+                                videoPublishedAt=temporal_ctx.videoPublishedAt,
+                                note=f"{existing_note} | {ml_note}" if existing_note else ml_note,
+                            )
+
+                snippet, t_start, t_end = self._extract_snippet_and_timestamps(
+                    request.transcript, claim_text, request.durationSeconds
+                )
 
                 claims.append(
                     Claim(
                         id=claim_id,
                         text=claim_text,
+                        transcriptSnippet=snippet,
+                        timestampStart=t_start,
+                        timestampEnd=t_end,
                         temporalContext=temporal_ctx,
                         evidence=evidence_list,
                         uncertainty=uncertainty,
@@ -235,17 +293,60 @@ class FactCheckerService:
                     if rel == "supports"
                     else ("contradicted" if rel == "contradicts" else "contextualized")
                 )
+                # No modo Evidence-Only, ClaimCard SEMPRE representa o vídeo real (título/áudio),
+                # NUNCA o claim_text da base de fact-checking externa.
                 claims.append(
                     Claim(
                         id="clm-01",
-                        text=matched.get("claim", request.videoTitle),
+                        text=request.videoTitle,
+                        transcriptSnippet=request.transcript[:120].strip() if request.transcript else None,
+                        timestampStart=0.0,
+                        timestampEnd=min(15.0, float(request.durationSeconds or 15.0)),
                         temporalContext=temporal_ctx,
                         evidence=evidence_list,
                         uncertainty=uncertainty,
                         reflectionQuestions=[],
                     )
                 )
-            elif not claims:
+            if not claims and not matched:
+                # Contingência Nível 2: Extrator de Alegações por ML diretamente da transcrição
+                candidate_claims = extract_candidate_claims(request.transcript, max_claims=3)
+                for c_idx, candidate_text in enumerate(candidate_claims):
+                    c_matched = brazilian_fact_matcher.find_match(candidate_text)
+                    c_evidence = [c_matched["evidence"]] if c_matched and c_matched.get("evidence") else []
+                    if c_matched and c_matched.get("evidence"):
+                        c_rel = c_matched.get("relation", "contextualizes")
+                        c_unc = "supported" if c_rel == "supports" else ("contradicted" if c_rel == "contradicts" else "contextualized")
+                        c_temporal = temporal_ctx
+                    else:
+                        c_unc = "insufficient_evidence"
+                        ml_diag = classifier_service.classify(candidate_text)
+                        c_temporal = temporal_ctx
+                        if ml_diag.get("heuristic_reasons"):
+                            ml_note = f"Análise linguística (ML): {'; '.join(ml_diag['heuristic_reasons'])}"
+                            c_temporal = TemporalContext(
+                                claimDate=temporal_ctx.claimDate,
+                                videoPublishedAt=temporal_ctx.videoPublishedAt,
+                                note=f"{temporal_ctx.note} | {ml_note}" if temporal_ctx.note else ml_note,
+                            )
+                    c_snip, c_start, c_end = self._extract_snippet_and_timestamps(
+                        request.transcript, candidate_text, request.durationSeconds
+                    )
+                    claims.append(
+                        Claim(
+                            id=f"clm-{c_idx + 1:02d}",
+                            text=candidate_text,
+                            transcriptSnippet=c_snip,
+                            timestampStart=c_start,
+                            timestampEnd=c_end,
+                            temporalContext=c_temporal,
+                            evidence=c_evidence,
+                            uncertainty=c_unc,
+                            reflectionQuestions=[],
+                        )
+                    )
+
+            if not claims:
                 limitations.append("Não foi possível identificar alegações verificáveis durante a falha de extração.")
 
         for claim in claims:

@@ -23,7 +23,7 @@ export interface CaptionTrack {
 
 export interface CaptionAvailability {
   tracks: CaptionTrack[];
-  metadata?: Pick<ExtractedCaptions, "videoTitle" | "channelName" | "uploadDate" | "durationSeconds">;
+  metadata?: Pick<ExtractedCaptions, "videoTitle" | "channelName" | "uploadDate" | "durationSeconds"> & { description?: string };
 }
 
 interface YouTubeCaptionJsonSegment {
@@ -236,7 +236,18 @@ export async function extractCaptionsFromPage(
     throw new Error(`Não foi possível baixar as legendas (HTTP ${response.status}). Tente novamente.`);
   }
 
-  const transcript = parseCaptionBody(await response.text());
+  let transcript = "";
+  try {
+    const text = await response.text();
+    transcript = parseCaptionBody(text);
+  } catch {
+    transcript = "";
+  }
+
+  if (transcript.length < 50 && payload.metadata?.description && payload.metadata.description.length >= 50) {
+    transcript = sanitizeTranscriptText(payload.metadata.description);
+  }
+
   if (transcript.length < 50) {
     throw new Error("A transcrição recebida está vazia ou é curta demais para análise. Tente novamente.");
   }

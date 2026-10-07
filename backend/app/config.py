@@ -1,3 +1,4 @@
+import os
 from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -34,8 +35,14 @@ class Settings(BaseSettings):
     RATE_LIMIT_MAX_PER_MINUTE: int = 60
     CORS_ALLOWED_ORIGINS: str = "*"
 
+    AUTH_SECRET: str = "dev_evidencia_secret_key_change_in_production"
+    REQUIRE_AUTH: bool = False
+
     model_config = {
-        "env_file": ".env",
+        "env_file": (
+            os.path.join(os.path.dirname(__file__), "..", ".env"),
+            ".env",
+        ),
         "extra": "ignore",
     }
 

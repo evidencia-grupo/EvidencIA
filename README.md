@@ -76,7 +76,34 @@ flowchart TD
 
 ---
 
-## 2. Estrutura do Monorepo
+## 2. Estado de Maturidade e Prontidão (Release Candidate)
+
+Este repositório encontra-se no estado **PRÉ-RELEASE CANDIDATA** (`PRERELEASE_CANDIDATE`). Abaixo declaramos com transparência factual o que está funcional, o que é parcial e o que permanece pendente de ações humanas:
+
+### 🟢 O Que Funciona (Pronto e Testado com Evidências)
+- **Extensão Manifest V3:** Injeção Shadow DOM no YouTube (`youtube.com/watch*`), extração de legendas oficiais (*timed text*) e renderização acessível (WCAG 2.1 AA).
+- **Análise & Decomposição Factual:** Endpoint `POST /api/v1/analyze` extraindo alegações atômicas e perguntas reflexivas socráticas sem score global.
+- **Separação Epistemológica:** `ClaimCard` exibe estritamente o discurso do vídeo; `EvidenceCard` exibe a checagem da agência jornalística com link original e justificativa transparente (`matchReason`).
+- **Navegação por Timestamps:** Marcadores temporais clicáveis no painel lateral sincronizam diretamente o player do YouTube via `video.currentTime`.
+- **Cache Local com TTL de 24h:** Armazenamento em `chrome.storage.local` com resposta sub-100ms para vídeos já analisados.
+- **Camada Agnóstica de Provedores:** Suporte a execução local (Ollama com Qwen 2.5), provedor remoto (OpenRouter / Groq / OpenAI) e Mock em testes.
+- **Proteção Anti-Mock em Produção:** O backend falha na inicialização se `MockLLMProvider` for referenciado sob `ENVIRONMENT=production`.
+- **Degradação Graciosa Evidence-Only:** Operação preservada em caso de lentidão ou timeout de IA, exibindo evidências curadas sem quebrar o fluxo.
+- **Hardening de Segurança:** Rate limiting real (retornando HTTP 429 sob excesso), CORS bloqueando wildcard `*` em produção, e tokens efêmeros de sessão (`/api/v1/auth/token`).
+
+### 🟡 O Que É Parcial (Preparado Tecnicamente / Portões Isolados)
+- **Corpus Completo de Fact-Checking:** O pipeline de ingestão e indexação está tecnicamente pronto (`TECHNICALLY_READY`), mas a ingestão de bases completas de terceiros aguarda aprovação jurídica de licença de redistribuição comercial/hospedada (Portão Humano **H2**).
+- **Framework de Avaliação Científica:** A estrutura de avaliação (`evaluation/claims.jsonl`, `candidates.jsonl`, `annotation-guide.md` e `scripts/evaluate_retrieval.py`) está 100% implementada. O status de rotulação humana encontra-se como `PENDING_HUMAN_ANNOTATION` (Portão Humano **H3**) para evitar fabricação de métricas por IA.
+- **Feedback dos Usuários:** Endpoint `/api/v1/feedback` validado com privacidade e minimização LGPD (descarte de IP/User-Agent). Persistência de telemetria analítica aguarda homologação de infraestrutura.
+
+### 🔴 O Que É Pendente (Dependências Genuinamente Humanas para o GO de Produção)
+- **Validação com Usuários Finais:** Condução dos experimentos práticos com pessoas voluntárias assistindo a vídeos no YouTube (Portão Humano **H6**).
+- **Decisão e Homologação de Produção:** Definição do provedor cloud (Google Cloud Run / Render) e injeção de credenciais finais (`JWT_SECRET`, `GOOGLE_FACT_CHECK_API_KEY`) via Secret Manager (Portões **H1**, **H4** e **H5**).
+- **Submissão à Chrome Web Store:** Publicação manual do `.zip` gerado na loja de extensões da Google após revisão humana final.
+
+---
+
+## 3. Estrutura do Monorepo
 
 O repositório é organizado de forma modular, com fronteiras estritas de responsabilidade:
 
@@ -118,7 +145,7 @@ evidencia/
 
 ---
 
-## 3. Matriz Canônica de Rastreabilidade
+## 4. Matriz Canônica de Rastreabilidade
 
 O desenvolvimento do EvidencIA é estritamente orientado a requisitos. Abaixo está a correlação completa entre os **8 Épicos**, as **16 Histórias de Usuário (HUs)**, os requisitos formais e os arquivos de implementação no código-fonte:
 
@@ -143,7 +170,7 @@ O desenvolvimento do EvidencIA é estritamente orientado a requisitos. Abaixo es
 
 ---
 
-## 4. Guia Rápido de Instalação e Execução
+## 5. Guia Rápido de Instalação e Execução
 
 ### 4.1 Pré-requisitos
 - **Node.js** >= 20 LTS e **npm** >= 10

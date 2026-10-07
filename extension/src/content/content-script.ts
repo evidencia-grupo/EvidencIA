@@ -39,6 +39,18 @@ window.addEventListener("message", (event) => {
     }
   } else if (event.data?.type === "SUBMIT_FEEDBACK") {
     chrome.runtime.sendMessage({ type: "SUBMIT_FEEDBACK", payload: event.data.payload }).catch(() => {});
+  } else if (event.data?.type === "JUMP_TO_TIMESTAMP") {
+    const video = document.querySelector("video");
+    if (video && typeof event.data.seconds === "number") {
+      video.currentTime = event.data.seconds;
+      video.play().catch(() => {});
+    }
+  } else if (event.data?.type === "OPEN_EXTERNAL_URL" && typeof event.data.url === "string") {
+    try {
+      window.open(event.data.url, "_blank", "noopener,noreferrer");
+    } catch {
+      chrome.runtime.sendMessage({ type: "OPEN_TAB", url: event.data.url }).catch(() => {});
+    }
   }
 });
 window.addEventListener("keydown", (event) => {
@@ -58,7 +70,7 @@ function initSidePanel() {
   panelIframe.title = "Checagem factual do vídeo";
   panelIframe.id = "evidencia-side-panel";
   panelIframe.src = chrome.runtime.getURL("src/panel/index.html");
-  panelIframe.setAttribute("sandbox", "allow-scripts allow-same-origin");
+  panelIframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox");
   panelIframe.style.cssText = `
     position: fixed;
     top: 56px;
@@ -226,9 +238,16 @@ function injectTriggerBadge() {
       status.textContent = data ? "Checagem concluída" : "Legendas indisponíveis";
     } catch (error) {
       if (!active()) return;
-      publish({ type: "ANALYSIS_ERROR", error: toFriendlyMessage(error) });
-      button.querySelector("span")!.textContent = "Tentar novamente";
-      status.textContent = "Falha na checagem";
+      const isNoCaptions = error instanceof Error && /curta demais|vazia|sem legendas/i.test(error.message);
+      if (isNoCaptions) {
+        publish({ type: "NO_CAPTIONS" });
+        button.querySelector("span")!.textContent = "Sem legendas — tentar novamente";
+        status.textContent = "Legendas indisponíveis";
+      } else {
+        publish({ type: "ANALYSIS_ERROR", error: toFriendlyMessage(error) });
+        button.querySelector("span")!.textContent = "Tentar novamente";
+        status.textContent = "Falha na checagem";
+      }
     } finally {
       clearTimeout(timer);
       controller.abort();

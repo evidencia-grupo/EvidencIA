@@ -1,0 +1,19 @@
+
+ RUN  v1.6.1 /Users/aluno1/Documents/challenge fake news/evidencia/extension
+
+ ✓ src/background/response-validation.test.ts  (16 tests) 3ms
+ ✓ src/background/cache-manager.test.ts  (34 tests) 10ms
+ ✓ src/background/service-worker.test.ts  (15 tests) 17ms
+ ✓ src/content/friendly-messages.test.ts  (9 tests) 3ms
+ ✓ src/background/player-captions.test.ts  (4 tests) 11ms
+ ✓ src/content/caption-parser.test.ts  (29 tests) 15ms
+ ✓ src/content/caption-extraction.test.ts  (13 tests) 19ms
+ ✓ src/panel/index.test.tsx  (12 tests) 236ms
+ ✓ src/content/content-script.test.ts  (12 tests) 268ms
+ ✓ src/panel/components.test.tsx  (27 tests) 133ms
+
+ Test Files  10 passed (10)
+      Tests  171 passed (171)
+   Start at  15:45:31
+   Duration  684ms (transform 460ms, setup 0ms, collect 806ms, tests 715ms, environment 1.40s, prepare 534ms)
+

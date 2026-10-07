@@ -1,0 +1,197 @@
+product:
+  name: "EvidencIA"
+  description: "Extensão de navegador para checagem factual Evidence-First e estímulo à reflexão crítica em vídeos do YouTube"
+  version: "1.0.0"
+  status: "PRERELEASE_CANDIDATE"
+  repository: "https://github.com/evidencia-grupo/EvidencIA"
+  documentation_repository: "https://github.com/evidencia-grupo/documentation"
+
+architecture:
+  paradigm: "Evidence-First (ADR-006)"
+  client_type: "Chrome Extension (Manifest V3)"
+  backend_type: "FastAPI Proxy Assíncrono com Validação Estrita"
+  llm_integration: "Ollama (Local/Soberano), Remote (OpenRouter/Groq), Mock (Testes)"
+  supervised_classifier: "Multinomial Naive Bayes + Calibração Probabilística e Abstenção"
+
+endpoints:
+  - path: "/api/v1/analyze"
+    method: "POST"
+    description: "Orquestra checagem factual por alegação atômica e síntese empática"
+    rate_limit: "60/minuto"
+    auth: "Bearer Token Efêmero (opcional em dev; obrigatório em prod)"
+    request_schema: "AnalyzeRequest"
+    response_schema: "AnalyzeResponse"
+    status: "IMPLEMENTADO"
+
+  - path: "/api/v1/auth/token"
+    method: "POST"
+    description: "Emite token de sessão efêmero assinado para clientes anônimos da extensão"
+    rate_limit: "30/minuto"
+    auth: "Livre (Valida integridade da instalação)"
+    request_schema: "AuthTokenRequest"
+    response_schema: "AuthTokenResponse"
+    status: "IMPLEMENTADO"
+
+  - path: "/api/v1/health"
+    method: "GET"
+    description: "Verifica integridade geral do proxy e conectores upstream"
+    rate_limit: "Livre"
+    auth: "Livre"
+    response_schema: "HealthResponse"
+    status: "IMPLEMENTADO"
+
+  - path: "/api/v1/health/live"
+    method: "GET"
+    description: "Liveness probe para monitoramento de processo ativo"
+    rate_limit: "Livre"
+    auth: "Livre"
+    response_schema: "LivenessResponse"
+    status: "IMPLEMENTADO"
+
+  - path: "/api/v1/health/ready"
+    method: "GET"
+    description: "Readiness probe para validação de conectividade de subsistemas"
+    rate_limit: "Livre"
+    auth: "Livre"
+    response_schema: "ReadinessResponse"
+    status: "IMPLEMENTADO"
+
+  - path: "/api/v1/feedback"
+    method: "POST"
+    description: "Coleta feedback anônimo voluntário de utilidade (LGPD/RNF-05)"
+    rate_limit: "60/minuto"
+    auth: "Bearer Token Efêmero (opcional em dev)"
+    request_schema: "FeedbackRequest"
+    response_schema: "FeedbackResponse"
+    status: "IMPLEMENTADO"
+
+  - path: "/api/v1/classify"
+    method: "POST"
+    description: "Classifica teor sensacionalista de alegações via modelo supervisionado"
+    rate_limit: "60/minuto"
+    auth: "Bearer Token Efêmero (opcional em dev)"
+    request_schema: "ClassifyRequest"
+    response_schema: "ClassifyResponse"
+    status: "IMPLEMENTADO"
+
+contracts:
+  pydantic:
+    location: "backend/app/schemas.py"
+    models:
+      - "AnalyzeRequest"
+      - "AnalyzeResponse"
+      - "Claim"
+      - "Evidence"
+      - "TemporalContext"
+      - "FeedbackRequest"
+      - "FeedbackResponse"
+      - "ClassifyRequest"
+      - "ClassifyResponse"
+      - "AuthTokenRequest"
+      - "AuthTokenResponse"
+      - "HealthResponse"
+      - "LivenessResponse"
+      - "ReadinessResponse"
+  typescript:
+    location: "shared/types/api.ts"
+    interfaces:
+      - "AnalyzeRequest"
+      - "AnalyzeResponse"
+      - "Claim"
+      - "Evidence"
+      - "FeedbackRequest"
+      - "FeedbackResponse"
+
+extension:
+  manifest_version: 3
+  manifest_path: "extension/manifest.json"
+  permissions:
+    - "activeTab"
+    - "storage"
+    - "scripting"
+  host_permissions:
+    - "https://www.youtube.com/*"
+    - "http://127.0.0.1:8000/*"
+    - "http://localhost:8000/*"
+    - "https://*.onrender.com/*"
+    - "https://*.up.railway.app/*"
+    - "https://*.run.app/*"
+    - "https://*.fly.dev/*"
+
+features:
+  - id: "FEAT-01"
+    name: "Captura In-Page de Legendas do YouTube"
+    rf: ["RF-01", "RF-02"]
+    status: "IMPLEMENTADO"
+  - id: "FEAT-02"
+    name: "Extração Atômica de Alegações Fatuais"
+    rf: ["RF-03", "RF-04"]
+    status: "IMPLEMENTADO"
+  - id: "FEAT-03"
+    name: "Recuperação e Apresentação de Evidências Auditáveis"
+    rf: ["RF-05", "RF-06", "RF-07"]
+    status: "IMPLEMENTADO"
+  - id: "FEAT-04"
+    name: "Perguntas de Reflexão Crítica sem Veredito Algorítmico"
+    rf: ["RF-08", "RF-09"]
+    status: "IMPLEMENTADO"
+  - id: "FEAT-05"
+    name: "Feedback Voluntário e Anônimo"
+    rf: ["RF-10"]
+    status: "IMPLEMENTADO"
+  - id: "FEAT-06"
+    name: "Degradação Graciosa em Modo Evidence-Only"
+    rf: ["RF-14"]
+    status: "IMPLEMENTADO"
+  - id: "FEAT-07"
+    name: "Proteção Estrita Anti-Mock em Produção"
+    rf: ["RF-15"]
+    status: "IMPLEMENTADO"
+  - id: "FEAT-08"
+    name: "Classificação Estatística Supervisionada com Abstenção"
+    rf: ["RF-16"]
+    status: "IMPLEMENTADO"
+  - id: "FEAT-09"
+    name: "Timestamps Clicáveis no Player de Vídeo"
+    rf: ["RF-17"]
+    status: "IMPLEMENTADO"
+
+datasets:
+  - id: "fakebr"
+    name: "Fake.br-Corpus (NILC / USP São Carlos)"
+    role: "linguistic_corpus"
+    language: "pt-BR"
+    status: "TECHNICALLY_READY"
+    licensing: "LICENSE_PENDING_HUMAN_APPROVAL"
+  - id: "factchecksbr"
+    name: "FactChecks.br (UFG)"
+    role: "fact_check_evidence"
+    language: "pt-BR"
+    status: "TECHNICALLY_READY"
+    licensing: "LICENSE_PENDING_HUMAN_APPROVAL"
+  - id: "google_claimreview"
+    name: "Google Fact Check Tools API"
+    role: "external_complementary"
+    language: "multilingual"
+    status: "TECHNICALLY_READY"
+    licensing: "TERMS_OF_SERVICE_API_KEY_REQUIRED"
+
+validation:
+  unit_tests_backend: "151 passed / 1 skipped"
+  unit_tests_frontend: "171 passed / 0 failed"
+  typecheck_frontend: "0 errors"
+  mkdocs_strict: "pass"
+  drift_check: "0 CRITICAL / 0 HIGH"
+  test_frameworks: ["pytest", "vitest"]
+  ci_workflow: ".github/workflows/ci.yml"
+
+known_gaps:
+  - id: "GAP-01"
+    description: "Dataset oficial completo aguarda confirmação jurídica de licença (H2)"
+    type: "human_gate"
+  - id: "GAP-02"
+    description: "Gold set de avaliação aguarda anotação humana independente (H3)"
+    type: "human_gate"
+  - id: "GAP-03"
+    description: "Validação final com usuários participantes a ser executada com voluntários reais (H6)"
+    type: "human_gate"
