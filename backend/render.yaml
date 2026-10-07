@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: evidencia-backend
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: ENV
+        value: production
+      - key: LLM_PROVIDER
+        value: remote
+      - key: REMOTE_LLM_BASE_URL
+        value: https://openrouter.ai/api/v1
+      - key: REMOTE_LLM_MODEL
+        value: qwen/qwen-2.5-7b-instruct:free
+      - key: REMOTE_LLM_API_KEY
+        sync: false
+      - key: LLM_TIMEOUT_SECONDS
+        value: "15.0"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "*"

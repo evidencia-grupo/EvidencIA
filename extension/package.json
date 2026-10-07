@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite build --watch --mode development",
     "build": "tsc && vite build && node -e \"require('fs').copyFileSync('manifest.json', 'dist/manifest.json')\"",
+    "build:prod": "tsc && vite build --mode production && node -e \"require('fs').copyFileSync('manifest.json', 'dist/manifest.json')\"",
+    "package": "npm run build && node -e \"const { execSync } = require('child_process'); execSync('cd dist && zip -r ../extension.zip .'); console.log('extension.zip gerado com sucesso!');\"",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "test": "vitest run",

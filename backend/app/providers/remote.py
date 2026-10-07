@@ -116,6 +116,9 @@ class RemoteLLMProvider(LLMProvider):
         headers = {"Content-Type": "application/json"}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
+        if "openrouter.ai" in self.base_url:
+            headers["HTTP-Referer"] = "https://github.com/evidencia-grupo/EvidencIA"
+            headers["X-Title"] = "EvidencIA - Fact-Checking"
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(f"{self.base_url}/chat/completions", json=payload, headers=headers)

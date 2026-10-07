@@ -5,8 +5,9 @@ import { getCaptionTracks } from "./player-captions";
 import { getCachedResult, saveCachedResult, CACHE_TTL_MS } from "./cache-manager";
 import type { AnalyzeRequest, AnalyzeResponse, FeedbackRequest, FeedbackResponse } from "../../../shared/types/api";
 
-const BACKEND_URL = "http://127.0.0.1:8000/api/v1/analyze";
-const FEEDBACK_URL = "http://127.0.0.1:8000/api/v1/feedback";
+const API_BASE = (import.meta.env?.VITE_API_BASE_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+const BACKEND_URL = `${API_BASE}/api/v1/analyze`;
+const FEEDBACK_URL = `${API_BASE}/api/v1/feedback`;
 
 export { getCachedResult, saveCachedResult, CACHE_TTL_MS };
 
