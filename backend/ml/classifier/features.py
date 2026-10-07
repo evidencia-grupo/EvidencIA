@@ -40,6 +40,18 @@ CREDIBILITY_MARKERS = {
     "regulamento", "norma", "monitoramento", "evidencia", "clinico"
 }
 
+EPISTEMIC_DOGMATISM_MARKERS = {
+    "com certeza", "sem duvida", "100%", "cem por cento", "provado cientificamente",
+    "todos sabem", "ninguem pode negar", "cura garantida", "solucao definitiva",
+    "verdade absoluta", "inquestionavel", "revelacao bombastica", "fato indiscutivel"
+}
+
+EPISTEMIC_HEDGING_MARKERS = {
+    "estudos sugerem", "pode indicar", "evidencias preliminares", "sob investigacao",
+    "apontam para", "conforme dados", "segundo especialistas", "em fase de teste",
+    "hipotese", "probabilidade", "estimativa", "possivel correlacao"
+}
+
 
 def normalize_text(text: str) -> str:
     """Remove diacríticos e normaliza espaços para manter robustez léxica."""
@@ -90,6 +102,39 @@ def extract_stylistic_features(raw_text: str) -> Dict[str, float]:
         "style_sensational_score": min(1.0, sensational_hits * 0.25),
         "style_credibility_score": min(1.0, credibility_hits * 0.25),
     }
+
+
+def explain_linguistic_triggers(raw_text: str) -> List[str]:
+    """Retorna explicações textuais compreensíveis sobre os padrões linguísticos detectados."""
+    norm_lower = normalize_text(raw_text)
+    explanations = []
+
+    sensational_found = [m for m in SENSATIONAL_MARKERS if m in norm_lower]
+    if sensational_found:
+        terms = ", ".join(f"'{t}'" for t in sensational_found[:3])
+        explanations.append(f"Gatilhos de sensacionalismo ou urgência identificados ({terms}).")
+
+    credibility_found = [m for m in CREDIBILITY_MARKERS if m in norm_lower]
+    if credibility_found:
+        terms = ", ".join(f"'{t}'" for t in credibility_found[:3])
+        explanations.append(f"Referência a fontes institucionais ou métodos de pesquisa ({terms}).")
+
+    dogmatic_found = [m for m in EPISTEMIC_DOGMATISM_MARKERS if m in norm_lower]
+    if dogmatic_found:
+        explanations.append("Tom categórico/dogmático sem margem para contraprova.")
+
+    hedging_found = [m for m in EPISTEMIC_HEDGING_MARKERS if m in norm_lower]
+    if hedging_found:
+        explanations.append("Linguagem com modulação epistêmica ou cautela metodológica.")
+
+    upper_chars = sum(1 for c in raw_text if c.isupper())
+    if len(raw_text) > 10 and (upper_chars / len(raw_text)) > 0.40:
+        explanations.append("Uso expressivo de letras maiúsculas (ênfase apelativa).")
+
+    if raw_text.count("!") >= 2:
+        explanations.append("Pontuação enfática com exclamações múltiplas.")
+
+    return explanations
 
 
 class TFIDFVectorizer:

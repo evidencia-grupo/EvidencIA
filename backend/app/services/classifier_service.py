@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional
 
 from ml.classifier.model import ClaimClassifier
 from ml.classifier.dataset import load_training_dataset
+from ml.classifier.features import explain_linguistic_triggers
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +56,13 @@ class ClassifierService:
 
         res = self.model.predict(text, threshold=threshold)
 
+        triggers = explain_linguistic_triggers(text)
+        tone = "neutral"
+        if any("sensacionalismo" in t.lower() or "dogmático" in t.lower() for t in triggers):
+            tone = "sensational_dogmatic"
+        elif any("institucionais" in t.lower() or "modulação" in t.lower() for t in triggers):
+            tone = "scientific_cautious"
+
         verdict_map = {
             "fake": "Falso / Desinformação",
             "true": "Verdadeiro / Fato",
@@ -70,6 +78,8 @@ class ClassifierService:
             "threshold": res["threshold"],
             "probabilities": res["probabilities"],
             "top_features": res["top_features"],
+            "heuristic_reasons": triggers,
+            "epistemic_tone": tone,
         }
 
 

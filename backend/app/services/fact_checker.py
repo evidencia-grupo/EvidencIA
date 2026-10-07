@@ -19,7 +19,9 @@ from app.schemas import (
     UncertaintyState,
 )
 from app.services.brazilian_fact_matcher import brazilian_fact_matcher
+from app.services.classifier_service import classifier_service
 from app.services.fact_check_client import fact_check_client
+from ml.classifier.claim_extractor import extract_candidate_claims
 
 logger = logging.getLogger(__name__)
 
@@ -213,6 +215,16 @@ class FactCheckerService:
                         # Prioridade 3: Estado explícito de evidência insuficiente (RF-12, ADR-006)
                         evidence_list = []
                         uncertainty = "insufficient_evidence"
+                        ml_diag = classifier_service.classify(claim_text)
+                        if ml_diag.get("heuristic_reasons"):
+                            reasons = "; ".join(ml_diag["heuristic_reasons"])
+                            ml_note = f"Análise linguística (ML): {reasons}"
+                            existing_note = temporal_ctx.note
+                            temporal_ctx = TemporalContext(
+                                claimDate=temporal_ctx.claimDate,
+                                videoPublishedAt=temporal_ctx.videoPublishedAt,
+                                note=f"{existing_note} | {ml_note}" if existing_note else ml_note,
+                            )
 
                 snippet, t_start, t_end = self._extract_snippet_and_timestamps(
                     request.transcript, claim_text, request.durationSeconds
@@ -295,7 +307,45 @@ class FactCheckerService:
                         reflectionQuestions=[],
                     )
                 )
-            elif not claims:
+            if not claims and not matched:
+                # Contingência Nível 2: Extrator de Alegações por ML diretamente da transcrição
+                candidate_claims = extract_candidate_claims(request.transcript, max_claims=3)
+                for c_idx, candidate_text in enumerate(candidate_claims):
+                    c_matched = brazilian_fact_matcher.find_match(candidate_text)
+                    c_evidence = [c_matched["evidence"]] if c_matched and c_matched.get("evidence") else []
+                    if c_matched and c_matched.get("evidence"):
+                        c_rel = c_matched.get("relation", "contextualizes")
+                        c_unc = "supported" if c_rel == "supports" else ("contradicted" if c_rel == "contradicts" else "contextualized")
+                        c_temporal = temporal_ctx
+                    else:
+                        c_unc = "insufficient_evidence"
+                        ml_diag = classifier_service.classify(candidate_text)
+                        c_temporal = temporal_ctx
+                        if ml_diag.get("heuristic_reasons"):
+                            ml_note = f"Análise linguística (ML): {'; '.join(ml_diag['heuristic_reasons'])}"
+                            c_temporal = TemporalContext(
+                                claimDate=temporal_ctx.claimDate,
+                                videoPublishedAt=temporal_ctx.videoPublishedAt,
+                                note=f"{temporal_ctx.note} | {ml_note}" if temporal_ctx.note else ml_note,
+                            )
+                    c_snip, c_start, c_end = self._extract_snippet_and_timestamps(
+                        request.transcript, candidate_text, request.durationSeconds
+                    )
+                    claims.append(
+                        Claim(
+                            id=f"clm-{c_idx + 1:02d}",
+                            text=candidate_text,
+                            transcriptSnippet=c_snip,
+                            timestampStart=c_start,
+                            timestampEnd=c_end,
+                            temporalContext=c_temporal,
+                            evidence=c_evidence,
+                            uncertainty=c_unc,
+                            reflectionQuestions=[],
+                        )
+                    )
+
+            if not claims:
                 limitations.append("Não foi possível identificar alegações verificáveis durante a falha de extração.")
 
         for claim in claims:

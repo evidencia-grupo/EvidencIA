@@ -109,6 +109,8 @@ class ClassifyResponse(BaseModel):
     threshold: float = Field(..., description="Limiar adotado")
     probabilities: Dict[str, float] = Field(..., description="P(fake) e P(true)")
     top_features: List[List[Any]] = Field(default_factory=list, description="Features mais discriminativas")
+    heuristic_reasons: List[str] = Field(default_factory=list, description="Gatilhos linguísticos identificados")
+    epistemic_tone: str = Field("neutral", description="Tom epistêmico da alegação")
 
 
 class AuthTokenRequest(BaseModel):

@@ -206,6 +206,8 @@ async def classify_claim(
         threshold=result["threshold"],
         probabilities=result["probabilities"],
         top_features=[[feat, score] for feat, score in result["top_features"]],
+        heuristic_reasons=result.get("heuristic_reasons", []),
+        epistemic_tone=result.get("epistemic_tone", "neutral"),
     )
 
 
