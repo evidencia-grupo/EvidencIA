@@ -6,7 +6,9 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from app.config import settings
-from app.providers.factory import get_provider, ProviderUnavailableError
+from app.providers.base import LLMProvider
+from app.providers.factory import get_provider
+from app.services.evidence_retrieval import retrieve_evidence
 from app.providers.types import Claim as ProviderClaim, EvidenceRef as ProviderEvidenceRef
 from app.schemas import (
     AnalyzeRequest,
@@ -39,6 +41,12 @@ class FactCheckerService:
         "Quais aspectos das fontes, como autoria, data e método, vale a pena verificar?",
         "Que contexto ou evidência adicional ajudaria você a formar sua própria interpretação?",
     ]
+
+    def __init__(self):
+        self.provider: Optional[LLMProvider] = None
+
+    def initialize_provider(self) -> None:
+        self.provider = get_provider(settings.LLM_PROVIDER, settings.ENV or settings.ENVIRONMENT)
 
     @staticmethod
     def _build_temporal_context(upload_date: Optional[str]) -> TemporalContext:
@@ -81,9 +89,9 @@ class FactCheckerService:
         temporal_ctx = self._build_temporal_context(request.uploadDate)
 
         # 1. Obtenção do provedor via Factory (lança MockInProductionError se configurado indevidamente)
-        provider = get_provider(
+        provider = self.provider or get_provider(
             provider_name=getattr(settings, "LLM_PROVIDER", None),
-            app_env=getattr(settings, "APP_ENV", None),
+            app_env=settings.ENV or settings.ENVIRONMENT,
         )
 
         analysis_mode = "evidence_first"
@@ -91,19 +99,24 @@ class FactCheckerService:
         provider_claims: List[ProviderClaim] = []
 
         # 2. Extração de alegações via LLM com timeout resiliente (RF-14, RNF-01, RNF-06)
-        timeout_limit = getattr(settings, "LLM_TIMEOUT_SECONDS", 8.0)
+        timeout_limit = settings.LLM_TIMEOUT_SECONDS
+        llm_elapsed = 0.0
+        llm_start = time.perf_counter()
+        unavailable_message = (
+            "Síntese de linguagem temporariamente indisponível; "
+            "operando em modo Evidence-Only a partir de bases de checagem curadas."
+        )
         try:
             provider_claims = await asyncio.wait_for(
                 provider.extract_claims(request.transcript, request.videoTitle),
                 timeout=timeout_limit,
             )
-        except (asyncio.TimeoutError, ProviderUnavailableError, Exception) as exc:
-            logger.warning(f"Degradação para modo Evidence-Only acionada por falha/timeout no LLMProvider: {exc}")
+        except Exception as exc:
+            logger.warning("llm_evidence_only: extração indisponível (%s)", type(exc).__name__)
             analysis_mode = "evidence_only"
-            limitations.append(
-                "Síntese e extração por IA temporariamente indisponíveis; "
-                "operando em modo Evidence-Only a partir de bases de checagem curadas."
-            )
+            limitations.append(unavailable_message)
+        finally:
+            llm_elapsed += time.perf_counter() - llm_start
 
         claims: List[Claim] = []
 
@@ -185,21 +198,33 @@ class FactCheckerService:
                     )
                     for item in claim.evidence
                 ]
+                llm_start = time.perf_counter()
                 try:
                     reflections = await asyncio.wait_for(
                         provider.generate_reflection([p_claim], evidence_refs),
-                        timeout=timeout_limit,
+                        timeout=max(0.0, timeout_limit - llm_elapsed),
                     )
                     claim.reflectionQuestions = self._normalize_reflection_questions(reflections)
                 except Exception as ref_exc:
-                    logger.debug(f"Perguntas reflexivas não geradas: {ref_exc}")
-                    claim.reflectionQuestions = self.FALLBACK_REFLECTION_QUESTIONS.copy()
+                    logger.warning("llm_evidence_only: reflexão indisponível (%s)", type(ref_exc).__name__)
+                    analysis_mode = "evidence_only"
+                    limitations.append(unavailable_message)
+                    # Preserva todas as evidências já recuperadas e interrompe inferências.
+                    break
+                finally:
+                    llm_elapsed += time.perf_counter() - llm_start
 
         # 5. Processamento no modo Evidence-Only (Fallback sem LLM)
         else:
             analysis_mode = "evidence_only"
-            matched = brazilian_fact_matcher.find_match(request.transcript)
-            if not matched:
+            retrieved = await asyncio.to_thread(retrieve_evidence, request.transcript)
+            for index, (text, evidence) in enumerate(retrieved):
+                claims.append(Claim(
+                    id=f"clm-{index + 1:02d}", text=text, temporalContext=temporal_ctx,
+                    evidence=[evidence], uncertainty="contextualized", reflectionQuestions=[],
+                ))
+            matched = None if claims else brazilian_fact_matcher.find_match(request.transcript)
+            if not claims and not matched:
                 matched = brazilian_fact_matcher.find_match(request.videoTitle)
 
             if matched and matched.get("evidence"):
@@ -220,7 +245,7 @@ class FactCheckerService:
                         reflectionQuestions=[],
                     )
                 )
-            else:
+            elif not claims:
                 limitations.append("Não foi possível identificar alegações verificáveis durante a falha de extração.")
 
         for claim in claims:

@@ -1,29 +1,31 @@
 """Factory e seletor de instâncias de LLMProvider com proteção anti-mock em produção.
 
 Regras de governança (ADR-001 / IS-11):
-1. `get_provider()` avalia `LLM_PROVIDER` e `APP_ENV`.
-2. Se `LLM_PROVIDER=mock` e `APP_ENV` for 'production' ou 'prod' (case-insensitive),
+1. `get_provider()` avalia `LLM_PROVIDER` e os aliases de ambiente.
+2. Se `LLM_PROVIDER=mock` e qualquer alias for 'production' ou 'prod' (case-insensitive),
    lança `MockInProductionError` imediatamente (fail-fast).
 3. Nunca realiza fallback silencioso para mock em caso de erro.
 4. Valor desconhecido de `LLM_PROVIDER` levanta `ValueError` listando os valores válidos.
-
-NOTA DE MIGRAÇÃO:
-NÃO conecte este factory aos serviços existentes (`fact_checker.py`, etc.) nesta etapa.
-A migração de produção está planejada para a Sprint 2 (Issue 'Provider abstraction migration').
 
 Refs: ADR-001, IS-11.
 """
 
 from __future__ import annotations
 
+import logging
 import os
+
 from typing import Optional
+
+from app.config import settings
 
 from app.providers.base import LLMProvider
 from app.providers.mock import MockProvider
 from app.providers.ollama import OllamaProvider
 from app.providers.remote import RemoteLLMProvider
 from app.providers.types import MockInProductionError, ProviderUnavailableError, ProviderError
+
+audit_logger = logging.getLogger("app.audit")
 
 VALID_PROVIDERS = ("ollama", "remote", "mock")
 
@@ -55,7 +57,7 @@ def get_provider(
         MockInProductionError: Se mock for requisitado em ambiente de produção.
         ValueError: Se o nome do provedor for desconhecido.
     """
-    raw_provider = provider_name or os.getenv("LLM_PROVIDER", "ollama")
+    raw_provider = provider_name or os.getenv("LLM_PROVIDER", settings.LLM_PROVIDER)
     normalized_provider = raw_provider.strip().lower()
 
     raw_env = (
@@ -63,18 +65,26 @@ def get_provider(
         or os.getenv("ENV")
         or os.getenv("NODE_ENV")
         or os.getenv("APP_ENV")
-        or os.getenv("ENVIRONMENT", "development")
+        or os.getenv("ENVIRONMENT", settings.ENVIRONMENT)
     )
-    normalized_env = raw_env.strip().lower()
 
     # Guarda anti-mock estrita em produção (ADR-001 / ADR-006 / RF-15)
-    is_production = normalized_env in ("production", "prod")
+    # Um alias de desenvolvimento nunca pode esconder outro alias de produção.
+    environments = [
+        raw_env, settings.ENVIRONMENT, settings.ENV, settings.APP_ENV, settings.NODE_ENV,
+        *(os.getenv(key, "") for key in ("ENV", "ENVIRONMENT", "APP_ENV", "NODE_ENV")),
+    ]
+    is_production = any((env or "").strip().lower() in ("production", "prod") for env in environments)
 
     if normalized_provider == "mock":
         if is_production:
+            audit_logger.critical(
+                "mock_in_production_blocked: LLM_PROVIDER=mock não é permitido em ambiente de produção",
+                extra={"event": "mock_in_production_blocked", "provider": "mock", "environment": "production"},
+            )
             raise MockInProductionError(
-                f"Violação de segurança ADR-001: LLM_PROVIDER=mock não é permitido em ambiente de "
-                f"produção (APP_ENV='{raw_env}'). Configure um provedor real ('ollama' ou 'remote')."
+                "Violação de segurança ADR-001: LLM_PROVIDER=mock não é permitido em ambiente de "
+                "produção. Configure um provedor real ('ollama' ou 'remote')."
             )
         return MockProvider()
 

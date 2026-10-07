@@ -123,3 +123,13 @@ it("handleFeedbackRequest envia requisição POST para endpoint de feedback", as
 });
 
 
+
+it("recebe Evidence-Only após o timeout de IA de 15 segundos", async () => {
+  const evidenceOnly = { ...data, analysisMode: "evidence_only", limitations: ["Síntese temporariamente indisponível."] };
+  vi.mocked(fetch).mockImplementation(() => new Promise(resolve => {
+    setTimeout(() => resolve({ ok: true, json: async () => evidenceOnly } as Response), 15100);
+  }));
+  const result = handleAnalyzeRequest(payload);
+  await vi.advanceTimersByTimeAsync(15100);
+  expect(await result).toEqual(evidenceOnly);
+});
