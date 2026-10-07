@@ -43,7 +43,7 @@ class LLMProvider(Protocol):
         claims: list[Claim],
         evidence: list[Evidence],
     ) -> list[str]:
-        """Gera perguntas de reflexão não-dogmáticas orientadas por evidências (Sprint 2 / HU02).
+        """Gera perguntas de reflexão não-dogmáticas orientadas por evidências.
 
         A LLM atua como formuladora de perguntas críticas, nunca como juíza da verdade.
 

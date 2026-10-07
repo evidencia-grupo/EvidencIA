@@ -34,7 +34,7 @@ export function FeedbackSection({ videoId, onSubmitFeedback }: FeedbackSectionPr
         window.parent.postMessage({ type: "SUBMIT_FEEDBACK", payload }, "https://www.youtube.com");
       }
     } catch {
-      // Cenário de Exceção: Falha ocorre silenciosamente sem interromper a navegação (RNF-05 / HU12)
+      // Cenário de Exceção: Falha ocorre silenciosamente sem interromper a navegação (RNF-05)
     } finally {
       setSubmitted(true);
       setShowReasons(false);

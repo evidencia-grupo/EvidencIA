@@ -1,4 +1,4 @@
-/** HU05/HU08/HU10: leitura e sanitização de faixas de legenda do YouTube. */
+/** Leitura e sanitização de faixas de legenda do YouTube. */
 
 export interface ExtractedCaptions {
   videoId: string;

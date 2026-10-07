@@ -1,7 +1,7 @@
 ## Identificacao da Mudanca
 
 - **Issue Relacionada:** Closes #
-- **Historia de Usuario / Tarefa:** [ex.: HU01 - Verificacao Simplificada]
+- **Funcionalidade / Tarefa:** [ex.: Notificação de Ausência de Legendas]
 - **Tipo de Alteracao:**
   - [ ] Nova Funcionalidade (Feature)
   - [ ] Correcao de Falha (Bugfix)

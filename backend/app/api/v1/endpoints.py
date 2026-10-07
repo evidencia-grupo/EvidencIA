@@ -67,7 +67,7 @@ async def health_check():
     "/feedback",
     response_model=FeedbackResponse,
     status_code=status.HTTP_200_OK,
-    summary="Recebe avaliação voluntária e anônima de utilidade da análise (HU12, RF-10, RNF-05)",
+    summary="Recebe avaliação voluntária e anônima de utilidade da análise (RF-10, RNF-05)",
 )
 async def submit_feedback(
     request: FeedbackRequest,

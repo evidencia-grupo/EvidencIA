@@ -5,7 +5,7 @@ interface EvidenceCardProps {
 }
 
 /**
- * Cartão de evidência rastreável (HU14 / RF-12 / RNF-07 / ADR-006).
+ * Cartão de evidência rastreável (RF-12 / RNF-07 / ADR-006).
  * Mostra de forma explícita a relação da fonte com a alegação, o trecho factual,
  * quem publicou, quando publicou, o endereço da fonte e a base de onde ela veio.
  */

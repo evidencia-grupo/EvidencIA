@@ -164,7 +164,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid #FBC02D; outline-offs
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
 
-/* Alerta de Incerteza Analítica (HU09 / RF-07) */
+/* Alerta de Incerteza Analítica (RF-07) */
 .uncertainty-alert {
   background: rgba(255, 152, 0, 0.15);
   border: 1px solid var(--color-evidencia-insuficiente);
@@ -194,7 +194,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid #FBC02D; outline-offs
   fill: var(--color-evidencia-insuficiente);
 }
 
-/* Evidence Card (HU14 / RF-12 / UX-01) */
+/* Evidence Card (RF-12 / UX-01) */
 .evidence-card {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border-subtle);
@@ -339,7 +339,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid #FBC02D; outline-offs
   border: 0;
 }
 
-/* Reflection Questions (HU15) */
+/* Reflection Questions */
 .reflection-section {
   background: rgba(255, 255, 255, 0.03);
   border: 1px dashed var(--color-border-subtle);
@@ -409,7 +409,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid #FBC02D; outline-offs
 .claim-toggle { font: inherit; color: inherit; text-align: left; background: transparent; border: none; padding: 6px 0; width: 100%; cursor: pointer; }
 .claim-toggle:focus-visible { outline: 3px solid #FBC02D; outline-offset: 3px; }
 
-/* Seção de Avaliação Anônima (HU12 / RF-10 / RNF-05) */
+/* Seção de Avaliação Anônima (RF-10 / RNF-05) */
 .feedback-section {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border-subtle);

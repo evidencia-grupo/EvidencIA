@@ -132,7 +132,7 @@ it("aguarda metadados, recria iframe removido e suporta chegada pela home", asyn
   navigate("/watch?v=next"); expect(button()).toBeTruthy();
 });
 
-it("HU10: ausência em até 1s ignora cache lento e encerra carregamento", async () => {
+it("ausência de legendas em até 1s ignora cache lento e encerra carregamento", async () => {
   await import("./content-script"); panelMessage("PANEL_READY");
   const post = vi.spyOn(frame().contentWindow!, "postMessage");
   sendMessage.mockReturnValue(new Promise(() => {}));
@@ -144,7 +144,7 @@ it("HU10: ausência em até 1s ignora cache lento e encerra carregamento", async
   expect(button().classList.contains("evidencia-loading")).toBe(false);
   expect(sendMessage).not.toHaveBeenCalled();
 });
-it("HU10: falha de detecção permite recuperação pelo painel", async () => {
+it("falha de detecção de legendas permite recuperação pelo painel", async () => {
   await import("./content-script"); panelMessage("PANEL_READY");
   const post = vi.spyOn(frame().contentWindow!, "postMessage");
   vi.mocked(detectCaptionTracks).mockRejectedValueOnce(new Error("Falha temporária"));

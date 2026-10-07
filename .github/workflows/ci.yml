@@ -116,11 +116,11 @@ jobs:
       - name: Acceptance, Keyboard and Accessibility Tests
         run: npm run test:e2e
 
-      - name: Archive HU03 Test Evidence
+      - name: Archive E2E Test Evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: hu03-test-evidence
+          name: e2e-test-evidence
           path: |
             extension/coverage/
             extension/test-results/

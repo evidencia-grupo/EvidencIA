@@ -47,7 +47,7 @@ async function setup(context: BrowserContext, id = "video", captions = true, fai
     } else {
       await route.fulfill({
         contentType: "text/html",
-        body: `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Vídeo de teste HU10</title></head><body>
+        body: `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Vídeo de teste - Ausência de legendas</title></head><body>
         <main><h1 class="ytd-watch-metadata">Vídeo Teste</h1><div id="channel-name">Canal de testes</div><div id="above-the-fold"></div><div id="movie_player"></div><video></video><a href="#footer">Próximo</a></main>
         <script>
         window.ytInitialPlayerResponse = {
@@ -58,12 +58,12 @@ async function setup(context: BrowserContext, id = "video", captions = true, fai
             }
           }
         };
-        window.hu10 = { click: 0, alertTime: null, blocking: 0 };
+        window.__evidencia_perf__ = { click: 0, alertTime: null, blocking: 0 };
         new PerformanceObserver(list => {
-          for (const entry of list.getEntries()) window.hu10.blocking += Math.max(0, entry.duration - 50);
+          for (const entry of list.getEntries()) window.__evidencia_perf__.blocking += Math.max(0, entry.duration - 50);
         }).observe({ type: 'longtask', buffered: true });
         document.addEventListener('click', () => {
-          window.hu10.click = performance.timeOrigin + performance.now();
+          window.__evidencia_perf__.click = performance.timeOrigin + performance.now();
         }, true);
         </script></body></html>`,
       });
@@ -79,7 +79,7 @@ async function setup(context: BrowserContext, id = "video", captions = true, fai
   return { page, button, panel, captionCalls: () => captionCalls, recover: () => { failCaptions = false; } };
 }
 
-test("HU10: Cenário 1 — Vídeo sem legendas notifica em até 1s e encerra com segurança sem bloquear a aba", async ({ extension }) => {
+test("Ausência de legendas: Cenário 1 — Vídeo sem legendas notifica em até 1s e encerra com segurança sem bloquear a aba", async ({ extension }) => {
   const { page, button, panel, captionCalls } = await setup(extension.context, "no-captions-video", false);
 
   // Monitora reprodução do vídeo e tarefas longas
@@ -104,12 +104,12 @@ test("HU10: Cenário 1 — Vídeo sem legendas notifica em até 1s e encerra com
   await expect(alert).toContainText("Sem as legendas não conseguimos analisar");
 
   const alertTime = await panelFrame!.evaluate(() => (window as any).alertTime);
-  const clickTime = await page.evaluate(() => (window as any).hu10.click);
+  const clickTime = await page.evaluate(() => (window as any).__evidencia_perf__.click);
   expect(alertTime - clickTime).toBeLessThanOrEqual(1000);
 
   // Player não deve ter sido pausado nem a aba bloqueada
   expect(await page.evaluate(() => (window as any).pauses)).toBe(0);
-  const blocking = await page.evaluate(() => (window as any).hu10.blocking);
+  const blocking = await page.evaluate(() => (window as any).__evidencia_perf__.blocking);
   expect(blocking).toBeLessThanOrEqual(50);
 
   // Nenhuma chamada externa a timedtext
@@ -130,7 +130,7 @@ test("HU10: Cenário 1 — Vídeo sem legendas notifica em até 1s e encerra com
   }
 });
 
-test("HU10: Cenário 2 — Falha temporária da API do YouTube exibe botão de nova tentativa no painel", async ({ extension }) => {
+test("Ausência de legendas: Cenário 2 — Falha temporária da API do YouTube exibe botão de nova tentativa no painel", async ({ extension }) => {
   const { button, panel, recover } = await setup(extension.context, "temp-fail-video", true, true);
   await button.click();
 

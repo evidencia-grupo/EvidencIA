@@ -1,6 +1,6 @@
 from typing import Any, List
 
-# Lista de termos técnicos e jargões proibidos na síntese voltada para Dona Lurdes (HU02 / RF-03)
+# Lista de termos técnicos e jargões proibidos na síntese acessível (RF-03)
 FORBIDDEN_JARGONS = [
     "algoritmo",
     "bayesiano",
@@ -23,7 +23,7 @@ FORBIDDEN_JARGONS = [
 class SynthesisService:
     """
     Serviço gerador de sínteses analíticas estruturadas em linguagem clara,
-    acessível e empática para a persona Dona Lurdes (HU02 / RF-03).
+    acessível e empática para a persona Dona Lurdes (RF-03).
     Garante ausência de termos herméticos e separação evidente do que é fato vs boato.
     """
 

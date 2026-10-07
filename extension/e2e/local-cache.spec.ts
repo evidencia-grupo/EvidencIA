@@ -46,7 +46,7 @@ async function setupPage(context: BrowserContext, videoId = "video-carlos", capt
     } else {
       await route.fulfill({
         contentType: "text/html",
-        body: `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Vídeo de Teste HU06</title></head><body>
+        body: `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Vídeo de Teste - Cache Local</title></head><body>
           <main>
             <h1 class="ytd-watch-metadata">Título de Carlos Augusto</h1>
             <div id="channel-name">Canal de Tecnologia</div>
@@ -63,21 +63,21 @@ async function setupPage(context: BrowserContext, videoId = "video-carlos", capt
                 }
               }
             };
-            window.hu06 = { click: 0, feedback: null, blocking: 0 };
+            window.__evidencia_perf__ = { click: 0, feedback: null, blocking: 0 };
             new PerformanceObserver(list => {
               for (const entry of list.getEntries()) {
-                window.hu06.blocking += Math.max(0, entry.duration - 50);
+                window.__evidencia_perf__.blocking += Math.max(0, entry.duration - 50);
               }
             }).observe({ type: 'longtask', buffered: true });
             document.addEventListener('click', () => {
-              window.hu06.click = performance.timeOrigin + performance.now();
+              window.__evidencia_perf__.click = performance.timeOrigin + performance.now();
               const root = document.querySelector('#evidencia-badge-host')?.shadowRoot;
               if (!root) return;
               const observer = new MutationObserver(() => {
                 if (root.querySelector('button')?.textContent.includes('Analisando')) {
                   observer.disconnect();
                   requestAnimationFrame(() => {
-                    window.hu06.feedback = performance.timeOrigin + performance.now() - window.hu06.click;
+                    window.__evidencia_perf__.feedback = performance.timeOrigin + performance.now() - window.__evidencia_perf__.click;
                   });
                 }
               });
@@ -156,7 +156,7 @@ const mockValidEntry: LocalCacheEntry = {
   ttl: 86400000,
 };
 
-test("HU06: Cenário 1 — Cache válido disponível exibe resultado em <1s sem nova extração de legendas nem backend", async ({
+test("Cache local: Cenário 1 — Cache válido disponível exibe resultado em <1s sem nova extração de legendas nem backend", async ({
   extension,
 }) => {
   // Pré-popula chrome.storage.local com registro válido de Carlos Augusto
@@ -188,7 +188,7 @@ test("HU06: Cenário 1 — Cache válido disponível exibe resultado em <1s sem 
   expect(await extension.worker.evaluate(() => (globalThis as any).cacheFetchCalls)).toBe(0);
 
   // Medição de latência estrita: < 1s (critério obrigatório) e < 100ms (meta controlada ADR-003)
-  const clickTime = await page.evaluate(() => (window as any).hu06.click);
+  const clickTime = await page.evaluate(() => (window as any).__evidencia_perf__.click);
   await expect.poll(() => frame.evaluate(() => (window as any).renderedAt)).toBeTruthy();
   const renderTime = await frame.evaluate(() => (window as any).renderedAt);
   const latencyMs = renderTime - clickTime;
@@ -197,7 +197,7 @@ test("HU06: Cenário 1 — Cache válido disponível exibe resultado em <1s sem 
   expect(latencyMs).toBeLessThan(process.env.CI ? 250 : 100); // Meta de cache controlado ADR-003: < 100ms
 });
 
-test("HU06: Cenário 1b — Cache continua funcionando após recarregar a página do vídeo", async ({
+test("Cache local: Cenário 1b — Cache continua funcionando após recarregar a página do vídeo", async ({
   extension,
 }) => {
   await extension.worker.evaluate(async (entry) => {
@@ -226,7 +226,7 @@ test("HU06: Cenário 1b — Cache continua funcionando após recarregar a págin
   expect(captionCalls()).toBe(0);
   expect(await extension.worker.evaluate(() => (globalThis as any).cacheFetchCalls)).toBe(0);
 
-  const reopenedClick = await page.evaluate(() => (window as any).hu06.click);
+  const reopenedClick = await page.evaluate(() => (window as any).__evidencia_perf__.click);
   await expect.poll(() => reopenedFrame.evaluate(() => (window as any).renderedAt)).toBeTruthy();
   const reopenedRender = await reopenedFrame.evaluate(() => (window as any).renderedAt);
   const latency = reopenedRender - reopenedClick;
@@ -234,7 +234,7 @@ test("HU06: Cenário 1b — Cache continua funcionando após recarregar a págin
   expect(latency).toBeLessThan(process.env.CI ? 250 : 100);
 });
 
-test("HU06: Cenário 2 — Cache expirado é descartado e inicia nova análise completa substituindo o registro", async ({
+test("Cache local: Cenário 2 — Cache expirado é descartado e inicia nova análise completa substituindo o registro", async ({
   extension,
 }) => {
   // Injeta cache expirado (exatamente 24h atrás: idade = 86400000 ms)
@@ -276,7 +276,7 @@ test("HU06: Cenário 2 — Cache expirado é descartado e inicia nova análise c
     .toBe(true);
 });
 
-test("HU06: Cenário 2b — Cache corrompido, timestamp futuro ou videoId divergente dispara nova análise", async ({
+test("Cache local: Cenário 2b — Cache corrompido, timestamp futuro ou videoId divergente dispara nova análise", async ({
   extension,
 }) => {
   // Injeta registros inválidos: timestamp futuro, dado corrompido e identificador divergente
@@ -308,7 +308,7 @@ test("HU06: Cenário 2b — Cache corrompido, timestamp futuro ou videoId diverg
     .toBe(true);
 });
 
-test("HU06: Análise com erro não é salva no cache e permite nova tentativa", async ({
+test("Cache local: Análise com erro não é salva no cache e permite nova tentativa", async ({
   extension,
 }) => {
   // Limpa cache

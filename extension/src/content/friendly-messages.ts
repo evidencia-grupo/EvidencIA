@@ -1,4 +1,4 @@
-/** HU01 / RNF-07: traduz falhas técnicas em avisos simples para quem usa a extensão. */
+/** Traduz falhas técnicas em avisos simples e acolhedores (RNF-07). */
 export const FRIENDLY_MESSAGES = {
   offline: "Parece que sua internet caiu. Confira a conexão e tente de novo.",
   timeout: "A checagem demorou mais do que o esperado. Tente de novo em instantes.",
