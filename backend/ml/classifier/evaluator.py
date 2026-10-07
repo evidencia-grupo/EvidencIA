@@ -1,7 +1,7 @@
 """Módulo de avaliação rigorosa com métricas estatísticas e análise de limiares de aceitação."""
 
 import random
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from ml.classifier.dataset import TrainingSample
 from ml.classifier.model import ClaimClassifier
 

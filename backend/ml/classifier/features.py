@@ -4,7 +4,7 @@ import math
 import re
 import unicodedata
 from collections import Counter
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List
 
 STOPWORDS_PT = {
     "o", "a", "os", "as", "um", "uma", "uns", "umas", "de", "do", "da", "dos", "das",

@@ -15,6 +15,7 @@ from app.schemas import (
     AnalyzeResponse,
     Claim,
     Evidence,
+    EvidenceProvenance,
     TemporalContext,
     UncertaintyState,
 )

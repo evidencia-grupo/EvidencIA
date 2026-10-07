@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import os
+from pathlib import Path
 import subprocess
 import sys
 from types import SimpleNamespace
@@ -122,8 +123,6 @@ def test_production_alias_cannot_be_masked_by_development(alias, monkeypatch, ca
     assert caplog.records[-1].environment == "production"
 
 
-from pathlib import Path
-
 backend_dir = Path(__file__).resolve().parent.parent
 
 
@@ -133,6 +132,7 @@ def test_uvicorn_aborts_before_serving_when_mock_is_configured_in_production(ali
     for key in ("ENV", "ENVIRONMENT", "APP_ENV", "NODE_ENV"):
         environment.pop(key, None)
     environment[alias] = "production"
+    environment["CORS_ALLOWED_ORIGINS"] = "https://example.com"
     result = subprocess.run(
         [sys.executable, "-m", "uvicorn", "app.main:app"],
         env=environment,
@@ -313,7 +313,7 @@ def test_index_preserves_record_for_vector_evidence(record, tmp_path, monkeypatc
 
     silver = tmp_path / "silver"
     silver.mkdir()
-    (silver / "facts.jsonl").write_text(record.model_dump_json() + "\n")
+    (silver / "facts.jsonl").write_text(record.model_dump_json() + "\n", encoding="utf-8")
     collection = MagicMock()
     chroma = SimpleNamespace(
         PersistentClient=lambda **kwargs: SimpleNamespace(get_or_create_collection=lambda **kwargs: collection)

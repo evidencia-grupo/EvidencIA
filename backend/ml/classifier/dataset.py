@@ -4,7 +4,7 @@ import csv
 import json
 import os
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List
 
 FIXTURE_FAKEBR_PATH = os.path.join(
     os.path.dirname(__file__), "..", "..", "tests", "fixtures", "fakebr_sample.csv"

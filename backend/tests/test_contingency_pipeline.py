@@ -6,13 +6,12 @@ Valida a resiliência do sistema perante falhas simultâneas de:
 - Extração de alegações por ML no modo offline.
 """
 
-import asyncio
 from unittest.mock import AsyncMock, patch
 import pytest
 
 from app.config import settings
 from app.providers.types import ProviderUnavailableError
-from app.schemas import AnalyzeRequest, ClassifyRequest
+from app.schemas import AnalyzeRequest
 from app.services.classifier_service import classifier_service
 from app.services.fact_checker import FactCheckerService
 from ml.classifier.claim_extractor import extract_candidate_claims, score_claim_saliency

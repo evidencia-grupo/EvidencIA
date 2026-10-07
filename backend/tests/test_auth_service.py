@@ -1,7 +1,6 @@
 """Testes de autenticação, rotação e proteção de tokens efêmeros (ADR-002, RNF-01)."""
 
 import time
-import pytest
 from fastapi.testclient import TestClient
 
 from app.config import settings

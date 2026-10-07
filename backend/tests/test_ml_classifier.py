@@ -2,7 +2,6 @@
 
 import os
 import tempfile
-import pytest
 
 from ml.classifier.dataset import TrainingSample, load_training_dataset
 from ml.classifier.evaluator import evaluate_model, generate_markdown_report, train_test_split

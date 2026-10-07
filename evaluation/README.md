@@ -8,7 +8,7 @@ Este diretório contém a estrutura oficial e reproduzível para avaliação emp
 
 1. **Separação Epistemológica:** A alegação extraída do vídeo (`claim`) é mantida separada do texto do documento de evidência (`evidence`).
 2. **Não-Circularidade:** Nenhum modelo de linguagem (LLM) ou classificador pode gerar rótulos para avaliar a si mesmo. Métricas de qualidade científica dependem de anotação humana independente.
-3. **Protocolo Duplo-Cego:** As diretrizes completas de rotulação estão definidas em [`annotation-guide.md`](file:///Users/aluno1/Documents/challenge%20fake%20news/evidencia/evaluation/annotation-guide.md).
+3. **Protocolo Duplo-Cego:** As diretrizes completas de rotulação estão definidas em [`annotation-guide.md`](annotation-guide.md).
 
 ---
 

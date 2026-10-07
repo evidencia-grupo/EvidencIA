@@ -1,9 +1,7 @@
 """Testes funcionais de Rate Limiting (RNF-04)."""
 
-import pytest
 from fastapi.testclient import TestClient
 
-from app.config import settings
 from app.main import app
 from app.limiter import limiter
 

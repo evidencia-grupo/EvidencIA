@@ -1,7 +1,12 @@
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
 const storage = { get: vi.fn(), set: vi.fn(), remove: vi.fn() };
-vi.stubGlobal("chrome", { runtime: { id: "extension", onMessage: { addListener: vi.fn() } }, storage: { local: storage } });
-const { getCachedResult, handleAnalyzeRequest, handleFeedbackRequest } = await import("./service-worker");
+vi.stubGlobal("chrome", {
+  runtime: { id: "extension", onMessage: { addListener: vi.fn() } },
+  storage: { local: storage },
+  tabs: { create: vi.fn().mockResolvedValue({ id: 123 }) },
+  scripting: { executeScript: vi.fn().mockResolvedValue([{ result: { tracks: [], metadata: { videoTitle: "t", channelName: "c" } } }]) },
+});
+const { getCachedResult, handleAnalyzeRequest, handleFeedbackRequest, getAuthToken, refreshAuthToken } = await import("./service-worker");
 const listener = vi.mocked(chrome.runtime.onMessage.addListener).mock.calls[0][0];
 const data = {
   analysisMode: "evidence_first",
@@ -133,3 +138,51 @@ it("recebe Evidence-Only após o timeout de IA de 15 segundos", async () => {
   await vi.advanceTimersByTimeAsync(15100);
   expect(await result).toEqual(evidenceOnly);
 });
+
+it("rejeita handleFeedbackRequest quando servidor responde com erro", async () => {
+  vi.mocked(fetch).mockResolvedValueOnce({ ok: false, status: 500 } as Response);
+  await expect(handleFeedbackRequest({ videoId: "video", rating: "positive" })).rejects.toThrow(
+    "Falha ao registrar feedback: HTTP 500"
+  );
+});
+
+it("atualiza e recupera token de autenticação via refreshAuthToken e getAuthToken", async () => {
+  vi.mocked(fetch).mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({ token: "token-auth-xyz" }),
+  } as Response);
+
+  const token = await refreshAuthToken();
+  expect(token).toBe("token-auth-xyz");
+  expect(storage.set).toHaveBeenCalledWith({ evidencia_auth_token: "token-auth-xyz" });
+
+  const retrieved = await getAuthToken();
+  expect(retrieved).toBe("token-auth-xyz");
+});
+
+it("retorna null em refreshAuthToken quando requisição falha", async () => {
+  vi.mocked(fetch).mockResolvedValueOnce({ ok: false, status: 401 } as Response);
+  const token = await refreshAuthToken();
+  expect(token).toBeNull();
+});
+
+it("processa mensagens GET_CAPTION_TRACKS e OPEN_TAB no listener", async () => {
+  const senderWithTab = {
+    id: "extension",
+    url: "https://www.youtube.com/watch?v=video",
+    tab: { id: 1 },
+  } as unknown as chrome.runtime.MessageSender;
+  const response = vi.fn();
+
+  expect(listener({ type: "GET_CAPTION_TRACKS", videoId: "video" }, senderWithTab, response)).toBe(true);
+  await vi.advanceTimersByTimeAsync(0);
+  expect(response).toHaveBeenCalledWith(
+    expect.objectContaining({ success: true })
+  );
+
+  response.mockClear();
+  expect(listener({ type: "OPEN_TAB", url: "https://youtube.com" }, senderWithTab, response)).toBe(true);
+  await vi.advanceTimersByTimeAsync(0);
+  expect(response).toHaveBeenCalledWith({ success: true, data: { id: 123 } });
+});
+
