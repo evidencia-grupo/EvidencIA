@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional, Dict
+from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field, ConfigDict
 
 EvidenceRelation = Literal["supports", "contradicts", "contextualizes"]
@@ -89,4 +89,20 @@ class FeedbackRequest(BaseModel):
 class FeedbackResponse(BaseModel):
     status: Literal["received"] = "received"
     message: str = "Feedback anônimo registrado com sucesso."
+
+
+class ClassifyRequest(BaseModel):
+    text: str = Field(..., min_length=3, description="Texto ou proposição a ser classificada")
+    threshold: Optional[float] = Field(None, ge=0.0, le=1.0, description="Limiar de aceitação (default: 0.65)")
+
+
+class ClassifyResponse(BaseModel):
+    label: str = Field(..., description="fake, true ou unverified")
+    dominant_label: str = Field(..., description="fake ou true")
+    verdict_pt: str = Field(..., description="Veredito textual em português")
+    confidence: float = Field(..., description="Score de confiança [0.5, 1.0]")
+    accepted: bool = Field(..., description="Se a confiança superou o limiar de aceitação")
+    threshold: float = Field(..., description="Limiar adotado")
+    probabilities: Dict[str, float] = Field(..., description="P(fake) e P(true)")
+    top_features: List[List[Any]] = Field(default_factory=list, description="Features mais discriminativas")
 

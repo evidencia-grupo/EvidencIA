@@ -3,9 +3,18 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Header, status
 from typing import Optional
 
-from app.schemas import AnalyzeRequest, AnalyzeResponse, HealthResponse, FeedbackRequest, FeedbackResponse
+from app.schemas import (
+    AnalyzeRequest,
+    AnalyzeResponse,
+    HealthResponse,
+    FeedbackRequest,
+    FeedbackResponse,
+    ClassifyRequest,
+    ClassifyResponse,
+)
 from app.config import settings
 from app.services.fact_checker import fact_checker_service
+from app.services.classifier_service import classifier_service
 
 logger = logging.getLogger(__name__)
 
@@ -83,5 +92,29 @@ async def submit_feedback(
     return FeedbackResponse(
         status="received",
         message="Feedback anônimo registrado com sucesso.",
+    )
+
+
+@router.post(
+    "/classify",
+    response_model=ClassifyResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Classifica o teor da alegação com modelo estatístico supervisionado",
+)
+async def classify_claim(request: ClassifyRequest):
+    """
+    Submete uma alegação ou sentença avulsa para classificação estatística supervisionada.
+    Retorna as probabilidades calculadas, o score de confiança calibrado e a aceitação conforme o limiar.
+    """
+    result = classifier_service.classify(request.text, threshold=request.threshold)
+    return ClassifyResponse(
+        label=result["label"],
+        dominant_label=result["dominant_label"],
+        verdict_pt=result["verdict_pt"],
+        confidence=result["confidence"],
+        accepted=result["accepted"],
+        threshold=result["threshold"],
+        probabilities=result["probabilities"],
+        top_features=[[feat, score] for feat, score in result["top_features"]],
     )
 
