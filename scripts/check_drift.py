@@ -175,6 +175,16 @@ class DriftChecker:
                 target = match.group(2).split("#")[0].strip()
                 if not target or target.startswith("http://") or target.startswith("https://") or target.startswith("mailto:"):
                     continue
+                if target.startswith("file://"):
+                    import urllib.parse
+                    file_path = Path(urllib.parse.unquote(urllib.parse.urlparse(target).path))
+                    if not file_path.exists():
+                        self.log_finding(
+                            "LOW", "BROKEN_LINK",
+                            f"Link quebrado para '{target}' em {md_file.relative_to(self.docs_dir)}",
+                            str(md_file.relative_to(self.docs_dir))
+                        )
+                    continue
                 # Resolução relativa
                 resolved = (md_file.parent / target).resolve()
                 if not resolved.exists():

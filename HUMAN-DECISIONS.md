@@ -53,7 +53,7 @@ Modelos de IA e classificadores não podem avaliar a si mesmos de forma circular
 
 ### Proposta Técnica Preparada
 - Preparação de 50 a 100 amostras candidatas de transcrições do YouTube.
-- Elaboração do guia de anotação [`EVAL-ANNOTATION-GUIDE.md`](file:///Users/aluno1/Documents/challenge%20fake%20news/evidencia/EVAL-ANNOTATION-GUIDE.md) definindo critérios objetivos: *Totalmente Relevante*, *Parcialmente Contextualiza*, *Irrelevante/Desconexa*.
+- Elaboração do guia de anotação [`EVAL-ANNOTATION-GUIDE.md`](EVAL-ANNOTATION-GUIDE.md) definindo critérios objetivos: *Totalmente Relevante*, *Parcialmente Contextualiza*, *Irrelevante/Desconexa*.
 - Pelo menos 2 anotadores humanos independentes com cálculo de concordância Kappa de Fleiss/Cohen.
 
 ### Status
