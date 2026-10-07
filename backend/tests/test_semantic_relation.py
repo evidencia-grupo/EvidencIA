@@ -1,4 +1,4 @@
-"""Testes semânticos e contratuais da Fase 2 (Confiança da Evidência, ADR-006)."""
+"""Testes semânticos, adversariais e contratuais da Fase 2 e Release Candidate (ADR-006)."""
 
 import pytest
 from app.schemas import AnalyzeRequest
@@ -17,7 +17,6 @@ async def test_claim_video_strictly_separated_from_fact_check_claim(monkeypatch)
         transcript="Neste vídeo nós discutimos sobre diabetes e remédios caseiros amplamente divulgados.",
         durationSeconds=120,
     )
-    # Força modo evidence_only para checar se o título do vídeo é preservado
     res = await service.analyze(req)
     assert len(res.claims) > 0
     # A alegação principal deve ser a fala/título do vídeo, não o texto da checagem
@@ -32,12 +31,12 @@ def test_lexical_overlap_moderate_defaults_to_contextualizes():
     assert match is not None
     assert match["relation"] == "contextualizes"
     assert match["evidence"].relation == "contextualizes"
-    assert "contextualizada" in match["evidence"].matchReason.lower()
+    assert "relacionada" in match["evidence"].matchReason.lower() or "contextualizada" in match["evidence"].matchReason.lower()
 
 
 def test_strong_contradiction_yields_contradicts():
     """Caso 3: Afirmação idêntica a boato desmentido gera 'contradicts'."""
-    text = "Chá de casca de banana cura diabetes e zera a glicose no sangue segundo receita caseira"
+    text = "Chá de casca de banana cura diabetes e zera a glicose no sangue em 3 dias"
     match = brazilian_fact_matcher.find_match(text)
     assert match is not None
     assert match["relation"] == "contradicts"
@@ -75,3 +74,63 @@ async def test_timestamps_and_snippet_extracted():
     assert t_start > 0
     assert t_end is not None
     assert t_end > t_start
+
+
+# =========================================================================
+# BATERIA DE TESTES ADVERSARIAIS EPISTÊMICOS (Seção 4 do Fechamento)
+# =========================================================================
+
+def test_adversarial_similar_text_different_semantics_defaults_to_contextualizes():
+    """Cenário Adversarial 1: Textos parecidos lexicamente mas com predicado diferente."""
+    text = "Uso culinário de água morna com limão para temperar saladas e pratos gourmet saudáveis"
+    match = brazilian_fact_matcher.find_match(text, threshold=0.20)
+    if match:
+        assert match["relation"] == "contextualizes", "Não pode contradizer uma receita culinária"
+        assert match["evidence"].relation == "contextualizes"
+
+
+def test_adversarial_same_entity_different_conclusion_does_not_falsely_contradict():
+    """Cenário Adversarial 2: Mesma entidade (Anvisa / vacina), predicado e conclusão distintos."""
+    text = "A Anvisa realizou reunião extraordinária para avaliar a importação de lotes de insumos hospitalares"
+    match = brazilian_fact_matcher.find_match(text, threshold=0.15)
+    if match:
+        assert match["relation"] == "contextualizes"
+
+
+def test_adversarial_same_news_different_temporal_context():
+    """Cenário Adversarial 3: Mesmo tema econômico, mas contexto temporal histórico diferente."""
+    text = "O Brasil registrou superávit comercial histórico na balança comercial durante o início dos anos 2000"
+    match = brazilian_fact_matcher.find_match(text, threshold=0.20)
+    if match:
+        assert match["relation"] == "contextualizes"
+
+
+def test_adversarial_explicitly_contradicted_claim():
+    """Cenário Adversarial 4: Alegação explicitamente idêntica a boato desmentido."""
+    text = "Consumir água morna com limão pela manhã neutraliza o pH do corpo e previne infecções virais"
+    match = brazilian_fact_matcher.find_match(text)
+    assert match is not None
+    assert match["relation"] == "contradicts"
+
+
+def test_adversarial_debunking_video_with_negation_does_not_yield_contradicts():
+    """Cenário Adversarial 4b: Vídeo desmentindo o boato (negação explícita) NÃO pode receber 'contradicts'."""
+    text = "Médicos e cientistas alertam que NÃO é verdade que chá de casca de banana cura diabetes"
+    match = brazilian_fact_matcher.find_match(text)
+    assert match is not None
+    assert match["relation"] == "contextualizes", "Vídeo que desmente boato não pode ser rotulado como contradito pela checagem"
+
+
+def test_adversarial_only_related_claim():
+    """Cenário Adversarial 5: Alegação apenas tematicamente relacionada."""
+    text = "Debates acadêmicos sobre pesquisas de vitamina D e saúde preventiva geral"
+    match = brazilian_fact_matcher.find_match(text, threshold=0.15)
+    if match:
+        assert match["relation"] == "contextualizes"
+
+
+def test_adversarial_absence_of_evidence():
+    """Cenário Adversarial 6: Ausência total de evidência (assunto sem correspondência)."""
+    text = "O telescópio James Webb fotografou uma nova galáxia espiral distante a bilhões de anos-luz"
+    match = brazilian_fact_matcher.find_match(text)
+    assert match is None

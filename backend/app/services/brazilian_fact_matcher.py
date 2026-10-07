@@ -76,19 +76,42 @@ class BrazilianFactMatcher:
         if best_match:
             raw_status = (best_match.get("status") or "").lower()
 
-            # Camada explícita de validação da relação: similaridade moderada (< 0.55) não pode
-            # determinar sozinha 'contradicts' ou 'supports', degradando para 'contextualizes'.
-            if best_score >= 0.55:
+            tokens_claim = self._tokenize(best_match.get("claim", ""))
+            intersection = tokens_text.intersection(tokens_claim)
+            union = tokens_text.union(tokens_claim)
+            jaccard = len(intersection) / len(union) if union else 0.0
+            overlap = len(intersection) / min(len(tokens_text), len(tokens_claim)) if tokens_text and tokens_claim else 0.0
+
+            # Detecção de negação e inversão de polaridade (ex: vídeo desmentindo o boato)
+            text_lower = text.lower()
+            negation_terms = {"nao", "não", "nunca", "jamais", "falso", "mentira", "desmentido", "fake", "boato"}
+            has_negation = any(re.search(rf"\b{term}\b", text_lower) for term in negation_terms)
+            claim_lower = best_match.get("claim", "").lower()
+            claim_has_negation = any(re.search(rf"\b{term}\b", claim_lower) for term in negation_terms)
+            polarity_mismatch = has_negation != claim_has_negation
+
+            # Regra estrita contra falso positivo factual:
+            # Similaridade lexical indica apenas relevância de recuperação (candidato de fact-check).
+            # Para emitir 'contradicts' ou 'supports', exige-se correspondência proposicional alta
+            # (jaccard >= 0.50 e overlap >= 0.65) SEM divergência de polaridade.
+            is_high_propositional_match = (jaccard >= 0.50 and overlap >= 0.65 and not polarity_mismatch)
+
+            if is_high_propositional_match:
                 if "contraditada" in raw_status or "falso" in raw_status or "falsa" in raw_status:
                     relation: EvidenceRelation = "contradicts"
+                    match_reason = f"Checagem da {best_match.get('publisher', 'Agência')} apurou esta alegação específica e atestou falsidade ou distorção factual."
                 elif "apoiada" in raw_status or "verdadeiro" in raw_status or "verdadeira" in raw_status or "fato" in raw_status:
                     relation: EvidenceRelation = "supports"
+                    match_reason = f"Checagem da {best_match.get('publisher', 'Agência')} confirmou a veracidade e conformidade oficial desta alegação."
                 else:
-                    relation: EvidenceRelation = "contextualizes"
-                match_reason = f"Correspondência temática direta ({best_match.get('publisher', 'Agência')}) com validação factual auditada."
+                    relation = "contextualizes"
+                    match_reason = f"Correspondência direta com checagem da {best_match.get('publisher', 'Agência')} que esclarece o contexto factual."
             else:
                 relation = "contextualizes"
-                match_reason = f"Correspondência temática contextualizada baseada em entidades e tópicos relacionados."
+                if polarity_mismatch:
+                    match_reason = f"Fonte relacionada ({best_match.get('publisher', 'Agência')}): o vídeo aborda ou questiona o tema, fornecendo contexto jornalístico apurado."
+                else:
+                    match_reason = f"Fonte jornalística relacionada ({best_match.get('publisher', 'Agência')}) com apuração temática sobre entidades ou tópicos afins."
 
             evidence = Evidence(
                 sourceId=f"src-br-{best_match['id']}",
