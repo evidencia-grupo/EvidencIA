@@ -36,8 +36,8 @@ def test_brazilian_fact_matcher_no_false_positive():
     assert match is None
 
 
-def test_brazilian_fact_matcher_evidencia_rastreavel_hu14():
-    """HU14: a evidência traz trecho, publisher, endereço e proveniência, sem inventar data de publicação."""
+def test_brazilian_fact_matcher_traceable_evidence():
+    """A evidência traz trecho, publisher, endereço e proveniência, sem inventar data de publicação."""
     match = brazilian_fact_matcher.find_match("O chá de casca de banana cura diabetes e zera glicose")
 
     evidence = match["evidence"]

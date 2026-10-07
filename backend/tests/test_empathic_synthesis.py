@@ -14,10 +14,10 @@ class DummyClaim:
         self.confidence = confidence
 
 
-def test_hu02_summary_no_technical_jargon():
+def test_summary_avoids_technical_jargon():
     """
-    Critério HU02 / RF-03: A síntese não deve conter termos herméticos ou jargões técnicos,
-    assegurando compreensão imediata pela persona Dona Lurdes.
+    A síntese não deve conter termos herméticos ou jargões técnicos,
+    assegurando compreensão imediata e acessibilidade.
     """
     dummy_claims = [
         DummyClaim(
@@ -35,7 +35,7 @@ def test_hu02_summary_no_technical_jargon():
         assert jargon not in summary.lower()
 
 
-def test_hu02_summary_guides_individual_investigation_without_global_verdict():
+def test_summary_guides_individual_investigation_without_global_verdict():
     claims = [DummyClaim(id="c1", text="Chá cura doença", status="contraditada")]
     summary = synthesis_service.generate_accessible_summary(claims)
     assert "separadamente" in summary
@@ -45,9 +45,9 @@ def test_hu02_summary_guides_individual_investigation_without_global_verdict():
     assert "Não foram identificadas alegações checáveis" in empty
 
 
-def test_hu02_claims_contain_explicit_status_for_ui_grouping():
+def test_claims_contain_explicit_status_for_ui_grouping():
     """
-    Critério HU02 / HU13: As alegações devem conter separação nítida de incerteza/status
+    As alegações devem conter separação nítida de incerteza/status
     para permitir agrupamento visual no painel lateral.
     """
     payload = {
@@ -68,9 +68,9 @@ def test_hu02_claims_contain_explicit_status_for_ui_grouping():
         assert claim["uncertainty"] in valid_uncertainties
 
 
-def test_hu02_public_access_no_registration_required():
+def test_public_access_no_registration_required():
     """
-    Critério HU02: A consulta não deve exigir configurações complexas,
+    A consulta não deve exigir configurações complexas,
     preenchimento de cadastros ou autenticação externa.
     """
     payload = {

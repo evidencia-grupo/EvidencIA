@@ -1,4 +1,4 @@
-"""Testes de resiliência e suporte ao modo Evidence-Only sob falha externa (ARC-06 / HU16 / Issue #37).
+"""Testes de resiliência e suporte ao modo Evidence-Only sob falha externa (ARC-06 / Issue #37).
 
 Garante que sob timeout ou indisponibilidade do provedor de LLM:
 1. O backend não cai (zero crashes).

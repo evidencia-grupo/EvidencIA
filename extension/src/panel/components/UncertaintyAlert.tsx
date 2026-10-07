@@ -5,7 +5,7 @@ interface UncertaintyAlertProps {
 }
 
 /**
- * Alerta visual imediato de incerteza analítica (HU09 / RF-07 / RNF-06 / RNF-07).
+ * Alerta visual imediato de incerteza analítica (RF-07 / RNF-06 / RNF-07).
  * Exibido quando há divergência entre fontes ou quando as evidências são insuficientes,
  * sem impor autoridade algorítmica.
  */

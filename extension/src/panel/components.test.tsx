@@ -38,7 +38,7 @@ describe("ReflectionQuestions Component", () => {
   });
 });
 
-describe("EvidenceCard Component (HU14)", () => {
+describe("EvidenceCard Component", () => {
   const baseEvidence: Evidence = {
     sourceId: "src-10",
     relation: "supports",
@@ -305,7 +305,7 @@ describe("UncertaintyAlert Component", () => {
   });
 });
 
-describe("FeedbackSection Component (HU12)", () => {
+describe("FeedbackSection Component", () => {
   it("renderiza opções discretas de feedback (positivo/negativo)", () => {
     const container = document.createElement("div");
     render(<FeedbackSection videoId="test-vid" />, container);

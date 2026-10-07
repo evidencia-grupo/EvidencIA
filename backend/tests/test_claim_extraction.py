@@ -15,9 +15,9 @@ from app.services.fact_checker import FactCheckerService
 client = TestClient(app)
 
 
-def test_hu04_claim_extraction_isolated_listing():
+def test_claim_extraction_isolated_listing():
     """
-    Critério HU04: As alegações extraídas pela IA devem ser listadas isoladamente,
+    As alegações extraídas pela IA devem ser listadas isoladamente,
     com identificador único, texto individual e relação explícita com as evidências.
     """
     payload = {
@@ -49,9 +49,9 @@ def test_hu04_claim_extraction_isolated_listing():
         assert claim["uncertainty"] in ["supported", "contradicted", "contextualized", "conflicting", "insufficient_evidence"]
 
 
-def test_hu04_non_dogmatic_verdicts():
+def test_claim_extraction_non_dogmatic_verdicts():
     """
-    Critério HU04: O sistema não deve impor vereditos dogmáticos,
+    O sistema não deve impor vereditos dogmáticos,
     mantendo foco na apresentação factual e analítica para fichamento acadêmico.
     """
     payload = {
@@ -75,7 +75,7 @@ def test_hu04_non_dogmatic_verdicts():
         assert "absurdo" not in text_lower
 
 
-def test_hu04_fact_check_client_rating_normalization():
+def test_fact_check_client_rating_normalization():
     """
     Testa a normalização de vereditos do padrão ClaimReview da Google Fact Check API
     para o enum ClaimVerificationStatus do EvidencIA.
@@ -96,14 +96,14 @@ def test_hu04_fact_check_client_rating_normalization():
     assert normalize_rating_to_status("Desconhecido Qualquer") == "inconclusiva"
 
 
-def test_hu04_extract_domain_from_url():
+def test_extract_domain_from_url():
     """Testa extração de domínio a partir de URLs HTTP/HTTPS."""
     assert extract_domain_from_url("https://www.lupa.uol.com.br/checagem") == "lupa.uol.com.br"
     assert extract_domain_from_url("http://aosfatos.org/noticia") == "aosfatos.org"
     assert extract_domain_from_url("sem-protocolo") == "agenciachecagem.org"
 
 
-def test_hu04_fact_check_client_parsing():
+def test_fact_check_client_parsing():
     """
     Testa a interpretação do payload estruturado da Google Fact Check Tools API.
     """
@@ -149,7 +149,7 @@ def test_hu04_fact_check_client_parsing():
 
 
 @pytest.mark.asyncio
-async def test_hu04_fact_check_client_offline_resilience():
+async def test_fact_check_client_offline_resilience():
     """
     Garante que a ausência de chave de API externa não causa exceção
     e degrada com segurança em modo offline.
@@ -160,7 +160,7 @@ async def test_hu04_fact_check_client_offline_resilience():
 
 
 @pytest.mark.asyncio
-async def test_hu04_fact_check_client_search_network_success():
+async def test_fact_check_client_search_network_success():
     """Valida requisição HTTP à API do Google Fact Check quando chave está presente."""
     mock_payload = {
         "claims": [
@@ -193,7 +193,7 @@ async def test_hu04_fact_check_client_search_network_success():
 
 
 @pytest.mark.asyncio
-async def test_hu04_fact_check_client_search_error_handling():
+async def test_fact_check_client_search_error_handling():
     """Valida tratamento seguro de erros HTTP 500 ou exceções de rede."""
     from unittest.mock import MagicMock
 
@@ -213,7 +213,7 @@ async def test_hu04_fact_check_client_search_error_handling():
         assert res == []
 
 
-def test_hu04_brazilian_fact_matcher_heuristics():
+def test_brazilian_fact_matcher_heuristics():
     """Testa a correspondência semântica e lexical do BrazilianFactMatcher com checagens brasileiras."""
     from app.services.brazilian_fact_matcher import brazilian_fact_matcher
 
@@ -228,7 +228,7 @@ def test_hu04_brazilian_fact_matcher_heuristics():
 
 
 @pytest.mark.asyncio
-async def test_hu04_execute_analysis_development_pipeline(monkeypatch):
+async def test_claim_extraction_execute_analysis_development_pipeline(monkeypatch):
     """Testa o pipeline completo de orquestração sob LLM_PROVIDER='mock'."""
     monkeypatch.setattr(settings, "LLM_PROVIDER", "mock")
 

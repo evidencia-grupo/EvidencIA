@@ -103,7 +103,7 @@ export function App({ onSubmitFeedback }: AppProps = {}) {
         </button>
       </header>
 
-      {/* Alerta de ausência de legendas (HU10 / RNF-06) */}
+      {/* Alerta de ausência de legendas (RNF-06) */}
       {noCaptions && (
         <section class="alert-box" role="alert">
           <div>
@@ -145,14 +145,14 @@ export function App({ onSubmitFeedback }: AppProps = {}) {
       {/* Resultado da Análise Evidence-First */}
       {data && (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {/* Banner de Modo Evidence-Only (HU16 / Issue #37) */}
+          {/* Banner de Modo Evidence-Only (Issue #37) */}
           {data.analysisMode === "evidence_only" && (
             <div class="warning-badge" role="status" style={{ padding: "8px 12px", borderRadius: "6px", background: "rgba(255, 152, 0, 0.15)", border: "1px solid #FF9800", color: "#FFB74D", fontSize: "12px" }}>
               <strong>Modo Exclusivo de Evidências:</strong> A síntese de IA está temporariamente indisponível. Exibindo evidências recuperadas diretamente das bases de checagem.
             </div>
           )}
 
-          {/* Alerta de Incerteza Analítica no topo (HU09 / RF-07) */}
+          {/* Alerta de Incerteza Analítica no topo (RF-07) */}
           <UncertaintyAlert claims={data.claims} />
 
           {/* Limitações e Ressalvas Metodológicas */}
@@ -164,7 +164,7 @@ export function App({ onSubmitFeedback }: AppProps = {}) {
             </aside>
           )}
 
-          {/* Lista de Alegações com Evidence Cards (HU13 / HU14 / RF-06 / ADR-006) */}
+          {/* Lista de Alegações com Evidence Cards (RF-06 / ADR-006) */}
           <div class="claims-list-section" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <h2 style={{ fontSize: "14px", fontWeight: "600", color: "var(--color-text-primary)", margin: "4px 0" }}>
               Alegações Analisadas ({data.claims.length})

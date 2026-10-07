@@ -104,7 +104,7 @@ class OllamaService:
         video_title: str,
     ) -> Optional[str]:
         """
-        Gera uma síntese analítica em tom claro e empático (Dona Lurdes - HU02) via Qwen local.
+        Gera uma síntese analítica em tom claro e empático (persona Dona Lurdes) via Qwen local.
         """
         system_prompt = (
             "Você é um assistente de checagem de fatos dedicado a explicar a veracidade de conteúdos "

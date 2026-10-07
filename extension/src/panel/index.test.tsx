@@ -163,7 +163,7 @@ it("ignora remetentes externos, confirma foco e fecha pelo botão/Escape", () =>
   expect(post).toHaveBeenCalledWith({ type: "CLOSE_PANEL" }, "https://www.youtube.com");
   post.mockRestore();
 });
-it("permite acionar nova tentativa pelo painel em caso de falha ou ausência de legendas (HU10)", () => {
+it("permite acionar nova tentativa pelo painel em caso de falha ou ausência de legendas", () => {
   const post = vi.spyOn(window.parent, "postMessage");
   message({ type: "NO_CAPTIONS" });
   expect(document.body.textContent).toContain("Este vídeo não tem legendas");
