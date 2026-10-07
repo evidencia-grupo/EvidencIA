@@ -31,10 +31,10 @@ backend/
 │   ├── api/v1/
 │   │   └── endpoints.py   # Handlers para POST /api/v1/analyze e GET /api/v1/health
 │   ├── providers/         # Camada agnóstica de provedores de IA (Factory Pattern)
-│   │   ├── base.py        # Protocolo abstrato LLMProvider
+│   │   ├── base.py        # Classe abstrata LLMProvider
 │   │   ├── factory.py     # Resolução de provedor com guardas de segurança
 │   │   ├── ollama.py      # Integração local via Ollama HTTP API (Qwen 2.5)
-│   │   ├── remote.py      # Integração com APIs externas (OpenAI / Gemini)
+│   │   ├── remote.py      # Gateway remoto compatível com chat completions
 │   │   ├── mock.py        # Provedor determinístico para testes e CI
 │   │   └── types.py       # Dataclasses de extração e classificação
 │   └── services/          # Serviços de negócio e orquestração assíncrona
@@ -126,3 +126,58 @@ Toda a documentação conceitual e técnica deste serviço é mantida no reposit
   - [ADR-006: Arquitetura Evidence-First](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-006-evidence-first-architecture.md)
 - **Segurança:** [Modelo de Ameaças (Threat Model)](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/threat-model.md)
 - **Validação e Testes:** [Estratégia Global de Testes](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/estrategia-testes.md)
+
+
+## 7. Provedor independente — Sprint 2 (RF-14, RF-15, RNF-06)
+
+`LLMProvider` é uma classe abstrata com `extract_claims` e `generate_reflection`.
+O backend seleciona `OllamaProvider`, `RemoteLLMProvider` ou `MockLLMProvider`
+na inicialização pelo factory. `MockProvider` permanece como alias de compatibilidade.
+Extração e reflexão utilizam o mesmo provedor, sem mudar o código de negócio.
+
+Para alternar para um gateway remoto compatível com chat completions, configure no
+ambiente do backend (ou em `backend/.env`) e reinicie o serviço:
+
+```dotenv
+ENV=production
+LLM_PROVIDER=remote
+REMOTE_LLM_BASE_URL=https://seu-gateway.example/v1
+REMOTE_LLM_MODEL=seu-modelo
+REMOTE_LLM_API_KEY=sua-chave
+LLM_TIMEOUT_SECONDS=15.0
+REMOTE_LLM_TIMEOUT_SECONDS=15.0
+```
+
+Para execução local, use `LLM_PROVIDER=ollama`, `OLLAMA_BASE_URL`, `OLLAMA_MODEL`
+e `OLLAMA_TIMEOUT_SECONDS=15.0`. Nenhuma chave é enviada à extensão.
+
+O lifespan do FastAPI valida a configuração antes de aceitar requisições.
+Qualquer alias de ambiente (`ENV`, `ENVIRONMENT`, `APP_ENV`, `NODE_ENV`) com valor
+`production` ou `prod` bloqueia `LLM_PROVIDER=mock`, mesmo quando outro alias indica
+`development`. O bloqueio lança `MockInProductionError`, registra o evento crítico
+`mock_in_production_blocked` no logger `app.audit` e encerra o Uvicorn com código 3.
+O coletor de logs do ambiente deve preservar esses eventos de auditoria.
+
+O orçamento padrão de inferência é **15 segundos**, compartilhado entre extração
+e reflexões da requisição; consultas de evidência não consomem esse orçamento.
+Os timeouts configuráveis aceitam valores positivos até 15 segundos. Falhas de API,
+respostas inválidas e timeout produzem `analysisMode=evidence_only` com uma mensagem
+em `limitations`. Falha na reflexão preserva todas as evidências já obtidas e
+interrompe as inferências restantes. O painel já exibe o aviso correspondente;
+a extensão aguarda até 30 segundos para acomodar inferência e busca de evidências.
+
+Se a extração falhar, a transcrição é consultada no índice vetorial existente.
+A indexação armazena o registro canônico completo (`record_json`) nos metadados
+Chroma, permitindo retornar URL, trecho, agência, datas e proveniência.
+**Índices anteriores precisam ser reconstruídos** pelo comando existente
+`python -m ml.retrieval.index --silver-dir <diretorio-silver>` para recuperar
+esses metadados. Registros sem fonte ou proveniência e corpora linguísticos não
+viram evidências factuais. Resultados vetoriais são apresentados como contexto,
+sem inferir vereditos pela similaridade. Sem índice ou dependências ML opcionais,
+o casamento lexical com a base curada continua disponível.
+
+Validação automatizada: `uv run pytest --cov=app --cov-report=term-missing -W error`
+e `uv run ruff check .`; na extensão, `npm test` e `npm run typecheck`.
+A suíte cobre chamadas HTTP de extração/reflexão em ambos os provedores,
+startup real do Uvicorn com configuração proibida, aliases conflitantes,
+cancelamento sob timeout e rastreabilidade das evidências vetoriais.

@@ -8,6 +8,7 @@ Refs: ADR-001, IS-06.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import sys
@@ -49,13 +50,6 @@ def build_index(
             "chromadb não está instalado. Execute: pip install -r requirements-ml.txt"
         ) from exc
 
-    try:
-        import pandas as pd  # type: ignore
-    except ImportError as exc:
-        raise ImportError(
-            "pandas não está instalado. Execute: pip install -r requirements-ml.txt"
-        ) from exc
-
     from ml.embeddings.encoder import EmbeddingEncoder
 
     if not os.path.isdir(silver_dir):
@@ -88,6 +82,10 @@ def build_index(
         logger.info("Indexando %s...", file_path)
 
         if silver_file.endswith(".parquet"):
+            try:
+                import pandas as pd  # type: ignore
+            except ImportError as exc:
+                raise ImportError("pandas não está instalado. Execute: pip install -r requirements-ml.txt") from exc
             df = pd.read_parquet(file_path)
             records = df.to_dict("records")
         else:
@@ -116,6 +114,7 @@ def build_index(
                 meta: dict = {
                     "dataset": rec.get("dataset", "unknown"),
                     "record_type": rec.get("record_type", "unknown"),
+                    "record_json": json.dumps(rec, ensure_ascii=False, default=str),
                 }
                 if rec.get("published_at"):
                     meta["published_at"] = str(rec["published_at"])[:10]

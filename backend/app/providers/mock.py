@@ -13,12 +13,13 @@ from __future__ import annotations
 
 import re
 from typing import List
+from app.providers.base import LLMProvider
 from app.providers.types import Claim, Evidence
 
 ANALYSIS_MODE = "mock"
 
 
-class MockProvider:
+class MockLLMProvider(LLMProvider):
     """Implementação mock do protocolo LLMProvider para testes e CI."""
 
     name: str = "mock"
@@ -48,3 +49,7 @@ class MockProvider:
             "Que dados independentes permitem comparar as evidências desta alegação?",
             "Como a data e o contexto desta afirmação influenciam sua interpretação?",
         ]
+
+
+# Compatibilidade com consumidores existentes.
+MockProvider = MockLLMProvider
