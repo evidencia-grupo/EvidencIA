@@ -43,12 +43,16 @@ export interface Evidence {
   publishedAt: string;
   publisher: string;
   snippet?: string;
+  matchReason?: string;
   provenance: EvidenceProvenance;
 }
 
 export interface Claim {
   id: string;
   text: string;
+  transcriptSnippet?: string;
+  timestampStart?: number;
+  timestampEnd?: number;
   temporalContext: TemporalContext;
   evidence: Evidence[];
   uncertainty: UncertaintyState;

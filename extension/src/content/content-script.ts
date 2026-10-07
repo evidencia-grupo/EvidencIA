@@ -39,6 +39,12 @@ window.addEventListener("message", (event) => {
     }
   } else if (event.data?.type === "SUBMIT_FEEDBACK") {
     chrome.runtime.sendMessage({ type: "SUBMIT_FEEDBACK", payload: event.data.payload }).catch(() => {});
+  } else if (event.data?.type === "JUMP_TO_TIMESTAMP") {
+    const video = document.querySelector("video");
+    if (video && typeof event.data.seconds === "number") {
+      video.currentTime = event.data.seconds;
+      video.play().catch(() => {});
+    }
   }
 });
 window.addEventListener("keydown", (event) => {

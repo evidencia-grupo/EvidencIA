@@ -54,6 +54,12 @@ const UNCERTAINTY_BADGES: Record<
   },
 };
 
+function formatSeconds(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
+
 export function ClaimCard({ claim, expanded = false, onSelect }: ClaimCardProps) {
   const badge = UNCERTAINTY_BADGES[claim.uncertainty] || UNCERTAINTY_BADGES.insufficient_evidence;
   const evidenceCount = claim.evidence ? claim.evidence.length : 0;
@@ -125,6 +131,49 @@ export function ClaimCard({ claim, expanded = false, onSelect }: ClaimCardProps)
           </svg>
         </button>
       </h3>
+
+      {claim.transcriptSnippet && (
+        <p
+          class="claim-transcript-snippet"
+          style={{
+            fontSize: "12px",
+            color: "var(--color-text-secondary, #94A3B8)",
+            fontStyle: "italic",
+            borderLeft: "2px solid rgba(255, 255, 255, 0.2)",
+            paddingLeft: "8px",
+            margin: "4px 0 8px 0",
+          }}
+        >
+          "{claim.transcriptSnippet}"
+        </p>
+      )}
+
+      {claim.timestampStart !== undefined && (
+        <div class="claim-timestamp-row" style={{ marginBottom: "8px" }}>
+          <button
+            type="button"
+            class="claim-jump-button"
+            onClick={() => {
+              window.parent?.postMessage({ type: "JUMP_TO_TIMESTAMP", seconds: claim.timestampStart }, "*");
+            }}
+            style={{
+              fontSize: "11px",
+              padding: "3px 8px",
+              borderRadius: "4px",
+              background: "rgba(59, 130, 246, 0.15)",
+              color: "#93C5FD",
+              border: "1px solid rgba(59, 130, 246, 0.3)",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+            aria-label={`Ir para o trecho em ${formatSeconds(claim.timestampStart)}`}
+          >
+            <span>⏱️ Ir para {formatSeconds(claim.timestampStart)}</span>
+          </button>
+        </div>
+      )}
 
       {claim.temporalContext?.note && (
         <aside

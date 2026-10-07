@@ -75,12 +75,20 @@ class BrazilianFactMatcher:
 
         if best_match:
             raw_status = (best_match.get("status") or "").lower()
-            if "contraditada" in raw_status or "falso" in raw_status or "falsa" in raw_status:
-                relation: EvidenceRelation = "contradicts"
-            elif "apoiada" in raw_status or "verdadeiro" in raw_status or "verdadeira" in raw_status or "fato" in raw_status:
-                relation: EvidenceRelation = "supports"
+
+            # Camada explícita de validação da relação: similaridade moderada (< 0.55) não pode
+            # determinar sozinha 'contradicts' ou 'supports', degradando para 'contextualizes'.
+            if best_score >= 0.55:
+                if "contraditada" in raw_status or "falso" in raw_status or "falsa" in raw_status:
+                    relation: EvidenceRelation = "contradicts"
+                elif "apoiada" in raw_status or "verdadeiro" in raw_status or "verdadeira" in raw_status or "fato" in raw_status:
+                    relation: EvidenceRelation = "supports"
+                else:
+                    relation: EvidenceRelation = "contextualizes"
+                match_reason = f"Correspondência temática direta ({best_match.get('publisher', 'Agência')}) com validação factual auditada."
             else:
-                relation: EvidenceRelation = "contextualizes"
+                relation = "contextualizes"
+                match_reason = f"Correspondência temática contextualizada baseada em entidades e tópicos relacionados."
 
             evidence = Evidence(
                 sourceId=f"src-br-{best_match['id']}",
@@ -90,6 +98,7 @@ class BrazilianFactMatcher:
                 publishedAt=best_match.get("published_at") or "",
                 publisher=best_match.get("publisher", "Agência de Fact-Checking"),
                 snippet=best_match.get("evidence_summary", ""),
+                matchReason=match_reason,
                 provenance=EvidenceProvenance(
                     dataset="factchecksbr",
                     indexedAt="2026-08-01T10:00:00Z",

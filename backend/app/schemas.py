@@ -31,12 +31,16 @@ class Evidence(BaseModel):
     publishedAt: str = Field(..., description="Data de publicação original")
     publisher: str = Field(..., description="Instituição ou agência publicadora")
     snippet: Optional[str] = Field(None, description="Trecho textual relevante da checagem")
+    matchReason: Optional[str] = Field(None, description="Explicação objetiva de por que a fonte foi recuperada")
     provenance: EvidenceProvenance = Field(..., description="Metadados de auditoria e proveniência")
 
 
 class Claim(BaseModel):
     id: str = Field(..., description="Identificador único da alegação")
     text: str = Field(..., min_length=1, description="Texto da alegação extraída")
+    transcriptSnippet: Optional[str] = Field(None, description="Trecho textual da transcrição onde a alegação ocorre")
+    timestampStart: Optional[float] = Field(None, ge=0, description="Segundo de início no vídeo")
+    timestampEnd: Optional[float] = Field(None, ge=0, description="Segundo de término no vídeo")
     temporalContext: TemporalContext = Field(..., description="Contexto temporal da alegação")
     evidence: List[Evidence] = Field(default_factory=list, description="Evidências relacionadas")
     uncertainty: UncertaintyState = Field(..., description="Estado de certeza analítica")

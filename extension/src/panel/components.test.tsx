@@ -187,6 +187,21 @@ describe("EvidenceCard Component", () => {
     render(null, host);
     host.remove();
   });
+
+  it("exibe explicação 'Por que esta fonte apareceu' quando matchReason fornecido", () => {
+    const container = document.createElement("div");
+    render(
+      <EvidenceCard
+        evidence={{
+          ...baseEvidence,
+          matchReason: "Correspondência temática direta identificada com checagem auditada.",
+        }}
+      />,
+      container
+    );
+    expect(container.querySelector(".evidence-match-reason")?.textContent).toContain("Por que esta fonte apareceu");
+    expect(container.querySelector(".evidence-match-reason")?.textContent).toContain("Correspondência temática direta");
+  });
 });
 
 describe("ClaimCard Component", () => {
@@ -194,6 +209,9 @@ describe("ClaimCard Component", () => {
     id: "clm-99",
     text: "O chá cura doenças graves.",
     uncertainty: "contradicted",
+    transcriptSnippet: "Ele disse explicitamente que o chá cura doenças graves no início.",
+    timestampStart: 75.0,
+    timestampEnd: 90.0,
     temporalContext: {
       videoPublishedAt: "2022-05-10T00:00:00Z",
       note: "Publicado em 2022 durante surto viral.",
@@ -211,6 +229,14 @@ describe("ClaimCard Component", () => {
     ],
     reflectionQuestions: ["Existe estudo científico com humanos para essa alegação?"],
   };
+
+  it("exibe trecho da transcrição e botão de salto temporal quando definidos", () => {
+    const container = document.createElement("div");
+    render(<ClaimCard claim={baseClaim} />, container);
+
+    expect(container.querySelector(".claim-transcript-snippet")?.textContent).toContain("Ele disse explicitamente que o chá cura");
+    expect(container.querySelector(".claim-jump-button")?.textContent).toContain("⏱️ Ir para 01:15");
+  });
 
   it("renderiza todos os estados de incerteza", () => {
     const states: UncertaintyState[] = [

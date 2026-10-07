@@ -83,6 +83,42 @@ class FactCheckerService:
             return normalized
         return cls.FALLBACK_REFLECTION_QUESTIONS.copy()
 
+    @staticmethod
+    def _extract_snippet_and_timestamps(
+        transcript: str,
+        claim_text: str,
+        duration_seconds: Optional[int],
+    ) -> tuple[Optional[str], Optional[float], Optional[float]]:
+        if not transcript or not claim_text:
+            return None, None, None
+
+        lower_transcript = transcript.lower()
+        search_terms = re.findall(r"\b[a-zA-ZáéíóúãõçÁÉÍÓÚÃÕÇ]{4,}\b", claim_text.lower())
+        pos = -1
+
+        sub = claim_text[: min(30, len(claim_text))].lower()
+        pos = lower_transcript.find(sub)
+        if pos == -1 and search_terms:
+            for term in search_terms:
+                pos = lower_transcript.find(term)
+                if pos != -1:
+                    break
+
+        if pos == -1:
+            return None, None, None
+
+        start_char = max(0, pos - 20)
+        end_char = min(len(transcript), pos + len(claim_text) + 40)
+        snippet = transcript[start_char:end_char].strip()
+
+        t_start = None
+        t_end = None
+        if duration_seconds and duration_seconds > 0 and len(transcript) > 0:
+            t_start = round((pos / len(transcript)) * duration_seconds, 1)
+            t_end = round(min(duration_seconds, t_start + 15.0), 1)
+
+        return snippet, t_start, t_end
+
     async def analyze(self, request: AnalyzeRequest) -> AnalyzeResponse:
         start_time = time.perf_counter()
         published_at = request.uploadDate or datetime.now(timezone.utc).isoformat()
@@ -165,10 +201,11 @@ class FactCheckerService:
                                 publishedAt=src.publishedAt or published_at,
                                 publisher=src.domain,
                                 snippet=item.get("evidence_summary"),
-                                provenance={
-                                    "dataset": "google_fact_check",
-                                    "indexedAt": datetime.now(timezone.utc).isoformat(),
-                                },
+                                matchReason=f"Correspondência temática com a checagem apurada por {src.domain}.",
+                                provenance=EvidenceProvenance(
+                                    dataset="google_fact_check",
+                                    indexedAt=datetime.now(timezone.utc).isoformat(),
+                                ),
                             )
                         )
                     else:
@@ -176,10 +213,17 @@ class FactCheckerService:
                         evidence_list = []
                         uncertainty = "insufficient_evidence"
 
+                snippet, t_start, t_end = self._extract_snippet_and_timestamps(
+                    request.transcript, claim_text, request.durationSeconds
+                )
+
                 claims.append(
                     Claim(
                         id=claim_id,
                         text=claim_text,
+                        transcriptSnippet=snippet,
+                        timestampStart=t_start,
+                        timestampEnd=t_end,
                         temporalContext=temporal_ctx,
                         evidence=evidence_list,
                         uncertainty=uncertainty,
@@ -235,10 +279,15 @@ class FactCheckerService:
                     if rel == "supports"
                     else ("contradicted" if rel == "contradicts" else "contextualized")
                 )
+                # No modo Evidence-Only, ClaimCard SEMPRE representa o vídeo real (título/áudio),
+                # NUNCA o claim_text da base de fact-checking externa.
                 claims.append(
                     Claim(
                         id="clm-01",
-                        text=matched.get("claim", request.videoTitle),
+                        text=request.videoTitle,
+                        transcriptSnippet=request.transcript[:120].strip() if request.transcript else None,
+                        timestampStart=0.0,
+                        timestampEnd=min(15.0, float(request.durationSeconds or 15.0)),
                         temporalContext=temporal_ctx,
                         evidence=evidence_list,
                         uncertainty=uncertainty,

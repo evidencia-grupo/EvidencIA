@@ -139,6 +139,24 @@ export function EvidenceCard({ evidence }: EvidenceCardProps) {
         )}
       </div>
 
+      {evidence.matchReason && (
+        <div
+          class="evidence-match-reason"
+          style={{
+            fontSize: "11px",
+            color: "#94A3B8",
+            background: "rgba(255, 255, 255, 0.04)",
+            padding: "6px 8px",
+            borderRadius: "4px",
+            marginBottom: "8px",
+            borderLeft: "2px solid #3B82F6",
+          }}
+        >
+          <span style={{ fontWeight: 600, color: "#E2E8F0" }}>Por que esta fonte apareceu: </span>
+          <span>{evidence.matchReason}</span>
+        </div>
+      )}
+
       <dl class="evidence-meta">
         <div class="evidence-meta-row">
           <dt>Publicado por</dt>
