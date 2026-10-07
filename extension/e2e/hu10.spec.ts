@@ -10,7 +10,21 @@ const test = base.extend<{ extension: { context: BrowserContext; worker: Worker 
       headless: true,
       args: [`--disable-extensions-except=${path}`, `--load-extension=${path}`],
     });
-    const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
+    let worker = context.serviceWorkers()[0];
+    if (!worker) {
+      let interval: NodeJS.Timeout | undefined;
+      const pollPromise = new Promise<Worker>((res) => {
+        interval = setInterval(() => {
+          const sw = context.serviceWorkers()[0];
+          if (sw) {
+            clearInterval(interval);
+            res(sw);
+          }
+        }, 50);
+      });
+      worker = await Promise.race([context.waitForEvent("serviceworker"), pollPromise]);
+      if (interval) clearInterval(interval);
+    }
     await use({ context, worker });
     await context.close();
   },
