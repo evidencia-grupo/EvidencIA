@@ -1,7 +1,7 @@
 /**
  * Contrato de Dados Oficial — EvidencIA Backend Proxy & Extension Client
  * Arquitetura Evidence-First (ADR-006)
- * Rastreabilidade: documentation/docs/tecnico/contrato-api.md (RF-06, RF-12, RF-13, RF-14)
+ * Rastreabilidade: documentation/docs/arquitetura/contrato-api.md (RF-06, RF-12, RF-13, RF-14)
  */
 
 export interface AnalyzeRequest {
