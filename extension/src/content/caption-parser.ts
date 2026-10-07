@@ -120,17 +120,18 @@ export function parseCaptionBody(body: string): string {
   const trimmed = body.trimStart();
 
   if (trimmed.startsWith("{")) {
+    let data: YouTubeCaptionJsonResponse;
     try {
-      const data = JSON.parse(body) as YouTubeCaptionJsonResponse;
-      const transcript = (data.events ?? [])
-        .flatMap((event) => event.segs ?? [])
-        .map((segment) => segment.utf8 ?? "")
-        .join(" ");
-
-      return sanitizeTranscriptText(transcript.replace(/(^|\s)\s*>>\s*/g, "$1"));
+      data = JSON.parse(body) as YouTubeCaptionJsonResponse;
     } catch {
-      // fallback para XML
+      throw new Error("Não foi possível interpretar as legendas. Tente novamente.");
     }
+    const transcript = (data.events ?? [])
+      .flatMap((event) => event.segs ?? [])
+      .map((segment) => segment.utf8 ?? "")
+      .join(" ");
+
+    return sanitizeTranscriptText(transcript.replace(/(^|\s)\s*>>\s*/g, "$1"));
   }
 
   const document = new DOMParser().parseFromString(body, "text/xml");
@@ -215,24 +216,24 @@ export async function extractCaptionsFromPage(
   const tracks = payload.tracks;
 
   signal?.throwIfAborted();
-  if (!tracks.length) return null;
-
   const track = selectCaptionTrack(tracks);
   if (!track) return null;
 
+  let validUrl = false;
   try {
     const url = new URL(track.baseUrl);
-    if (url.origin !== "https://www.youtube.com" || url.pathname !== "/api/timedtext") {
-      throw new Error("Endereço de legendas inválido.");
-    }
+    validUrl = url.origin === "https://www.youtube.com" && url.pathname === "/api/timedtext";
   } catch {
+    validUrl = false;
+  }
+  if (!validUrl) {
     throw new Error("Endereço de legendas inválido.");
   }
 
   const response = await fetch(track.baseUrl, { signal });
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+    throw new Error(`Não foi possível baixar as legendas (HTTP ${response.status}). Tente novamente.`);
   }
 
   const transcript = parseCaptionBody(await response.text());

@@ -3,6 +3,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  extractCaptionsFromPage,
+  getCaptionTracksFromPlayer,
+  parseCaptionBody,
   parseCaptionJson,
   parseCaptionXml,
   sanitizeTranscriptText,
@@ -387,5 +390,87 @@ describe("selectCaptionTrack", () => {
     expect(
       selectCaptionTrack([])
     ).toBeNull();
+    expect(selectCaptionTrack(null)).toBeNull();
+    expect(selectCaptionTrack(undefined)).toBeNull();
+  });
+});
+
+describe("getCaptionTracksFromPlayer", () => {
+  it("deve retornar lista vazia se elemento do player nao existir", () => {
+    document.body.innerHTML = "<div></div>";
+    expect(getCaptionTracksFromPlayer()).toEqual([]);
+  });
+
+  it("deve retornar lista vazia se player nao tiver funcao getPlayerResponse", () => {
+    document.body.innerHTML = '<div id="movie_player"></div>';
+    expect(getCaptionTracksFromPlayer()).toEqual([]);
+  });
+
+  it("deve extrair faixas de legenda quando getPlayerResponse retornar dados", () => {
+    document.body.innerHTML = '<div id="movie_player"></div>';
+    const player = document.querySelector("#movie_player") as any;
+    player.getPlayerResponse = () => ({
+      captions: {
+        playerCaptionsTracklistRenderer: {
+          captionTracks: [{ baseUrl: "https://example.com/pt", languageCode: "pt" }],
+        },
+      },
+    });
+
+    expect(getCaptionTracksFromPlayer()).toEqual([
+      { baseUrl: "https://example.com/pt", languageCode: "pt" },
+    ]);
+  });
+
+  it("deve retornar lista vazia se captions nao estiver presente", () => {
+    document.body.innerHTML = '<div id="movie_player"></div>';
+    const player = document.querySelector("#movie_player") as any;
+    player.getPlayerResponse = () => ({});
+
+    expect(getCaptionTracksFromPlayer()).toEqual([]);
+  });
+
+  it("deve capturar excecao e retornar lista vazia se getPlayerResponse falhar", () => {
+    document.body.innerHTML = '<div id="movie_player"></div>';
+    const player = document.querySelector("#movie_player") as any;
+    player.getPlayerResponse = () => {
+      throw new Error("Erro de player simulado");
+    };
+
+    expect(getCaptionTracksFromPlayer()).toEqual([]);
+  });
+});
+
+describe("parseCaptionBody", () => {
+  it("deve lancar erro se comecar com { mas for JSON invalido", () => {
+    expect(() => parseCaptionBody("{ invalid json")).toThrow(
+      "Não foi possível interpretar as legendas. Tente novamente."
+    );
+  });
+
+  it("deve lancar erro se for XML malformado", () => {
+    expect(() => parseCaptionBody("<invalido>")).toThrow(
+      "Não foi possível interpretar as legendas. Tente novamente."
+    );
+  });
+});
+
+describe("extractCaptionsFromPage", () => {
+  it("deve rejeitar se URL da legenda tiver origem ou rota invalida", async () => {
+    const invalidAvailability = {
+      tracks: [{ baseUrl: "https://evil.com/api/timedtext", languageCode: "pt" }],
+    };
+    await expect(
+      extractCaptionsFromPage("video-1", undefined, invalidAvailability)
+    ).rejects.toThrow("Endereço de legendas inválido.");
+  });
+
+  it("deve rejeitar se URL da legenda for malformada", async () => {
+    const invalidAvailability = {
+      tracks: [{ baseUrl: "not-a-valid-url", languageCode: "pt" }],
+    };
+    await expect(
+      extractCaptionsFromPage("video-1", undefined, invalidAvailability)
+    ).rejects.toThrow("Endereço de legendas inválido.");
   });
 });
