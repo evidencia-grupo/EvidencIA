@@ -226,9 +226,16 @@ function injectTriggerBadge() {
       status.textContent = data ? "Checagem concluída" : "Legendas indisponíveis";
     } catch (error) {
       if (!active()) return;
-      publish({ type: "ANALYSIS_ERROR", error: toFriendlyMessage(error) });
-      button.querySelector("span")!.textContent = "Tentar novamente";
-      status.textContent = "Falha na checagem";
+      const isNoCaptions = error instanceof Error && /curta demais|vazia|sem legendas/i.test(error.message);
+      if (isNoCaptions) {
+        publish({ type: "NO_CAPTIONS" });
+        button.querySelector("span")!.textContent = "Sem legendas — tentar novamente";
+        status.textContent = "Legendas indisponíveis";
+      } else {
+        publish({ type: "ANALYSIS_ERROR", error: toFriendlyMessage(error) });
+        button.querySelector("span")!.textContent = "Tentar novamente";
+        status.textContent = "Falha na checagem";
+      }
     } finally {
       clearTimeout(timer);
       controller.abort();

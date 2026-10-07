@@ -93,3 +93,18 @@ def test_analyze_video_missing_fields():
     }
     response = client.post("/api/v1/analyze", json=payload)
     assert response.status_code == 422
+
+
+def test_cors_preflight_allows_chrome_extension():
+    """Valida permissão de preflight OPTIONS para extensões Chrome."""
+    response = client.options(
+        "/api/v1/analyze",
+        headers={
+            "Origin": "chrome-extension://abcdefghijklmnopabcdefghijklmnop",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "Content-Type,X-Client-Version",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == "chrome-extension://abcdefghijklmnopabcdefghijklmnop"
+

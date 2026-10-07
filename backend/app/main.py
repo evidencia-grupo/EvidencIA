@@ -36,10 +36,14 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configuração de CORS restrito
-origins = [o.strip() for o in settings.CORS_ALLOWED_ORIGINS.split(",")]
+raw_origins = [o.strip() for o in settings.CORS_ALLOWED_ORIGINS.split(",") if o.strip()]
+exact_origins = [o for o in raw_origins if not o.startswith("chrome-extension://")]
+allow_extension = any(o.startswith("chrome-extension://") for o in raw_origins)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins if origins != ["*"] else ["*"],
+    allow_origins=exact_origins if "*" not in raw_origins else ["*"],
+    allow_origin_regex=r"^chrome-extension://[a-zA-Z0-9]+$" if allow_extension else None,
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
