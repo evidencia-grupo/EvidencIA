@@ -1,3 +1,5 @@
+// Até 15s de IA, além de captura de legendas e busca de evidências.
+const ANALYSIS_TIMEOUT_MS = 30_000;
 import { detectCaptionTracks, extractCaptionsFromPage } from "./caption-parser";
 import { toFriendlyMessage } from "./friendly-messages";
 import type { AnalyzeRequest } from "../../../shared/types/api";
@@ -174,7 +176,7 @@ function injectTriggerBadge() {
     const run = ++generation;
     const controller = new AbortController();
     activeController = controller;
-    const deadline = Date.now() + 9500;
+    const deadline = Date.now() + ANALYSIS_TIMEOUT_MS;
     const active = () => run === generation && getVideoIdFromUrl() === videoId;
     button.setAttribute("aria-disabled", "true");
     button.classList.add("evidencia-loading");
@@ -185,7 +187,7 @@ function injectTriggerBadge() {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const checkActive = () => {
       if (!active()) throw new Error("Checagem encerrada. Tente novamente.");
-      if (Date.now() >= deadline) throw new Error("Tempo limite de 10 segundos excedido. Tente novamente.");
+      if (Date.now() >= deadline) throw new Error("Tempo limite de resposta excedido. Tente novamente.");
     };
     try {
       const work = async () => {
@@ -215,7 +217,7 @@ function injectTriggerBadge() {
       const data = await Promise.race([
         work(),
         new Promise<never>((_, reject) => {
-          timer = setTimeout(() => reject(new Error("Tempo limite de 10 segundos excedido. Tente novamente.")), Math.max(0, deadline - Date.now()));
+          timer = setTimeout(() => reject(new Error("Tempo limite de resposta excedido. Tente novamente.")), Math.max(0, deadline - Date.now()));
         }),
       ]);
       if (!active()) return;

@@ -9,11 +9,11 @@
 A extensão **EvidencIA** é executada diretamente nas páginas de reprodução do YouTube (`https://www.youtube.com/watch?v=...`) e atua como a interface do usuário com as ferramentas de checagem.
 
 ### Princípios Arquiteturais e Decisões Formais (ADRs)
-- **Manifest V3 e Princípio do Menor Privilégio ([ADR-001](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-001-manifest-v3.md)):** Declaração mínima e estrita de permissões (`activeTab`, `storage`). O host permission é restrito unicamente a `*://*.youtube.com/*`. Não são executados scripts remotos, em estrita conformidade com a política de segurança da Chrome Web Store.
-- **Cache Local com TTL de 24h ([ADR-003](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-003-estrategia-cache-local.md)):** Resultados de checagens anteriores são gravados em `chrome.storage.local`. Ao revisitar um vídeo já analisado, o painel é carregado instantaneamente em menos de 100 ms ([RNF-04](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-04)), poupando requisições ao backend proxy.
-- **Preact, TypeScript e Shadow DOM ([ADR-004](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-004-stack-tecnologica.md)):** A interface do painel lateral utiliza Preact (~4 kB) e é injetada via **Shadow DOM fechado/isolado**, prevenindo colisões entre o CSS do YouTube e o design system do EvidencIA.
-- **Paradigma Evidence-First ([ADR-006](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-006-evidence-first-architecture.md)):** A extensão exibe evidências rastreáveis e perguntas reflexivas ([HU15](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu15)) por alegação, abolindo vereditos simplistas e scores globais de veracidade.
-- **Acessibilidade Universal ([HU11](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu11) / [RNF-07](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-07)):** Total conformidade com as diretrizes WCAG 2.1 nível AA: navegação completa via teclado, atributos ARIA adequados e contraste de cores superior a 4.5:1.
+- **Manifest V3 e Princípio do Menor Privilégio ([ADR-001](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-001-manifest-v3.md)):** Declaração mínima e estrita de permissões (`activeTab`, `storage`). O host permission é restrito unicamente a `*://*.youtube.com/*`. Não são executados scripts remotos, em estrita conformidade com a política de segurança da Chrome Web Store.
+- **Cache Local com TTL de 24h ([ADR-003](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-003-estrategia-cache-local.md)):** Resultados de checagens anteriores são gravados em `chrome.storage.local`. Ao revisitar um vídeo já analisado, o painel é carregado instantaneamente em menos de 100 ms ([RNF-04](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/catalogo-requisitos.md#rnf-04)), poupando requisições ao backend proxy.
+- **Preact, TypeScript e Shadow DOM ([ADR-004](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-004-stack-tecnologica.md)):** A interface do painel lateral utiliza Preact (~4 kB) e é injetada via **Shadow DOM fechado/isolado**, prevenindo colisões entre o CSS do YouTube e o design system do EvidencIA.
+- **Paradigma Evidence-First ([ADR-006](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-006-evidence-first-architecture.md)):** A extensão exibe evidências rastreáveis e perguntas reflexivas ([HU15](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/backlog-e-historias.md#hu15)) por alegação, abolindo vereditos simplistas e scores globais de veracidade.
+- **Acessibilidade Universal ([HU11](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/backlog-e-historias.md#hu11) / [RNF-07](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/catalogo-requisitos.md#rnf-07)):** Total conformidade com as diretrizes WCAG 2.1 nível AA: navegação completa via teclado, atributos ARIA adequados e contraste de cores superior a 4.5:1.
 
 ---
 
@@ -108,20 +108,20 @@ npm run test:coverage
 
 ## 6. Rastreabilidade com a Documentação Oficial
 
-Toda a especificação conceitual e técnica deste módulo reside no repositório oficial [evidencia-grupo/documentation](https://github.com/evidencia-grupo/documentation) (branch `docs/reorganizacao`):
+Toda a especificação conceitual e técnica deste módulo reside no repositório oficial [evidencia-grupo/documentation](https://github.com/evidencia-grupo/documentation) (branch `main`):
 
-- **Arquitetura Geral:** [Documento de Arquitetura de Software](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/arquitetura.md)
-- **Design System:** [Design System e Componentes Preact](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/design/design-system.md)
+- **Arquitetura Geral:** [Documento de Arquitetura de Software](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/arquitetura.md)
+- **Design System:** [Design System e Componentes Preact](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/design-system.md)
 - **Decisões Arquiteturais:**
-  - [ADR-001: Manifest V3 e Permissões Mínimas](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-001-manifest-v3.md)
-  - [ADR-003: Estratégia de Cache Local com TTL](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-003-estrategia-cache-local.md)
-  - [ADR-004: Stack Tecnológica (Preact + TypeScript)](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-004-stack-tecnologica.md)
-  - [ADR-006: Arquitetura Evidence-First](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-006-evidence-first-architecture.md)
+  - [ADR-001: Manifest V3 e Permissões Mínimas](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-001-manifest-v3.md)
+  - [ADR-003: Estratégia de Cache Local com TTL](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-003-estrategia-cache-local.md)
+  - [ADR-004: Stack Tecnológica (Preact + TypeScript)](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-004-stack-tecnologica.md)
+  - [ADR-006: Arquitetura Evidence-First](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-006-evidence-first-architecture.md)
 - **Histórias de Usuário:**
-  - [HU06 — Feedback de Progresso e Degradação Graciosa](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu06)
-  - [HU08 — Botão Discreto na Interface do YouTube](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu08)
-  - [HU09 — Painel Lateral com Alegações e Evidências](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu09)
-  - [HU10 — Alertas Climatológicos, Saúde e Fraudes](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu10)
-  - [HU11 — Acessibilidade WCAG 2.1 AA no Painel Lateral](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu11)
-  - [HU15 — Perguntas Reflexivas para Pensamento Crítico](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/backlog-e-historias.md#hu15)
-- **Validação e Qualidade:** [Estratégia de Testes](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/estrategia-testes.md)
+  - [HU06 — Feedback de Progresso e Degradação Graciosa](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/backlog-e-historias.md#hu06)
+  - [HU08 — Botão Discreto na Interface do YouTube](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/backlog-e-historias.md#hu08)
+  - [HU09 — Painel Lateral com Alegações e Evidências](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/backlog-e-historias.md#hu09)
+  - [HU10 — Alertas Climatológicos, Saúde e Fraudes](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/backlog-e-historias.md#hu10)
+  - [HU11 — Acessibilidade WCAG 2.1 AA no Painel Lateral](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/backlog-e-historias.md#hu11)
+  - [HU15 — Perguntas Reflexivas para Pensamento Crítico](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/backlog-e-historias.md#hu15)
+- **Validação e Qualidade:** [Estratégia de Testes](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/estrategia-testes.md)

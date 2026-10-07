@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -6,11 +8,23 @@ from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
 from app.api.v1.endpoints import router as api_v1_router
+from app.services.fact_checker import fact_checker_service
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Exceção de configuração aborta o startup do Uvicorn com código não zero.
+    fact_checker_service.initialize_provider()
+    try:
+        yield
+    finally:
+        fact_checker_service.provider = None
 
 # Rate limiter por endereço remoto (RNF-04)
 limiter = Limiter(key_func=get_remote_address, default_limits=[f"{settings.RATE_LIMIT_MAX_PER_MINUTE}/minute"])
 
 app = FastAPI(
+    lifespan=lifespan,
     title="EvidencIA — Backend Proxy Seguro",
     description="API de intermediação e orquestração de checagem factual para extensão do YouTube.",
     version="1.0.0",

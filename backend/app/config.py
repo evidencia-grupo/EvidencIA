@@ -1,15 +1,24 @@
 from typing import Optional
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     PORT: int = 8000
     ENVIRONMENT: str = "development"
+    ENV: Optional[str] = None
+    APP_ENV: Optional[str] = None
+    NODE_ENV: Optional[str] = None
     LOG_LEVEL: str = "info"
 
     LLM_PROVIDER: str = "mock"
     LLM_API_KEY: str = "mock_key"
-    LLM_TIMEOUT_SECONDS: float = 8.0
+    LLM_TIMEOUT_SECONDS: float = Field(15.0, gt=0, le=15, allow_inf_nan=False)
+
+    REMOTE_LLM_BASE_URL: str = ""
+    REMOTE_LLM_API_KEY: str = ""
+    REMOTE_LLM_MODEL: str = "qwen2.5:7b"
+    REMOTE_LLM_TIMEOUT_SECONDS: float = Field(15.0, gt=0, le=15, allow_inf_nan=False)
 
     SEARCH_API_KEY: str = "mock_search_key"
 
@@ -20,7 +29,7 @@ class Settings(BaseSettings):
     # Ollama Local Engine (Qwen 2.5-3B)
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "qwen2.5:3b"
-    OLLAMA_TIMEOUT_SECONDS: float = 6.0
+    OLLAMA_TIMEOUT_SECONDS: float = Field(15.0, gt=0, le=15, allow_inf_nan=False)
 
     RATE_LIMIT_MAX_PER_MINUTE: int = 60
     CORS_ALLOWED_ORIGINS: str = "*"

@@ -1,3 +1,5 @@
+// Até 15s de IA, além de captura de legendas e busca de evidências.
+const ANALYSIS_TIMEOUT_MS = 30_000;
 import { isAnalysis } from "./response-validation";
 import { getCaptionTracks } from "./player-captions";
 import { getCachedResult, saveCachedResult, CACHE_TTL_MS } from "./cache-manager";
@@ -21,11 +23,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-export async function handleAnalyzeRequest(payload: AnalyzeRequest, deadline = Date.now() + 9500): Promise<AnalyzeResponse> {
+export async function handleAnalyzeRequest(payload: AnalyzeRequest, deadline = Date.now() + ANALYSIS_TIMEOUT_MS): Promise<AnalyzeResponse> {
   const cached = await getCachedResult(payload.videoId);
   if (cached) return cached;
-  const remaining = Math.min(9500, deadline - Date.now());
-  if (!Number.isFinite(remaining) || remaining <= 0) throw new Error("Tempo limite de resposta excedido (SLA 10s).");
+  const remaining = Math.min(ANALYSIS_TIMEOUT_MS, deadline - Date.now());
+  if (!Number.isFinite(remaining) || remaining <= 0) throw new Error("Tempo limite de resposta excedido.");
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), remaining);
   try {
@@ -41,7 +43,7 @@ export async function handleAnalyzeRequest(payload: AnalyzeRequest, deadline = D
     await saveCachedResult(data, payload.videoId);
     return data;
   } catch (error) {
-    if (controller.signal.aborted) throw new Error("Tempo limite de resposta excedido (SLA 10s).");
+    if (controller.signal.aborted) throw new Error("Tempo limite de resposta excedido.");
     throw error;
   } finally {
     clearTimeout(timeout);

@@ -9,6 +9,7 @@ Refs: ADR-001, IS-06.
 
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass
 from typing import Any, Optional, Union
@@ -111,11 +112,19 @@ def _search_chroma(
     for eid, dist, doc, meta in zip(ids, distances, documents, metadatas):
         # Chroma com cosine retorna distância 0–2; converte para similaridade 0–1
         similarity = max(0.0, 1.0 - dist / 2.0)
+        record = None
+        if meta.get("record_json"):
+            try:
+                raw_record = json.loads(meta["record_json"])
+                record_class = EvidenceRecord if raw_record.get("record_type") == "fact_check" else NewsRecord
+                record = record_class.model_validate(raw_record)
+            except (ValueError, TypeError, AttributeError):
+                logger.warning("Registro inválido no índice: %s", eid)
         hits.append(SearchHit(
             evidence_id=eid,
             score=round(similarity, 4),
-            record=None,  # Registro completo requer leitura do silver
-            provenance=None,
+            record=record,
+            provenance=record.provenance if record else None,
         ))
 
     return hits

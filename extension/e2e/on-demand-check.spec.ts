@@ -193,20 +193,41 @@ test("Checagem sob demanda: sem legendas encerra carregamento sem interromper pl
 });
 
 test("Checagem sob demanda: erro HTTP permite nova tentativa; timeout nunca mostra sucesso tardio", async ({ extension }) => {
+  // O prazo da extensão é 30s para acomodar os 15s de IA e a busca de evidências.
+  // A fixture, a tentativa HTTP inicial e as verificações também consomem o timeout do teste.
+  test.setTimeout(45_000);
   await extension.worker.evaluate(() => {
-    (globalThis as any).originalFetch = fetch;
     globalThis.fetch = async () => new Response("", { status: 503 });
   });
   const { page, button, panel } = await setup(extension.context);
   await button.click();
   await expect(panel.getByRole("alert")).toContainText("Não conseguimos checar este vídeo agora");
   await extension.worker.evaluate(() => {
-    globalThis.fetch = async (_url, init) =>
-      new Promise((_resolve, reject) => init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError"))));
+    (globalThis as any).requestAborted = false;
+    globalThis.fetch = async (_url, init) => new Promise<Response>((resolve, reject) => {
+      (globalThis as any).releaseLateResponse = () => resolve(new Response(JSON.stringify({
+        analysisMode: "evidence_first", videoId: "video", videoTitle: "Resposta tardia",
+        channelName: "Canal", publishedAt: "2026-10-07T00:00:00Z",
+        processingTimeMs: 31_000, claims: [], limitations: [],
+      }), { headers: { "Content-Type": "application/json" } }));
+      init?.signal?.addEventListener("abort", () => {
+        (globalThis as any).requestAborted = true;
+        reject(new DOMException("Aborted", "AbortError"));
+      });
+    });
   });
   await page.getByRole("button", { name: "Tentar novamente" }).click();
-  await expect(panel.getByRole("alert")).toContainText(/demorou mais do que o esperado/, { timeout: 11000 });
+  await expect(panel.getByRole("alert")).toContainText(/demorou mais do que o esperado/, { timeout: 35_000 });
   await expect(page.getByRole("button", { name: "Tentar novamente" })).toBeEnabled();
+  await expect.poll(() => extension.worker.evaluate(() => (globalThis as any).requestAborted)).toBe(true);
+
+  // Uma resposta que chega depois do cancelamento não deve substituir o erro nem entrar no cache.
+  await extension.worker.evaluate(() => (globalThis as any).releaseLateResponse());
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  await expect(panel.getByRole("alert")).toContainText(/demorou mais do que o esperado/);
+  await expect(panel.getByText(/Alegações Analisadas/)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Checagem concluída/ })).toHaveCount(0);
+  expect(await extension.worker.evaluate(async () => (await chrome.storage.local.get("video")).video)).toBeUndefined();
 });
 
 test("Checagem sob demanda: teclado, foco e WCAG 2.1 AA no resultado", async ({ extension }, info) => {

@@ -9,11 +9,11 @@
 O **Backend Proxy** é o componente responsável por isolar todo o acesso a modelos de inteligência artificial e serviços externos de busca de checagens de fatos. A extensão cliente interage unicamente com este serviço via HTTPS/JSON, implementando o princípio fundamental de **Zero Segredos no Cliente**.
 
 ### Princípios Arquiteturais e Decisões Formais (ADRs)
-- **Isolamento de Credenciais ([ADR-002](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-002-backend-proxy.md)):** Nenhuma chave de API (OpenAI, Gemini, Serper, etc.) reside no código da extensão. O backend centraliza a gestão segura de credenciais via variáveis de ambiente.
-- **Modelo Local e Soberania em PT-BR ([ADR-005](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-005-modelo-local-e-datasets-brasileiros.md)):** Suporte nativo à inferência local soberana via Ollama utilizando o modelo `qwen2.5:3b-instruct` e priorização de checagens de agências brasileiras (FactChecks.br, Lupa, Aos Fatos).
-- **Paradigma Evidence-First ([ADR-006](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-006-evidence-first-architecture.md)):** A API entrega coleções estruturadas de alegações, evidências rastreáveis e estados de incerteza analítica. Não são geradas notas numéricas unilaterais ou scores de veracidade.
-- **Degradação Graciosa Evidence-Only ([RF-14](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-14)):** Em caso de indisponibilidade ou timeout do provedor de IA, o orquestrador sintetiza os dados das bases de checagem nacionais no modo `evidence_only`, mantendo o serviço operacional para o usuário.
-- **Defesa em Profundidade contra Provedores Falsos ([RF-15](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-15)):** Travas em nível de configuração impedem estritamente a execução de `MockLLMProvider` em ambiente de produção (`ENVIRONMENT=production`).
+- **Isolamento de Credenciais ([ADR-002](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-002-backend-proxy.md)):** Nenhuma chave de API (OpenAI, Gemini, Serper, etc.) reside no código da extensão. O backend centraliza a gestão segura de credenciais via variáveis de ambiente.
+- **Modelo Local e Soberania em PT-BR ([ADR-005](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-005-modelo-local-e-datasets-brasileiros.md)):** Suporte nativo à inferência local soberana via Ollama utilizando o modelo `qwen2.5:3b-instruct` e priorização de checagens de agências brasileiras (FactChecks.br, Lupa, Aos Fatos).
+- **Paradigma Evidence-First ([ADR-006](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-006-evidence-first-architecture.md)):** A API entrega coleções estruturadas de alegações, evidências rastreáveis e estados de incerteza analítica. Não são geradas notas numéricas unilaterais ou scores de veracidade.
+- **Degradação Graciosa Evidence-Only ([RF-14](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/catalogo-requisitos.md#rf-14)):** Em caso de indisponibilidade ou timeout do provedor de IA, o orquestrador sintetiza os dados das bases de checagem nacionais no modo `evidence_only`, mantendo o serviço operacional para o usuário.
+- **Defesa em Profundidade contra Provedores Falsos ([RF-15](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/catalogo-requisitos.md#rf-15)):** Travas em nível de configuração impedem estritamente a execução de `MockLLMProvider` em ambiente de produção (`ENVIRONMENT=production`).
 
 ---
 
@@ -31,10 +31,10 @@ backend/
 │   ├── api/v1/
 │   │   └── endpoints.py   # Handlers para POST /api/v1/analyze e GET /api/v1/health
 │   ├── providers/         # Camada agnóstica de provedores de IA (Factory Pattern)
-│   │   ├── base.py        # Protocolo abstrato LLMProvider
+│   │   ├── base.py        # Classe abstrata LLMProvider
 │   │   ├── factory.py     # Resolução de provedor com guardas de segurança
 │   │   ├── ollama.py      # Integração local via Ollama HTTP API (Qwen 2.5)
-│   │   ├── remote.py      # Integração com APIs externas (OpenAI / Gemini)
+│   │   ├── remote.py      # Gateway remoto compatível com chat completions
 │   │   ├── mock.py        # Provedor determinístico para testes e CI
 │   │   └── types.py       # Dataclasses de extração e classificação
 │   └── services/          # Serviços de negócio e orquestração assíncrona
@@ -58,12 +58,12 @@ backend/
 
 ## 3. Endpoints da API
 
-Para a especificação completa de contratos e tipos de payload, consulte o [Contrato Canônico de API](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/contrato-api.md).
+Para a especificação completa de contratos e tipos de payload, consulte o [Contrato Canônico de API](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/contrato-api.md).
 
 | Método | Rota | Descrição | Requisitos Relacionados |
 |:---|:---|:---|:---|
-| `POST` | `/api/v1/analyze` | Recebe metadados e transcrição do vídeo, orquestra extração, busca de evidências e retorna o payload Evidence-First | [RF-06](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-06), [RF-12](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-12), [RF-13](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-13), [RF-14](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rf-14) |
-| `GET` | `/api/v1/health` | Verifica a disponibilidade do backend, do provedor de IA e a conectividade com os datasets | [RNF-06](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/requisitos/catalogo-requisitos.md#rnf-06) |
+| `POST` | `/api/v1/analyze` | Recebe metadados e transcrição do vídeo, orquestra extração, busca de evidências e retorna o payload Evidence-First | [RF-06](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/catalogo-requisitos.md#rf-06), [RF-12](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/catalogo-requisitos.md#rf-12), [RF-13](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/catalogo-requisitos.md#rf-13), [RF-14](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/catalogo-requisitos.md#rf-14) |
+| `GET` | `/api/v1/health` | Verifica a disponibilidade do backend, do provedor de IA e a conectividade com os datasets | [RNF-06](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/catalogo-requisitos.md#rnf-06) |
 
 ---
 
@@ -115,14 +115,69 @@ uv run pytest --cov=app --cov-report=term-missing
 
 ## 6. Rastreabilidade com a Documentação Oficial
 
-Toda a documentação conceitual e técnica deste serviço é mantida no repositório oficial [evidencia-grupo/documentation](https://github.com/evidencia-grupo/documentation) (branch `docs/reorganizacao`):
+Toda a documentação conceitual e técnica deste serviço é mantida no repositório oficial [evidencia-grupo/documentation](https://github.com/evidencia-grupo/documentation) (branch `main`):
 
-- **Arquitetura Geral:** [Documento de Arquitetura de Software](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/arquitetura.md)
-- **Contrato de API:** [Especificação do Contrato de API](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/contrato-api.md)
-- **Pipeline de IA e Datasets:** [IA e Datasets Brasileiros](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/ia-e-datasets.md)
+- **Arquitetura Geral:** [Documento de Arquitetura de Software](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/arquitetura.md)
+- **Contrato de API:** [Especificação do Contrato de API](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/contrato-api.md)
+- **Pipeline de IA e Datasets:** [IA e Datasets Brasileiros](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/ia-e-datasets.md)
 - **Decisões Arquiteturais:**
-  - [ADR-002: Backend Proxy Seguro](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-002-backend-proxy.md)
-  - [ADR-005: Modelo Local e Datasets Brasileiros](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-005-modelo-local-e-datasets-brasileiros.md)
-  - [ADR-006: Arquitetura Evidence-First](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/decisoes/ADR-006-evidence-first-architecture.md)
-- **Segurança:** [Modelo de Ameaças (Threat Model)](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/threat-model.md)
-- **Validação e Testes:** [Estratégia Global de Testes](https://github.com/evidencia-grupo/documentation/blob/docs/reorganizacao/docs/tecnico/estrategia-testes.md)
+  - [ADR-002: Backend Proxy Seguro](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-002-backend-proxy.md)
+  - [ADR-005: Modelo Local e Datasets Brasileiros](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-005-modelo-local-e-datasets-brasileiros.md)
+  - [ADR-006: Arquitetura Evidence-First](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-006-evidence-first-architecture.md)
+- **Segurança:** [Modelo de Ameaças (Threat Model)](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/modelagem-ameacas.md)
+- **Validação e Testes:** [Estratégia Global de Testes](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/estrategia-testes.md)
+
+
+## 7. Provedor independente — Sprint 2 (RF-14, RF-15, RNF-06)
+
+`LLMProvider` é uma classe abstrata com `extract_claims` e `generate_reflection`.
+O backend seleciona `OllamaProvider`, `RemoteLLMProvider` ou `MockLLMProvider`
+na inicialização pelo factory. `MockProvider` permanece como alias de compatibilidade.
+Extração e reflexão utilizam o mesmo provedor, sem mudar o código de negócio.
+
+Para alternar para um gateway remoto compatível com chat completions, configure no
+ambiente do backend (ou em `backend/.env`) e reinicie o serviço:
+
+```dotenv
+ENV=production
+LLM_PROVIDER=remote
+REMOTE_LLM_BASE_URL=https://seu-gateway.example/v1
+REMOTE_LLM_MODEL=seu-modelo
+REMOTE_LLM_API_KEY=sua-chave
+LLM_TIMEOUT_SECONDS=15.0
+REMOTE_LLM_TIMEOUT_SECONDS=15.0
+```
+
+Para execução local, use `LLM_PROVIDER=ollama`, `OLLAMA_BASE_URL`, `OLLAMA_MODEL`
+e `OLLAMA_TIMEOUT_SECONDS=15.0`. Nenhuma chave é enviada à extensão.
+
+O lifespan do FastAPI valida a configuração antes de aceitar requisições.
+Qualquer alias de ambiente (`ENV`, `ENVIRONMENT`, `APP_ENV`, `NODE_ENV`) com valor
+`production` ou `prod` bloqueia `LLM_PROVIDER=mock`, mesmo quando outro alias indica
+`development`. O bloqueio lança `MockInProductionError`, registra o evento crítico
+`mock_in_production_blocked` no logger `app.audit` e encerra o Uvicorn com código 3.
+O coletor de logs do ambiente deve preservar esses eventos de auditoria.
+
+O orçamento padrão de inferência é **15 segundos**, compartilhado entre extração
+e reflexões da requisição; consultas de evidência não consomem esse orçamento.
+Os timeouts configuráveis aceitam valores positivos até 15 segundos. Falhas de API,
+respostas inválidas e timeout produzem `analysisMode=evidence_only` com uma mensagem
+em `limitations`. Falha na reflexão preserva todas as evidências já obtidas e
+interrompe as inferências restantes. O painel já exibe o aviso correspondente;
+a extensão aguarda até 30 segundos para acomodar inferência e busca de evidências.
+
+Se a extração falhar, a transcrição é consultada no índice vetorial existente.
+A indexação armazena o registro canônico completo (`record_json`) nos metadados
+Chroma, permitindo retornar URL, trecho, agência, datas e proveniência.
+**Índices anteriores precisam ser reconstruídos** pelo comando existente
+`python -m ml.retrieval.index --silver-dir <diretorio-silver>` para recuperar
+esses metadados. Registros sem fonte ou proveniência e corpora linguísticos não
+viram evidências factuais. Resultados vetoriais são apresentados como contexto,
+sem inferir vereditos pela similaridade. Sem índice ou dependências ML opcionais,
+o casamento lexical com a base curada continua disponível.
+
+Validação automatizada: `uv run pytest --cov=app --cov-report=term-missing -W error`
+e `uv run ruff check .`; na extensão, `npm test` e `npm run typecheck`.
+A suíte cobre chamadas HTTP de extração/reflexão em ambos os provedores,
+startup real do Uvicorn com configuração proibida, aliases conflitantes,
+cancelamento sob timeout e rastreabilidade das evidências vetoriais.

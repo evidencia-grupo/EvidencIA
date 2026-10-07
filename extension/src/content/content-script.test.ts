@@ -71,7 +71,7 @@ it("propaga orçamento total no cache miss", async () => {
   sendMessage.mockResolvedValueOnce({ success: true, data: null }).mockResolvedValueOnce({ success: true, data: { claims: [] } });
   const start = Date.now(); button().click(); await flush();
   expect(button().textContent).toContain("Checagem concluída");
-  expect(sendMessage.mock.calls[1][0]).toMatchObject({ deadline: start + 9500, payload: { videoTitle: "Título", channelName: "Canal", uploadDate: "2021-04-15T00:00:00Z", durationSeconds: 120 } });
+  expect(sendMessage.mock.calls[1][0]).toMatchObject({ deadline: start + 30000, payload: { videoTitle: "Título", channelName: "Canal", uploadDate: "2021-04-15T00:00:00Z", durationSeconds: 120 } });
 });
 it.each([undefined, { success: false, error: "Falhou" }])("erro do worker permite nova tentativa %s", async reply => {
   await import("./content-script");
@@ -101,7 +101,7 @@ it("timeout aborta a extração e rejeita resposta tardia", async () => {
   const post = vi.spyOn(frame().contentWindow!, "postMessage");
   let resolve!: (value: unknown) => void;
   sendMessage.mockReturnValueOnce(new Promise(r => { resolve = r; }));
-  button().click(); await vi.advanceTimersByTimeAsync(9500);
+  button().click(); await vi.advanceTimersByTimeAsync(30000);
   expect(button().getAttribute("aria-disabled")).toBe("false");
   expect(post).toHaveBeenCalledWith(
     { type: "ANALYSIS_ERROR", error: "A checagem demorou mais do que o esperado. Tente de novo em instantes." },

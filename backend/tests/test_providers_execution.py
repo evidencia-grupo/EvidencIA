@@ -9,7 +9,7 @@ import pytest
 
 from app.providers.ollama import OllamaProvider
 from app.providers.remote import RemoteLLMProvider
-from app.providers.types import Claim, ProviderUnavailableError
+from app.providers.types import Claim, EvidenceRef, ProviderUnavailableError
 
 
 @pytest.mark.asyncio
@@ -85,9 +85,18 @@ async def test_ollama_extract_claims_connection_failure():
 @pytest.mark.asyncio
 async def test_ollama_generate_reflection():
     provider = OllamaProvider()
-    questions = await provider.generate_reflection([Claim(text="Afirmação específica")], [])
-    assert len(questions) >= 3
-    assert any("fontes primárias" in q for q in questions)
+    content = '{"questions": ["Quais fontes primárias existem?", "Qual é a data do estudo?", "Que dados independentes existem?"]}'
+    response = MagicMock(status_code=200)
+    response.json.return_value = {"message": {"content": content}}
+    evidence = EvidenceRef(evidence_id="source", claim_text="Afirmação específica", summary="Evidência real", source_url="https://source.test")
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock, return_value=response) as post:
+        questions = await provider.generate_reflection([Claim(text="Afirmação específica")], [evidence])
+    assert len(questions) == 3
+    assert post.call_args.args[0] == "http://localhost:11434/api/chat"
+    context = post.call_args.kwargs["json"]["messages"][1]["content"]
+    assert "Evidência real" in context
+    assert "https://source.test" in context
+
 
 
 @pytest.mark.asyncio
@@ -159,6 +168,15 @@ async def test_remote_extract_claims_network_failure():
 
 @pytest.mark.asyncio
 async def test_remote_generate_reflection():
-    provider = RemoteLLMProvider()
-    questions = await provider.generate_reflection([Claim(text="Afirmação específica")], [])
-    assert len(questions) >= 3
+    provider = RemoteLLMProvider(base_url="https://gateway.test/v1", api_key="test-key")
+    content = '{"questions": ["Quais fontes primárias existem?", "Qual é a data do estudo?", "Que dados independentes existem?"]}'
+    response = MagicMock(status_code=200)
+    response.json.return_value = {"choices": [{"message": {"content": content}}]}
+    evidence = EvidenceRef(evidence_id="source", claim_text="Afirmação específica", summary="Evidência real", source_url="https://source.test")
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock, return_value=response) as post:
+        questions = await provider.generate_reflection([Claim(text="Afirmação específica")], [evidence])
+    assert len(questions) == 3
+    assert post.call_args.args[0] == "https://gateway.test/v1/chat/completions"
+    context = post.call_args.kwargs["json"]["messages"][1]["content"]
+    assert "Evidência real" in context
+    assert "https://source.test" in context

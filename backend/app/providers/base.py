@@ -1,4 +1,4 @@
-"""Contrato Protocol para Provedores de Modelos de Linguagem (LLMProvider).
+"""Contrato abstrato para Provedores de Modelos de Linguagem (LLMProvider).
 
 Estabelece a abstração padronizada para extração de alegações e geração de reflexão
 sem acoplamento direto com Ollama, APIs externas ou mocks.
@@ -8,16 +8,14 @@ Refs: ADR-001, IS-11.
 
 from __future__ import annotations
 
-from typing import Protocol, runtime_checkable
+from abc import ABC, abstractmethod
 from app.providers.types import Claim, Evidence
 
 
-@runtime_checkable
-class LLMProvider(Protocol):
-    """Protocolo oficial para provedores de LLM no EvidencIA.
+class LLMProvider(ABC):
+    """Classe abstrata oficial para provedores de LLM no EvidencIA.
 
-    Qualquer provider deve implementar este protocolo para poder ser instanciado
-    pelo `ProviderFactory`. A verificação em runtime é suportada via `@runtime_checkable`.
+    Todo provedor deve implementar os dois métodos assíncronos antes de ser instanciado.
     """
 
     #: Identificador legível do provedor (ex.: 'ollama', 'remote', 'mock')
@@ -26,6 +24,7 @@ class LLMProvider(Protocol):
     #: Flag booleana estrita indicando se a instância é mock
     is_mock: bool
 
+    @abstractmethod
     async def extract_claims(self, transcript: str, video_title: str) -> list[Claim]:
         """Extrai proposições atômicas checáveis a partir da transcrição de um vídeo.
 
@@ -38,6 +37,7 @@ class LLMProvider(Protocol):
         """
         ...
 
+    @abstractmethod
     async def generate_reflection(
         self,
         claims: list[Claim],
