@@ -36,6 +36,26 @@ describe("ReflectionQuestions Component", () => {
     expect(items[1].textContent).toContain("2.Existe algum conflito de interesse no conteúdo?");
     expect(items[2].textContent).toContain("3.Os dados apresentados são recentes?");
   });
+
+  it("mantém todas as perguntas quando recebe mais de três", () => {
+    const container = document.createElement("div");
+
+    const questions = [
+      "Que evidências sustentam esta alegação?",
+      "Quais fontes independentes tratam do tema?",
+      "O contexto apresentado está completo?",
+      "Há informações adicionais que deveriam ser consideradas?",
+    ];
+
+    render(<ReflectionQuestions questions={questions} />, container);
+
+    const items = container.querySelectorAll(".reflection-item");
+
+    expect(items).toHaveLength(4);
+    expect(items[3].textContent).toContain(
+      "Há informações adicionais que deveriam ser consideradas?"
+    );
+  });
 });
 
 describe("EvidenceCard Component", () => {

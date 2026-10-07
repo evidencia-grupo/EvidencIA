@@ -10,7 +10,10 @@ const fallbackQuestions = [
 ];
 
 export function ReflectionQuestions({ questions, headingId = "reflection-heading" }: ReflectionQuestionsProps) {
-  const visibleQuestions = questions?.length === 3 ? questions : fallbackQuestions;
+  const visibleQuestions =
+    questions && questions.length >= 3
+      ? questions
+      : fallbackQuestions;
 
   return (
     <section
