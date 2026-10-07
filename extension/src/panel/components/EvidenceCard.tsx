@@ -16,18 +16,17 @@ const RELATION_CONFIG: Record<
   supports: {
     label: "Apoia a alegação",
     className: "relation-supports",
-    iconPath: "M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z",
+    iconPath: "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M9 12l2 2 4-4",
   },
   contradicts: {
     label: "Contradiz a alegação",
     className: "relation-contradicts",
-    iconPath:
-      "M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z",
+    iconPath: "M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm3 13-6-6m0 6 6-6",
   },
   contextualizes: {
     label: "Contextualiza a alegação",
     className: "relation-contextualizes",
-    iconPath: "M11 7h2v2h-2V7zm0 4h2v6h-2v-6zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z",
+    iconPath: "M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14v-4m0-4h.01",
   },
 };
 
@@ -80,7 +79,19 @@ export function EvidenceCard({ evidence }: EvidenceCardProps) {
     >
       <header class="evidence-card-header">
         <span class={`relation-badge ${config.className}`}>
-          <svg class="relation-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <svg
+            class="relation-icon"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            focusable="false"
+          >
             <path d={config.iconPath} />
           </svg>
           <span class="relation-label">{config.label}</span>
@@ -90,9 +101,25 @@ export function EvidenceCard({ evidence }: EvidenceCardProps) {
       <h4 class="evidence-title">
         {safeUrl ? (
           <a href={safeUrl.href} target="_blank" rel="noopener noreferrer" class="evidence-link">
-            {evidence.title}
+            <span>{evidence.title}</span>
             <span class="visually-hidden"> (abre em nova aba)</span>
-            <span aria-hidden="true" class="external-icon"> ↗</span>
+            <svg
+              class="external-icon"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              style={{ display: "inline-block", verticalAlign: "middle", marginLeft: "4px" }}
+            >
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
           </a>
         ) : (
           evidence.title
@@ -138,6 +165,47 @@ export function EvidenceCard({ evidence }: EvidenceCardProps) {
           </div>
         )}
       </dl>
+
+      {safeUrl && (
+        <div class="evidence-cta-row" style={{ marginTop: "10px", paddingTop: "8px", borderTop: "1px solid rgba(255, 255, 255, 0.08)" }}>
+          <a
+            href={safeUrl.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="evidence-cta-button"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              backgroundColor: "#2563EB",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: "600",
+              padding: "6px 12px",
+              borderRadius: "6px",
+              textDecoration: "none",
+            }}
+          >
+            <span>Acessar checagem original</span>
+            <span class="visually-hidden"> (abre em nova aba)</span>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+          </a>
+        </div>
+      )}
     </article>
   );
 }

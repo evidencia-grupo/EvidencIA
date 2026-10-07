@@ -553,3 +553,28 @@ button:focus-visible, a:focus-visible { outline: 3px solid #FBC02D; outline-offs
   margin: 0;
   font-weight: 500;
 }
+
+.evidence-cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #2563EB;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.evidence-cta-button:hover {
+  background-color: #1D4ED8;
+  color: #FFFFFF;
+  transform: translateY(-1px);
+}
+
+.evidence-cta-button:focus-visible {
+  outline: 2px solid #FBC02D;
+  outline-offset: 2px;
+}

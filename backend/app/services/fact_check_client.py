@@ -13,6 +13,7 @@ class FactCheckingSource(BaseModel):
     title: str
     url: str
     domain: str
+    reliabilityScore: Optional[float] = None
     publishedAt: Optional[str] = None
 
 logger = logging.getLogger(__name__)
