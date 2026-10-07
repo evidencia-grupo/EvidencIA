@@ -122,6 +122,11 @@ def test_production_alias_cannot_be_masked_by_development(alias, monkeypatch, ca
     assert caplog.records[-1].environment == "production"
 
 
+from pathlib import Path
+
+backend_dir = Path(__file__).resolve().parent.parent
+
+
 @pytest.mark.parametrize("alias", ["ENV", "ENVIRONMENT"])
 def test_uvicorn_aborts_before_serving_when_mock_is_configured_in_production(alias):
     environment = dict(os.environ, LLM_PROVIDER="mock", PYTHONDONTWRITEBYTECODE="1")
@@ -129,7 +134,12 @@ def test_uvicorn_aborts_before_serving_when_mock_is_configured_in_production(ali
         environment.pop(key, None)
     environment[alias] = "production"
     result = subprocess.run(
-        [sys.executable, "-m", "uvicorn", "app.main:app"], env=environment, capture_output=True, text=True, timeout=5
+        [sys.executable, "-m", "uvicorn", "app.main:app"],
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=5,
+        cwd=backend_dir,
     )
     assert result.returncode == 3
     assert "mock_in_production_blocked" in result.stderr
