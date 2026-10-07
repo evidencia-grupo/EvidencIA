@@ -72,6 +72,15 @@ export function EvidenceCard({ evidence }: EvidenceCardProps) {
   const dataset = evidence.provenance?.dataset;
   const publisher = evidence.publisher || "Fonte não identificada";
 
+  const handleOpenUrl = () => {
+    if (!safeUrl) return;
+    try {
+      window.parent?.postMessage({ type: "OPEN_EXTERNAL_URL", url: safeUrl.href }, "*");
+    } catch {
+      // Ignora falhas em testes jsdom sem janela pai
+    }
+  };
+
   return (
     <article
       class={`evidence-card evidence-card--${relation}`}
@@ -100,7 +109,13 @@ export function EvidenceCard({ evidence }: EvidenceCardProps) {
 
       <h4 class="evidence-title">
         {safeUrl ? (
-          <a href={safeUrl.href} target="_blank" rel="noopener noreferrer" class="evidence-link">
+          <a
+            href={safeUrl.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="evidence-link"
+            onClick={handleOpenUrl}
+          >
             <span>{evidence.title}</span>
             <span class="visually-hidden"> (abre em nova aba)</span>
             <svg
@@ -191,6 +206,7 @@ export function EvidenceCard({ evidence }: EvidenceCardProps) {
             target="_blank"
             rel="noopener noreferrer"
             class="evidence-cta-button"
+            onClick={handleOpenUrl}
             style={{
               display: "inline-flex",
               alignItems: "center",

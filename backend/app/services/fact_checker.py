@@ -192,6 +192,7 @@ class FactCheckerService:
                             if rel == "supports"
                             else ("contradicted" if rel == "contradicts" else "contextualized")
                         )
+                        publisher_display = src.publisher or src.domain
                         evidence_list.append(
                             Evidence(
                                 sourceId=src.id,
@@ -199,9 +200,9 @@ class FactCheckerService:
                                 title=src.title,
                                 url=src.url,
                                 publishedAt=src.publishedAt or published_at,
-                                publisher=src.domain,
+                                publisher=publisher_display,
                                 snippet=item.get("evidence_summary"),
-                                matchReason=f"Correspondência temática com a checagem apurada por {src.domain}.",
+                                matchReason=f"Correspondência temática com a checagem apurada por {publisher_display}.",
                                 provenance=EvidenceProvenance(
                                     dataset="google_fact_check",
                                     indexedAt=datetime.now(timezone.utc).isoformat(),

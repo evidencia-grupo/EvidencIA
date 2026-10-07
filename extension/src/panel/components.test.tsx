@@ -235,7 +235,8 @@ describe("ClaimCard Component", () => {
     render(<ClaimCard claim={baseClaim} />, container);
 
     expect(container.querySelector(".claim-transcript-snippet")?.textContent).toContain("Ele disse explicitamente que o chá cura");
-    expect(container.querySelector(".claim-jump-button")?.textContent).toContain("⏱️ Ir para 01:15");
+    expect(container.querySelector(".claim-jump-button")?.textContent).toContain("Ir para 01:15");
+    expect(container.querySelector(".claim-jump-button svg")).not.toBeNull();
   });
 
   it("renderiza todos os estados de incerteza", () => {

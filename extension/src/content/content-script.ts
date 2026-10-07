@@ -45,6 +45,12 @@ window.addEventListener("message", (event) => {
       video.currentTime = event.data.seconds;
       video.play().catch(() => {});
     }
+  } else if (event.data?.type === "OPEN_EXTERNAL_URL" && typeof event.data.url === "string") {
+    try {
+      window.open(event.data.url, "_blank", "noopener,noreferrer");
+    } catch {
+      chrome.runtime.sendMessage({ type: "OPEN_TAB", url: event.data.url }).catch(() => {});
+    }
   }
 });
 window.addEventListener("keydown", (event) => {
@@ -64,7 +70,7 @@ function initSidePanel() {
   panelIframe.title = "Checagem factual do vídeo";
   panelIframe.id = "evidencia-side-panel";
   panelIframe.src = chrome.runtime.getURL("src/panel/index.html");
-  panelIframe.setAttribute("sandbox", "allow-scripts allow-same-origin");
+  panelIframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox");
   panelIframe.style.cssText = `
     position: fixed;
     top: 56px;

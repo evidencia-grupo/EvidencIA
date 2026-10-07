@@ -58,6 +58,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   else if (message.type === "GET_CACHE") operation = getCachedResult(message.videoId);
   else if (message.type === "ANALYZE_VIDEO") operation = handleAnalyzeRequest(message.payload, message.deadline);
   else if (message.type === "SUBMIT_FEEDBACK") operation = handleFeedbackRequest(message.payload);
+  else if (message.type === "OPEN_TAB" && typeof message.url === "string") operation = chrome.tabs.create({ url: message.url });
   else return;
   operation.then(data => sendResponse({ success: true, data })).catch(error =>
     sendResponse({ success: false, error: error instanceof Error ? error.message : "Falha na checagem." }));

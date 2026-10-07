@@ -13,6 +13,7 @@ class FactCheckingSource(BaseModel):
     title: str
     url: str
     domain: str
+    publisher: Optional[str] = None
     reliabilityScore: Optional[float] = None
     publishedAt: Optional[str] = None
 
@@ -143,6 +144,7 @@ class FactCheckClient:
                 title=f"{pub_name}: {review_title}",
                 url=review_url,
                 domain=domain,
+                publisher=pub_name,
                 reliabilityScore=0.96,  # Agências IFCN possuem elevado índice de confiabilidade
                 publishedAt=review_date,
             )
