@@ -93,6 +93,75 @@ CURATED_CORPUS = [
     ("O Supremo Tribunal Federal é o guardião da Constituição e atua como corte de última instância.", "true", "política", "FactChecks.br"),
     ("O Código de Trânsito Brasileiro estabelece normas e penalidades para condutores em vias terrestres.", "true", "sociedade", "FactChecks.br"),
     ("A Lei de Acesso à Informação garante aos cidadãos o direito de obter dados de órgãos públicos.", "true", "política", "FactChecks.br"),
+
+    # Pares Balanceados por Entidade (Economia, Sociedade, Saúde, Política, Ciência)
+    # Banco Central / Pix
+    ("Banco Central anunciou cobrança de taxa de quinze por cento sobre transferências via Pix entre pessoas físicas.", "fake", "economia", "FactChecks.br"),
+    ("O Banco Central do Brasil lançou o sistema Pix para liquidação instantânea de pagamentos em 2020.", "true", "economia", "FactChecks.br"),
+    ("Banco Central encerra operações de dinheiro físico e confisca cédulas em circulação a partir do próximo mês.", "fake", "economia", "FactChecks.br"),
+    ("O Banco Central do Brasil define diretrizes para funcionamento e segurança de instituições financeiras no país.", "true", "economia", "FactChecks.br"),
+    ("Receita Federal e Banco Central bloquearão contas com movimentações via Pix acima de duzentos reais sem declaração prévia.", "fake", "economia", "FactChecks.br"),
+    ("O Banco Central não cobra taxa de transferências por Pix realizadas entre pessoas físicas para operações de rotina.", "true", "economia", "FactChecks.br"),
+
+    # Bolsa Família / CadÚnico
+    ("Beneficiários do Bolsa Família que receberem Pix de qualquer valor terão o benefício cancelado no mesmo dia.", "fake", "sociedade", "FactChecks.br"),
+    ("O programa Bolsa Família prevê condicionalidades de saúde e educação como frequência escolar e acompanhamento nutricional.", "true", "sociedade", "FactChecks.br"),
+    ("Governo federal liberou saque extraordinário de cinco mil reais no Bolsa Família mediante cadastro em link externo.", "fake", "sociedade", "FactChecks.br"),
+    ("O Bolsa Família transfere renda mensalmente para famílias em situação de vulnerabilidade inscritas no Cadastro Único.", "true", "sociedade", "FactChecks.br"),
+    ("Bolsa Família foi cancelado em todo o país após corte orçamentário aprovado pelo Congresso.", "fake", "sociedade", "FactChecks.br"),
+    ("O Cadastro Único é gerido pelo governo federal em parceria com as prefeituras para identificar famílias de baixa renda.", "true", "sociedade", "FactChecks.br"),
+
+    # Imunização e Vacinas
+    ("Vacina contra poliomielite causa paralisia infantil nas crianças imunizadas e foi proibida em países desenvolvidos.", "fake", "saúde", "FactChecks.br"),
+    ("A vacina contra a poliomielite erradicou a transmissão do poliovírus selvagem no território brasileiro desde 1989.", "true", "saúde", "FactChecks.br"),
+    ("Vacina da febre amarela foi contaminada em laboratório e transmite a doença para adultos saudáveis.", "fake", "saúde", "FactChecks.br"),
+    ("A vacinação contra a febre amarela é indicada e segura para residentes e viajantes que se deslocam para áreas de recomendação.", "true", "saúde", "FactChecks.br"),
+    ("Vacina contra a dengue Qdenga teve registro cassado pela Anvisa por falta de comprovação de eficácia.", "fake", "saúde", "FactChecks.br"),
+    ("A vacina contra dengue Qdenga foi aprovada pela Anvisa e incorporada ao Programa Nacional de Imunizações para faixas prioritárias.", "true", "saúde", "FactChecks.br"),
+    ("Vacina da gripe comum altera o código genético humano e enfraquece a imunidade natural contra outras infecções.", "fake", "saúde", "FactChecks.br"),
+    ("A vacina contra a gripe é atualizada anualmente com base nas cepas do vírus influenza em circulação.", "true", "saúde", "FactChecks.br"),
+    ("Estudos científicos globais com milhões de crianças comprovaram a inexistência de relação entre vacinas e o desenvolvimento de autismo.", "true", "saúde", "FactChecks.br"),
+
+    # Eleições e Urnas
+    ("Tribunal Superior Eleitoral proibiu uso de caneta esferográfica azul na cabine de votação sob pena de anulação.", "fake", "política", "FactChecks.br"),
+    ("O Tribunal Superior Eleitoral coordena a realização das eleições e a fiscalização de contas de campanhas partidárias.", "true", "política", "FactChecks.br"),
+    ("As urnas eletrônicas brasileiras funcionam sem conexão à internet e imprimem o boletim de urna ao final da votação.", "true", "política", "FactChecks.br"),
+    ("Se mais de cinquenta por cento dos votos forem nulos a eleição inteira é anulada e novo pleito é convocado.", "fake", "política", "FactChecks.br"),
+    ("Os votos nulos e brancos não são considerados no cálculo dos votos válidos e não anulam a eleição.", "true", "política", "FactChecks.br"),
+
+    # Tratamentos Médicos e Fisiologia
+    ("Chá de casca de banana com canela cura diabetes e elimina a necessidade de aplicação de insulina em três dias.", "fake", "saúde", "FactChecks.br"),
+    ("A diabetes mellitus é uma condição crônica controlada com acompanhamento médico, alimentação equilibrada, atividade física e medicamentos.", "true", "saúde", "FactChecks.br"),
+    ("Água morna com limão em jejum alcaliniza o sangue e impede a proliferação de vírus e células de câncer.", "fake", "saúde", "FactChecks.br"),
+    ("O organismo humano possui mecanismos fisiológicos e renais próprios que mantêm o pH sanguíneo estável entre 7,35 e 7,45.", "true", "saúde", "FactChecks.br"),
+    ("Máscaras cirúrgicas e de proteção respiratória são seguras e amplamente utilizadas por profissionais de saúde há décadas sem causar hipóxia.", "true", "saúde", "FactChecks.br"),
+    ("Infecções respiratórias virais afetam as células do trato respiratório e não são eliminadas por gargarejos com vinagre ou sal.", "true", "saúde", "FactChecks.br"),
+    ("Ivermectina e hidroxicloroquina são comprovadamente eficazes para prevenir qualquer forma de dengue ou virose.", "fake", "saúde", "FactChecks.br"),
+    ("A dengue é tratada principalmente com hidratação rigorosa e analgésicos adequados, sob orientação médica para evitar complicações.", "true", "saúde", "FactChecks.br"),
+    ("Inalar vapor de álcool com eucalipto cura pneumonia e substitui internação hospitalar.", "fake", "saúde", "FactChecks.br"),
+    ("A pneumonia bacteriana exige tratamento com antibióticos específicos prescritos por profissional de saúde.", "true", "saúde", "FactChecks.br"),
+
+    # Meio Ambiente e Ciência
+    ("Imagens de satélite da NASA e do INPE sobre o desmatamento na Amazônia são geradas artificialmente para prejudicar o agronegócio.", "fake", "ciência", "FactChecks.br"),
+    ("O sistema Prodes do INPE utiliza imagens de satélites com sensoriamento remoto óptico para mapear o desmatamento na Amazônia Legal.", "true", "ciência", "FactChecks.br"),
+    ("A radiação emitida por antenas de telefonia celular e 5G é não-ionizante e não possui energia suficiente para danificar o DNA celular.", "true", "ciência", "FactChecks.br"),
+    ("Cientistas internacionais comprovaram que a Terra é plana e que fotos espaciais são ilustrações computadorizadas.", "fake", "ciência", "FactChecks.br"),
+    ("Fotografias espaciais e a observação de constelações e eclipses comprovam a esfericidade do planeta Terra.", "true", "ciência", "FactChecks.br"),
+    ("Tempestades e inundações recentes foram causadas artificialmente por transmissões da estação eletromagnética HAARP.", "fake", "ciência", "FactChecks.br"),
+    ("Eventos climáticos extremos decorrem da dinâmica atmosférica, fatores oceânicos como El Niño e alterações no clima global.", "true", "ciência", "FactChecks.br"),
+
+    # Instituições e Leis
+    ("Militares assumiram o controle das cortes superiores após decreto extraordinário secreto do Ministério da Defesa.", "fake", "política", "FactChecks.br"),
+    ("As Forças Armadas são instituições nacionais permanentes que atuam sob a autoridade suprema do Presidente da República e da Constituição.", "true", "política", "FactChecks.br"),
+    ("Todos os cidadãos que utilizarem redes sociais sem cadastro governamental terão suas contas bancárias bloqueadas por lei emergencial.", "fake", "sociedade", "FactChecks.br"),
+    ("A Lei Geral de Proteção de Dados (LGPD) garante aos cidadãos o controle e a privacidade de seus dados pessoais.", "true", "sociedade", "FactChecks.br"),
+    ("Vacinas da infância causam autismo e transtornos de desenvolvimento devido a conservantes com mercúrio.", "fake", "saúde", "FactChecks.br"),
+    ("Uso contínuo de máscaras faciais de proteção provoca hipóxia, asfixia celular e envenenamento por dióxido de carbono.", "fake", "saúde", "FactChecks.br"),
+    ("Gargarejo com vinagre e sal destrói o vírus no trato respiratório superior antes que ele atinja os pulmões.", "fake", "saúde", "FactChecks.br"),
+    ("Tribunal internacional em Haia revogou a Constituição Federal do Brasil e destituiu os três poderes.", "fake", "política", "FactChecks.br"),
+    ("Antenas de tecnologia 5G emitem radiação perigosa que mata aves em pleno voo e transmite vírus biológicos.", "fake", "ciência", "FactChecks.br"),
+    ("A Constituição de 1988 é a norma jurídica fundamental do Brasil e define a organização dos poderes Executivo, Legislativo e Judiciário.", "true", "política", "FactChecks.br"),
+    ("Urnas eletrônicas realizam apuração em servidor secreto e foram programadas para desviar votos de candidatos.", "fake", "política", "FactChecks.br"),
 ]
 
 

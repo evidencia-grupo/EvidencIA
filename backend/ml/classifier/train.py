@@ -16,8 +16,8 @@ def run_training(
     model_output: str = DEFAULT_MODEL_PATH,
     report_output: str = DEFAULT_REPORT_PATH,
     test_size: float = 0.20,
-    alpha: float = 1.0,
-    acceptance_threshold: float = 0.65,
+    alpha: float = 0.5,
+    acceptance_threshold: float = 0.60,
 ) -> dict:
     print("=" * 70)
     print("  EVIDENCIA ML — TREINAMENTO E CALIBRAÇÃO DO CLASSIFICADOR")
@@ -79,13 +79,15 @@ def main():
     parser.add_argument("--output", default=DEFAULT_MODEL_PATH, help="Caminho do arquivo do modelo (.json)")
     parser.add_argument("--report", default=DEFAULT_REPORT_PATH, help="Caminho do relatório (.md)")
     parser.add_argument("--test-size", type=float, default=0.20, help="Proporção de teste (padrão: 0.20)")
-    parser.add_argument("--threshold", type=float, default=0.65, help="Limiar de aceitação (padrão: 0.65)")
+    parser.add_argument("--alpha", type=float, default=0.5, help="Parâmetro de suavização Laplace (padrão: 0.5)")
+    parser.add_argument("--threshold", type=float, default=0.60, help="Limiar de aceitação (padrão: 0.60)")
     args = parser.parse_args()
 
     run_training(
         model_output=args.output,
         report_output=args.report,
         test_size=args.test_size,
+        alpha=args.alpha,
         acceptance_threshold=args.threshold,
     )
 

@@ -16,13 +16,13 @@ class ClaimClassifier:
 
     def __init__(
         self,
-        alpha: float = 1.0,
-        acceptance_threshold: float = 0.65,
+        alpha: float = 0.5,
+        acceptance_threshold: float = 0.60,
         vectorizer: Optional[TFIDFVectorizer] = None,
     ):
         self.alpha = alpha
         self.acceptance_threshold = acceptance_threshold
-        self.vectorizer = vectorizer or TFIDFVectorizer(max_features=1500, use_bigrams=True)
+        self.vectorizer = vectorizer or TFIDFVectorizer(max_features=2500, use_bigrams=True)
         self.class_priors: Dict[str, float] = {"fake": 0.5, "true": 0.5}
         self.feature_log_probs: Dict[str, Dict[str, float]] = {"fake": {}, "true": {}}
         self.classes = ["fake", "true"]

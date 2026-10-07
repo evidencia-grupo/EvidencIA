@@ -9,26 +9,35 @@ from typing import Dict, List, Set, Tuple
 STOPWORDS_PT = {
     "o", "a", "os", "as", "um", "uma", "uns", "umas", "de", "do", "da", "dos", "das",
     "em", "no", "na", "nos", "nas", "por", "para", "com", "sem", "sob", "sobre",
-    "que", "e", "ou", "se", "como", "mais", "mas", "porém", "contudo", "todavia",
-    "foi", "foram", "é", "era", "eram", "são", "ser", "sendo", "ter", "tem", "têm",
+    "que", "e", "ou", "se", "como", "mais", "mas", "porem", "contudo", "todavia",
+    "foi", "foram", "era", "eram", "sao", "ser", "sendo", "ter", "tem",
     "tinha", "tinham", "este", "esta", "estes", "estas", "esse", "essa", "esses", "essas",
     "aquele", "aquela", "aqueles", "aquelas", "isto", "isso", "aquilo", "seu", "sua",
     "seus", "suas", "meu", "minha", "nosso", "nossa", "nossos", "nossas", "ele", "ela",
-    "eles", "elas", "você", "vocês", "ao", "aos", "à", "às", "pelo", "pela", "pelos", "pelas"
+    "eles", "elas", "voce", "voces", "ao", "aos", "pelo", "pela", "pelos", "pelas",
+    "ja", "ate", "quando", "muito", "ha"
 }
 
 SENSATIONAL_MARKERS = {
     "urgente", "bomba", "revelado", "segredo", "ocultado", "milagroso", "cura",
     "proibido", "compartilhe", "apaguem", "vazou", "mentira", "verdade oculta",
     "perigo", "alerta", "absurdo", "inacreditavel", "chocante", "revolucionario",
-    "ninguem conta", "estao escondendo", "veneno", "destruir", "conspiracao"
+    "ninguem conta", "estao escondendo", "veneno", "destruir", "destroi", "conspiracao",
+    "confisca", "confiscar", "confiscara", "bloqueado", "bloquearao", "bloqueio",
+    "fraude", "adulterado", "escondido", "secreto", "golpe", "cuidado",
+    "repassar", "repassa", "cancele", "cancelado", "cancelarao",
+    "proibida", "perigosa", "venenosa", "nociva", "morte"
 }
 
 CREDIBILITY_MARKERS = {
     "estudo", "pesquisa", "relatorio", "oficial", "segundo", "publicado",
     "ministerio", "anvisa", "fiocruz", "ibge", "nature", "revista", "universidade",
     "dados", "conforme", "comprovado", "ensaios", "diretriz", "organizacao",
-    "secretaria", "banco central", "medida provisoria", "resolucao", "portaria"
+    "secretaria", "banco central", "medida provisoria", "resolucao", "portaria",
+    "agencia", "cientifico", "cientifica", "cientistas", "instituto", "nacional",
+    "vigilancia", "sanitaria", "periodico", "especialista", "conselho",
+    "declarou", "informou", "nota tecnica", "constituicao", "legislacao",
+    "regulamento", "norma", "monitoramento", "evidencia", "clinico"
 }
 
 
@@ -86,7 +95,7 @@ def extract_stylistic_features(raw_text: str) -> Dict[str, float]:
 class TFIDFVectorizer:
     """Vetorizador TF-IDF puro e determinístico otimizado para português."""
 
-    def __init__(self, max_features: int = 1000, min_df: int = 1, use_bigrams: bool = True):
+    def __init__(self, max_features: int = 2500, min_df: int = 1, use_bigrams: bool = True):
         self.max_features = max_features
         self.min_df = min_df
         self.use_bigrams = use_bigrams

@@ -30,7 +30,7 @@ class ClassifierService:
             else:
                 logger.info("Modelo não encontrado em %s. Treinando modelo inicial...", self.model_path)
                 dataset = load_training_dataset()
-                self.model = ClaimClassifier(alpha=0.5, acceptance_threshold=0.65)
+                self.model = ClaimClassifier(alpha=0.5, acceptance_threshold=0.60)
                 self.model.train([s.text for s in dataset], [s.label for s in dataset])
                 self.model.save(self.model_path)
                 logger.info("Modelo inicial treinado e salvo com sucesso em %s", self.model_path)
