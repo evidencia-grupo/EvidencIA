@@ -22,16 +22,48 @@ O **EvidencIA** é uma solução de software livre projetada para capacitar cida
 Diferente de ferramentas tradicionais que impõem notas algorítmicas de "verdadeiro ou falso", o EvidencIA segue a premissa de que **o julgamento pertence ao leitor**. O sistema decompõe o discurso em proposições verificáveis e apresenta diretamente as checagens prévias realizadas por agências jornalísticas profissionais brasileiras (Agência Lupa, Aos Fatos, FactChecks.br) combinadas à análise contextual de Inteligência Artificial.
 
 ```mermaid
-flowchart LR
-    A["Video no YouTube<br><code>/watch?v=...</code>"] --> B["Extensao MV3<br>(Preact + Shadow DOM)"]
-    B -->|"1. Extrai Transcricao & Metadados"| C["Service Worker<br>(Cache 24h & Validador)"]
-    C -->|"2. POST /api/v1/analyze<br>(Zero Chaves no Cliente)"| D["Backend Proxy<br>(FastAPI + Pydantic v2)"]
-    D -->|"3. Inferencia Local / Remota"| E["LLM Provider<br>(Qwen 2.5 / Ollama / Remote)"]
-    D -->|"4. Busca Semantica & Lexica"| F["Brazilian Fact Matcher<br>(FactChecks.br / Agencias)"]
-    E & F -->|"5. Sintese Evidence-First"| D
-    D -->|"6. JSON Validado (Sem Score Global)"| C
-    C -->|"7. Renderizacao Acessivel"| B
+flowchart TD
+    subgraph Client["Navegador do Usuário (Extensão Manifest V3)"]
+        direction TB
+        YT["Vídeo no YouTube<br><code>youtube.com/watch?v=...</code>"]
+        UI["Painel Lateral em Preact<br>(Shadow DOM Isolado)"]
+        SW["Service Worker em Background<br>(Cache Local 24h & Validação)"]
+    end
+
+    subgraph Server["Backend Proxy Seguro (FastAPI)"]
+        direction TB
+        API["Gateway & Orquestrador da API<br><code>POST /api/v1/analyze</code>"]
+        
+        subgraph Processing["Processamento Híbrido Desacoplado"]
+            direction LR
+            LLM["Provedor de IA<br>(Ollama Qwen 2.5 / Remoto)"]
+            MATCHER["Brazilian Fact Matcher<br>(FactChecks.br, Lupa, Aos Fatos)"]
+        end
+        
+        SYN["Motor de Síntese Evidence-First<br>(Alegações + Evidências + Perguntas Socráticas)"]
+    end
+
+    YT -->|"1. Extrai legendas e metadados"| UI
+    UI -->|"2. Solicita checagem"| SW
+    SW -->|"3. POST HTTPS seguro (Zero chaves no cliente)"| API
+    
+    API -->|"4a. Decompõe alegações"| LLM
+    API -->|"4b. Consulta checagens jornalísticas"| MATCHER
+    
+    LLM --> SYN
+    MATCHER --> SYN
+    
+    SYN -->|"5. Retorna JSON canônico (Sem veredito unilateral)"| SW
+    SW -->|"6. Renderiza cards acessíveis (WCAG AA)"| UI
 ```
+
+#### Fluxo de Execução do Sistema:
+1. **Captura sob demanda:** O usuário clica em *Checar Alegações*. O script injetado extrai legendas oficiais (*timed text*) e metadados temporais diretamente do player do YouTube.
+2. **Consulta de cache local:** O Service Worker checa o `chrome.storage.local`. Se o vídeo foi analisado nas últimas 24h, o painel abre em menos de 100 ms sem fazer chamadas de rede.
+3. **Fronteira segura (Zero Segredos):** Sem cache prévio, uma requisição HTTPS é despachada ao Backend Proxy via `POST /api/v1/analyze` sem expor qualquer chave de API no navegador.
+4. **Análise paralela desacoplada:** O backend aciona simultaneamente a extração de alegações atômicas e perguntas reflexivas via IA, e o cruzamento léxico/semântico com bases jornalísticas brasileiras (FactChecks.br, Agência Lupa, Aos Fatos).
+5. **Síntese Evidence-First:** Os dados são estruturados segundo o schema canônico, sem notas numéricas globais ou vereditos algorítmicos simplistas.
+6. **Apresentação acessível:** O painel em Preact injetado via Shadow DOM renderiza as alegações, evidências com links para as fontes originais e perguntas reflexivas com conformidade WCAG 2.1 AA.
 
 ### Princípios Técnicos Não-Negociáveis
 - **Arquitetura Evidence-First ([ADR-006](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-006-evidence-first-architecture.md)):** Não há score numérico global de "veracidade" (0–100%) nem selos definitivos de "verdadeiro/falso". O resultado exibe alegações atômicas, evidências rastreáveis e perguntas reflexivas socráticas ([HU15](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/backlog-e-historias.md#hu15)).
