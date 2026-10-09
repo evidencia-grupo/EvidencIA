@@ -30,10 +30,26 @@
 | **0.75** | 3 / 27 | 11.1% | 88.9% | **100.0%** | 0.0% |
 | **0.80** | 1 / 27 | 3.7% | 96.3% | **100.0%** | 0.0% |
 | **0.85** | 1 / 27 | 3.7% | 96.3% | **100.0%** | 0.0% |
-| **0.90** | 0 / 27 | 0.0% | 100.0% | **N/A%** | N/A% |
+| **0.90** | 0 / 27 | 0.0% | 100.0% | **N/A** | N/A |
 
 ## 5. Recomendação Operacional para Produção
 - **Limiar:** Deve ser escolhido em validação separada, de acordo com o custo do erro; não otimizar no conjunto de teste.
 - **Limitação:** Rótulos são padrões do corpus local; as métricas não demonstram veracidade factual de alegações externas. Nenhuma taxa é definida quando zero predições são aceitas.
 
 Protocolo: 112 treino / 27 teste, seed 42; corpus local de padrões linguísticos. Modelo entregue e avaliado é o mesmo; não houve retreinamento no teste.
+
+
+## 6. Exportação solicitada em pickle (.plk)
+
+`model.plk` contém o mesmo modelo de `model.json`, sem novo treinamento. A equivalência de inferência após carregar foi verificada nas 139 amostras do corpus. A extensão convencional para esse formato é `.pkl`; `.plk` atende ao nome solicitado.
+
+Na pasta `backend`, com as classes Python do projeto disponíveis:
+
+```python
+import pickle
+with open("ml/classifier/model.plk", "rb") as arquivo:
+    modelo = pickle.load(arquivo)
+resultado = modelo.predict("Texto da alegação em português.")
+```
+
+O runtime e o notebook continuam usando JSON. A exportação pickle requer as classes `ml.classifier` do projeto.
