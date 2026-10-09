@@ -4,7 +4,7 @@
 > Sistema de verificação factual sob o paradigma **Evidence-First** ([ADR-006](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-006-evidence-first-architecture.md)), com **Zero Segredos no Cliente** ([ADR-002](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-002-backend-proxy.md)), isolamento via **Shadow DOM** e conformidade estrita com **WCAG 2.1 AA**.
 
 [![CI/CD Pipeline](https://github.com/evidencia-grupo/EvidencIA/actions/workflows/ci.yml/badge.svg)](https://github.com/evidencia-grupo/EvidencIA/actions/workflows/ci.yml)
-[![Status: GO (Release 1.0.0)](https://img.shields.io/badge/Status-GO%20(Release%201.0.0)-brightgreen)](https://github.com/evidencia-grupo/documentation/blob/main/RELEASE-READINESS.md)
+[![Status: GO (Release 1.0.0)](https://img.shields.io/badge/Status-GO%20(Release%201.0.0)-brightgreen)](https://github.com/evidencia-grupo/documentation/blob/main/docs/governanca/prontidao.md)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-success?logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -18,7 +18,7 @@
 
 O **EvidencIA** capacita cidadãos a exercerem pensamento crítico no YouTube (`youtube.com/watch?v=...`). Sem emitir scores algorítmicos autoritários de "verdadeiro ou falso", o sistema decompõe o discurso em proposições verificáveis e apresenta evidências rastreáveis de agências jornalísticas profissionais brasileiras (Agência Lupa, Aos Fatos, FactChecks.br) e perguntas socráticas reflexivas.
 
-- **Status da Release:** 🟢 **GO — Pronto para Produção (v1.0.0)**. Todos os 17 Technical Gates e 6 Human Gates (H1–H6) homologados.
+- **Status da Release:** **GO — Pronto para Produção (v1.0.0)**. Todos os 17 Technical Gates e 6 Human Gates (H1–H6) homologados.
 - **Documentação Oficial:** Todo o detalhamento analítico, C4, ADRs e modelagem de ameaças reside no repositório [documentation](https://github.com/evidencia-grupo/documentation).
 
 ---
