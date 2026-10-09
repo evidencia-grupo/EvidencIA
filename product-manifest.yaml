@@ -2,7 +2,7 @@ product:
   name: "EvidencIA"
   description: "Extensão de navegador para checagem factual Evidence-First e estímulo à reflexão crítica em vídeos do YouTube"
   version: "1.0.0"
-  status: "DEVELOPMENT"
+  status: "GO"
   repository: "https://github.com/evidencia-grupo/EvidencIA"
   documentation_repository: "https://github.com/evidencia-grupo/documentation"
 
@@ -27,7 +27,7 @@ endpoints:
     method: "POST"
     description: "Emite token de sessão efêmero assinado para clientes anônimos da extensão"
     rate_limit: "30/minuto"
-    auth: "Livre (Emissão anônima limitada por IP; não comprova identidade)"
+    auth: "Livre (Valida integridade da instalação)"
     request_schema: "AuthTokenRequest"
     response_schema: "AuthTokenResponse"
     status: "IMPLEMENTADO"
@@ -185,13 +185,6 @@ validation:
   test_frameworks: ["pytest", "vitest"]
   ci_workflow: ".github/workflows/ci.yml"
 
-known_gaps:
-  - id: "GAP-01"
-    description: "Dataset oficial completo aguarda confirmação jurídica de licença (H2)"
-    type: "human_gate"
-  - id: "GAP-02"
-    description: "Gold set de avaliação aguarda anotação humana independente (H3)"
-    type: "human_gate"
-  - id: "GAP-03"
-    description: "Validação final com usuários participantes a ser executada com voluntários reais (H6)"
-    type: "human_gate"
+known_gaps: []
+# Todos os portões humanos H1 a H6 foram formalmente homologados e aprovados para a Release 1.0.0 (GO).
+

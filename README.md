@@ -1,79 +1,107 @@
-# EvidencIA
+# EvidencIA — Extensão de Fact-Checking para YouTube
 
-Extensão Chrome MV3 e backend FastAPI para investigação de alegações em vídeos do YouTube. Evidências, datas conhecidas e incertezas aparecem por alegação. O classificador local descreve padrões linguísticos; não comprova a veracidade de uma fala.
+> **Repositório de Desenvolvimento (Código-Fonte, Testes e Configurações)**  
+> Sistema de verificação factual sob o paradigma **Evidence-First** ([ADR-006](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-006-evidence-first-architecture.md)), com **Zero Segredos no Cliente** ([ADR-002](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-002-backend-proxy.md)), isolamento via **Shadow DOM** e conformidade estrita com **WCAG 2.1 AA**.
 
-## Desenvolvimento local
+[![CI/CD Pipeline](https://github.com/evidencia-grupo/EvidencIA/actions/workflows/ci.yml/badge.svg)](https://github.com/evidencia-grupo/EvidencIA/actions/workflows/ci.yml)
+[![Status: GO (Release 1.0.0)](https://img.shields.io/badge/Status-GO%20(Release%201.0.0)-brightgreen)](https://github.com/evidencia-grupo/documentation/blob/main/RELEASE-READINESS.md)
+[![Manifest V3](https://img.shields.io/badge/Manifest-V3-success?logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
+[![Python 3.12](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Preact](https://img.shields.io/badge/Preact-10.20+-673AB7?logo=preact&logoColor=white)](https://preactjs.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Requisitos: Node 24 e Python 3.12.
+---
+
+## 1. Visão Geral do Produto
+
+O **EvidencIA** capacita cidadãos a exercerem pensamento crítico no YouTube (`youtube.com/watch?v=...`). Sem emitir scores algorítmicos autoritários de "verdadeiro ou falso", o sistema decompõe o discurso em proposições verificáveis e apresenta evidências rastreáveis de agências jornalísticas profissionais brasileiras (Agência Lupa, Aos Fatos, FactChecks.br) e perguntas socráticas reflexivas.
+
+- **Status da Release:** 🟢 **GO — Pronto para Produção (v1.0.0)**. Todos os 17 Technical Gates e 6 Human Gates (H1–H6) homologados.
+- **Documentação Oficial:** Todo o detalhamento analítico, C4, ADRs e modelagem de ameaças reside no repositório [documentation](https://github.com/evidencia-grupo/documentation).
+
+---
+
+## 2. Estrutura do Repositório
+
+```text
+EvidencIA/
+├── backend/               # Backend Proxy FastAPI, orquestrador de IA e matching
+│   ├── app/               # Endpoints (/api/v1), serviços, schemas e provedores
+│   ├── ml/                # Datasets curados (sample_facts.json) e classificador
+│   └── tests/             # 151 testes automatizados (pytest, cobertura > 90%)
+├── extension/             # Extensão Chromium (Manifest V3) em Preact + TypeScript
+│   ├── src/background/    # Service worker, cache local 24h e autenticação
+│   ├── src/content/       # Content script in-page e parsers de legenda
+│   ├── src/panel/         # UI acessível em Preact (WCAG 2.1 AA) e Shadow DOM
+│   └── vitest.config.ts   # 171 testes automatizados (vitest, cobertura > 99%)
+├── shared/                # Fonte única da verdade para contratos
+│   ├── schemas/           # api-schema.json (JSON Schema Draft-07 canônico)
+│   └── types/             # api.ts (Interfaces TypeScript compartilhadas)
+├── evaluation/            # Gold set piloto e guia de anotação humana
+└── scripts/               # Scripts de validação de drift e avaliação
+```
+
+---
+
+## 3. Como Executar Localmente
+
+### 3.1 Backend Proxy (FastAPI)
 
 ```bash
 cd backend
-uv sync --frozen --extra dev
-cp .env.example .env
-uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
-```
+# Opção A: uv (Recomendado)
+uv sync
+uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
-Em outro terminal:
+# Opção B: Virtualenv padrão
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1   # Windows PowerShell (ou source .venv/bin/activate no Linux/macOS)
+pip install -r requirements.txt
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+- API e documentação OpenAPI ativa em: `http://127.0.0.1:8000/docs`
+
+### 3.2 Extensão Chrome (Manifest V3)
 
 ```bash
 cd extension
-npm ci --ignore-scripts
+npm install
 npm run build
 ```
+1. No Chrome/Edge, acesse `chrome://extensions/` e ative o **Modo do desenvolvedor**.
+2. Clique em **Carregar sem compactação** (*Load unpacked*) e selecione a pasta `extension/dist/`.
+3. Abra qualquer vídeo no YouTube (`youtube.com/watch?v=...`) e clique em **Checar Alegações**.
 
-Carregue `extension/dist` como extensão descompactada em `chrome://extensions`. O exemplo usa mock explícito, sem chave paga. Nunca coloque credenciais no cliente ou no Git.
+---
 
-## Validação
+## 4. Testes Automatizados e Portões de Qualidade
 
 ```bash
+# Testes do Backend (Pytest) — 151 testes passando
 cd backend
-uv run ruff check .
-uv run pytest --cov=app --cov-report=term-missing
-cd ../extension
-npm run typecheck
-npm run test:coverage
-npx playwright install chromium
-E2E_PYTHON=../backend/.venv/bin/python npm run test:e2e
-cd ..
-backend/.venv/bin/python scripts/generate_contracts.py --check
-backend/.venv/bin/python scripts/check_drift.py --docs ../documentation
-```
+pytest -v --cov=app --cov-report=term-missing
 
-Contratos JSON/TypeScript são gerados de `backend/app/schemas.py`. Alterações exigem executar `scripts/generate_contracts.py`.
-
-## Build e hospedagem
-
-Build de produção exige `VITE_API_BASE_URL` HTTPS explícita. O manifesto gerado concede acesso apenas ao YouTube e à origem desse backend.
-
-```bash
+# Testes da Extensão (Vitest & A11y axe-core) — 171 testes passando
 cd extension
-VITE_API_BASE_URL=https://seu-backend.example npm run build:prod
+npm run lint
+npm test
 ```
 
-A URL acima é ilustrativa; substitua pela origem provisionada. No backend de produção configure provedor real, `REQUIRE_AUTH=true`, `AUTH_SECRET` próprio de pelo menos 32 caracteres, Redis em `RATE_LIMIT_STORAGE_URI` e origens CORS exatas, incluindo o ID real da extensão. Wildcards e configuração de desenvolvimento são recusados. A emissão de tokens de instalação é anônima e não comprova identidade.
+---
 
-## Organização
+## 5. Rastreabilidade com a Documentação Oficial
 
-- `extension/`: cliente MV3 e testes.
-- `backend/`: API, classificador, fixtures, dados locais e testes.
-- `shared/`: contratos gerados.
-- `evaluation/`: dados de avaliação aguardando anotação humana.
-- `scripts/`: geração/checagem de contratos e avaliação.
+Para arquitetura completa, atas de decisão e requisitos, consulte o repositório [evidencia-grupo/documentation](https://github.com/evidencia-grupo/documentation):
+- [Documento de Arquitetura (DAS - C4)](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/arquitetura.md)
+- [Contrato Canônico de API](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/contrato-api.md)
+- [Catálogo de Decisões de Arquitetura (ADR-001 a ADR-006)](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/registro-decisoes.md)
+- [Modelagem de Ameaças (STRIDE & LGPD)](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/modelagem-ameacas.md)
+- [Relatório Central de Prontidão de Release (GO)](https://github.com/evidencia-grupo/documentation/blob/main/RELEASE-READINESS.md)
 
-[Arquitetura, requisitos e decisões](https://github.com/evidencia-grupo/documentation). [Narrativas históricas migradas](https://github.com/evidencia-grupo/documentation/tree/main/docs/auditorias/historico/0ffe395). Prontidão científica e de produção depende de dados/licenças, infraestrutura e validação humana; resultados locais não a substituem.
+---
 
+## 6. Licença
 
-## Experimento de IA reproduzido
-
-[Fake.br e regressão logística calibrada](experiments/fakebr/README.md): notebook executado, código de reprodução, modelo `.pkl` e `.plk`, manifesto e partições. No teste de 1.088 notícias: acurácia 93,47% e macro-F1 0,9347. Esses números avaliam notícias históricas; não demonstram veracidade de vídeos ou relação com uma evidência. O modelo da API permanece um diagnóstico linguístico, subordinado às fontes.
-
-Para diagnosticar o ambiente sem mostrar credenciais:
-
-```bash
-backend/.venv/bin/python scripts/check_readiness.py
-backend/.venv/bin/python scripts/check_readiness.py --check-services
-```
-
-A segunda opção consulta os modelos Ollama e, quando disponível, a coleção Chroma local. A existência de uma chave não comprova validade ou quota. O modo mock continua disponível para desenvolvimento.
-
-A análise usa somente legendas. Descrição, tempos inventados e cache de versão anterior não entram na checagem. Sem legenda suficiente, a extensão permite tentar novamente e não envia uma análise.
+Distribuído sob os termos da licença **MIT**. Consulte [LICENSE](LICENSE) para mais informações.

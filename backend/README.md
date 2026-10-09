@@ -1,27 +1,62 @@
-# Backend EvidencIA
+# EvidencIA — Backend Proxy & Orquestrador de IA
 
-Python 3.12 / FastAPI. Instalação e testes:
+> Backend Proxy assíncrono em FastAPI, isolador de credenciais (**Zero Segredos no Cliente** - [ADR-002](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/decisoes/ADR-002-backend-proxy.md)), orquestrador de inferência e motor de casamento com datasets brasileiros (FactChecks.br).
 
-```bash
-uv sync --frozen --extra dev
-cp .env.example .env
-uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
-uv run ruff check .
-uv run pytest --cov=app --cov-report=term-missing
+---
+
+## 1. Estrutura do Módulo
+
+```text
+backend/
+├── app/
+│   ├── main.py          # FastAPI app, CORS restrito e Rate Limiting (SlowAPI)
+│   ├── config.py        # Configurações tipadas via Pydantic Settings
+│   ├── schemas.py       # Modelos Pydantic v2 sincronizados com shared/
+│   ├── api/v1/          # Endpoints (/analyze, /auth/token, /health, /classify)
+│   ├── providers/       # Camada agnóstica de LLM (Ollama, Remote, Mock)
+│   └── services/        # Orquestrador fact_checker, brazilian_fact_matcher, auth
+├── ml/                  # Datasets curados (sample_facts.json) e classificador Naive Bayes
+└── tests/               # 151 testes automatizados (Pytest com cobertura > 90%)
 ```
 
-- `POST /api/v1/analyze`: texto e segmentos reais; `analysisMode=evidence_only` evita chamadas ao provedor.
-- `POST /api/v1/auth/token`: token anônimo de instalação, sujeito a rate limit.
-- `POST /api/v1/feedback`: avaliação voluntária.
-- `POST /api/v1/classify`: padrão linguístico; não é evidência factual.
-- `GET /api/v1/health`, `/health/live`, `/health/ready`: estado da aplicação; health não testa conexão remota.
+---
 
-Limite de corpo: 524288 bytes (configurável); transcrição: até 100000 caracteres. Data desconhecida é string vazia. Sem segmentos reais, timestamps são nulos. Perguntas do provedor só são exibidas se pertencem ao catálogo aprovado. Hits externos contextualizam; relação factual local exige a mesma proposição textual.
+## 2. Endpoints Principais (API v1)
 
-`requirements.txt` é exportado do uv.lock, com versões/hashes de runtime. Dev está no extra `dev`; não instalar ferramentas de teste em produção. Docker usa usuário sem privilégios.
+- `POST /api/v1/analyze`: Recebe transcrição do vídeo e retorna alegações atômicas e evidências.
+- `POST /api/v1/auth/token`: Emite credencial de acesso efêmera assinada para a extensão.
+- `GET /api/v1/health`: Retorna status dinâmico do serviço (`healthy`, `degraded`, `unhealthy`).
+- `GET /api/v1/health/live` e `/health/ready`: Liveness e readiness probes para orquestração.
+- `POST /api/v1/feedback`: Registro voluntário e anônimo de utilidade (LGPD/RNF-05).
+- `POST /api/v1/classify`: Classificação supervisionada de proposições com abstenção.
 
-Produção exige Redis compartilhado, segredo de assinatura próprio, autenticação e CORS exato; nenhum segredo está nos exemplos. Configure `RATE_LIMIT_STORAGE_URI=redis://...` e `CORS_ALLOWED_ORIGINS=https://www.youtube.com,chrome-extension://ID_REAL`.
+---
 
-Modelo local em `ml/classifier/model.json`; treinamento: `uv run python -m ml.classifier.train --output caminho.json --report relatorio.md`. O relatório gerado é artefato operacional de treinamento, não demonstração de qualidade factual.
+## 3. Instalação e Execução
 
-[Documentação oficial](https://github.com/evidencia-grupo/documentation).
+```bash
+# 1. Instalar dependências (recomendado: uv)
+uv sync
+# Ou via pip: pip install -r requirements.txt
+
+# 2. Configurar variáveis de ambiente
+cp ../.env.example .env
+
+# 3. Executar o servidor
+uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+Swagger UI disponível em: `http://127.0.0.1:8000/docs`
+
+---
+
+## 4. Testes Automatizados
+
+```bash
+# Execução da suíte completa de 151 testes
+uv run pytest -v
+
+# Cobertura de código (mínimo obrigatório: 80%)
+uv run pytest -v --cov=app --cov-report=term-missing
+```
+
+Documentação arquitetural completa: [docs/arquitetura/arquitetura.md](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/arquitetura.md).

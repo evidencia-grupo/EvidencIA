@@ -51,7 +51,7 @@ def test_health_check_dynamic_status():
     response = client.get("/api/v1/health")
     assert response.status_code == 200
     data = response.json()
-    assert data["status"] in ("operational", "degraded")
+    assert data["status"] in ("healthy", "degraded", "unhealthy")
     assert "llmConnector" in data["services"]
     assert "classifier" in data["services"]
     assert "searchConnector" in data["services"]

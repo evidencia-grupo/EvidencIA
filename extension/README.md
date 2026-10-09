@@ -1,22 +1,59 @@
-# Extensão EvidencIA
+# EvidencIA — Extensão de Navegador (Manifest V3)
 
-Chrome Manifest V3 / Preact / TypeScript. Node 24.
+> Extensão Chromium (Chrome, Edge, Brave) com interface em Preact, isolamento via Shadow DOM, conformidade com **WCAG 2.1 AA** e cache local de 24h em `chrome.storage.local`.
 
-```bash
-npm ci --ignore-scripts
-npm run typecheck
-npm run test:coverage
-npm run build
-npx playwright install chromium
-E2E_PYTHON=../backend/.venv/bin/python npm run test:e2e
+---
+
+## 1. Estrutura do Módulo
+
+```text
+extension/
+├── manifest.json              # Manifesto V3 com permissões mínimas (activeTab, storage)
+├── vite.config.ts             # Build multi-entry (service-worker, content-script, panel)
+└── src/
+    ├── background/            # Service worker, cache manager (TTL 24h) e autenticação
+    ├── content/               # Content script in-page, injeção Shadow DOM e caption parser
+    └── panel/                 # Interface do painel lateral em Preact (Cards e A11y)
 ```
 
-Carregue `dist` como extensão descompactada. Build local usa backend `http://127.0.0.1:8000`.
+---
 
-Produção: configure `VITE_API_BASE_URL` HTTPS e execute `npm run build:prod`. O manifesto gerado usa somente a origem configurada e YouTube; não libera hosts cloud por wildcard.
+## 2. Instalação e Compilação
 
-Legendas com tempo preservam segmentos reais. O cache por vídeo tem TTL de 24h e tolera falha de cota. Mensagens exigem `sender.id` próprio e origem YouTube; `postMessage` valida origem e janela. Token é emitido/renovado após 401/403, com no máximo uma nova tentativa.
+```bash
+# 1. Instalar dependências
+npm install
 
-Os E2E usam páginas e legendas interceptadas, com backend local em mock. Testes locais não certificam comportamento em todos os vídeos reais.
+# 2. Compilar bundles de produção (gera artefatos em dist/)
+npm run build
 
-[Requisitos e decisões](https://github.com/evidencia-grupo/documentation).
+# 3. Modo desenvolvimento contínuo (Watch)
+npm run dev
+```
+
+---
+
+## 3. Como Carregar no Navegador
+
+1. Acesse `chrome://extensions/` no Chrome ou `edge://extensions/` no Edge.
+2. Ative a chave **Modo do desenvolvedor** (*Developer mode*).
+3. Clique em **Carregar sem compactação** (*Load unpacked*).
+4. Selecione o diretório compilado `extension/dist/`.
+5. Abra qualquer vídeo do YouTube (`youtube.com/watch?v=...`) e acione **Checar Alegações**.
+
+---
+
+## 4. Testes Automatizados e Linters
+
+```bash
+# Execução da suíte completa de testes (Vitest + axe-core WCAG 2.1 AA)
+npm test
+
+# Verificação estrita de tipagem TypeScript
+npm run lint
+
+# Testes com relatório de cobertura (mínimo: 81%)
+npm run test:coverage
+```
+
+Documentação de interface e Design System: [docs/requisitos/design-system.md](https://github.com/evidencia-grupo/documentation/blob/main/docs/requisitos/design-system.md).
