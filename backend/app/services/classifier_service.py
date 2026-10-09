@@ -64,8 +64,8 @@ class ClassifierService:
             tone = "scientific_cautious"
 
         verdict_map = {
-            "fake": "Falso / Desinformação",
-            "true": "Verdadeiro / Fato",
+            "fake": "Padrão linguístico associado à classe fake",
+            "true": "Padrão linguístico associado à classe true",
             "unverified": "Sem evidência conclusiva (Abstenção)",
         }
 

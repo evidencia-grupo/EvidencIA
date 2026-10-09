@@ -45,9 +45,9 @@ def main() -> None:
     claims = load_jsonl(claims_path)
     candidates = load_jsonl(candidates_path)
 
-    print(f"==================================================")
-    print(f"EvidencIA — Avaliação Empírica de Recuperação")
-    print(f"==================================================")
+    print("==================================================")
+    print("EvidencIA — Avaliação Empírica de Recuperação")
+    print("==================================================")
     print(f"Total de Alegações carregadas: {len(claims)}")
     print(f"Total de Pares Candidatos avaliados: {len(candidates)}")
 
@@ -61,6 +61,15 @@ def main() -> None:
         print("Consulte 'evaluation/annotation-guide.md' para o protocolo de rotulação humana.")
         sys.exit(0)
 
+    if len(annotated) != len(candidates):
+        print("Status: PENDING_COMPLETE_ANNOTATION; métricas não calculadas com rótulos parciais.")
+        sys.exit(0)
+    for candidate in annotated:
+        if not isinstance(candidate.get("rank"), int) or candidate["rank"] < 1:
+            raise ValueError("rank deve ser inteiro positivo")
+        if candidate["human_relevance"] not in (0, 1, 2):
+            raise ValueError("human_relevance deve ser 0, 1 ou 2")
+    print("Escopo: Recall e nDCG no pool anotado; não comprovam recall no corpus completo.")
     # Cálculo real para quando anotado por humanos
     print(f"\nAmostras anotadas por humanos: {len(annotated)}")
     by_claim: dict[str, list[dict]] = {}
@@ -88,8 +97,8 @@ def main() -> None:
         else:
             first_rank = relevant_ranks[0]
             reciprocal_ranks.append(1.0 / first_rank)
-            recall_at_5.append(1.0 if any(r <= 5 for r in relevant_ranks) else 0.0)
-            recall_at_10.append(1.0 if any(r <= 10 for r in relevant_ranks) else 0.0)
+            recall_at_5.append(sum(r <= 5 for r in relevant_ranks) / len(relevant_ranks))
+            recall_at_10.append(sum(r <= 10 for r in relevant_ranks) / len(relevant_ranks))
 
             # Cálculo de nDCG@5
             dcg = 0.0
@@ -97,9 +106,10 @@ def main() -> None:
             ideal_rels = sorted([p.get("human_relevance", 0) for p in sorted_pairs], reverse=True)[:5]
             for i, rel in enumerate(ideal_rels):
                 idcg += (2**rel - 1) / math.log2(i + 2)
-            for i, p in enumerate(sorted_pairs[:5]):
-                rel = p.get("human_relevance", 0)
-                dcg += (2**rel - 1) / math.log2(i + 2)
+            for p in sorted_pairs:
+                if p["rank"] <= 5:
+                    rel = p.get("human_relevance", 0)
+                    dcg += (2**rel - 1) / math.log2(p["rank"] + 1)
             ndcg_at_5.append(dcg / idcg if idcg > 0 else 0.0)
 
         # False Match Rate: predição 'supports' ou 'contradicts' com relevância 0 ou divergência de postura
@@ -119,7 +129,7 @@ def main() -> None:
     fmr = false_matches / max(len(annotated), 1)
     ier = insufficient_evidence_count / total_queries
 
-    print(f"\nMétricas de IR & Stance Consolidadas:")
+    print("\nMétricas de IR & Stance Consolidadas:")
     print(f"  Recall@5:                   {r5:.4f}")
     print(f"  Recall@10:                  {r10:.4f}")
     print(f"  MRR:                        {mrr:.4f}")

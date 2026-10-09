@@ -34,13 +34,15 @@ async def test_unique_atomic_claims_with_individual_questions_and_temporal_conte
     provider.extract_claims = AsyncMock(return_value=[Claim(id="duplicate", text="A população aumentou em 2021."), Claim(id="duplicate", text="O PIB diminuiu em 2021.")])
     provider.generate_reflection = AsyncMock(side_effect=lambda claims, evidence: [f"Que fontes ajudam a investigar {claims[0].text}?", "Qual era o período estudado?", "Que dados independentes existem?"])
     with patch("app.services.fact_checker.get_provider", return_value=provider), patch("app.services.fact_checker.brazilian_fact_matcher.find_match", return_value=None), patch("app.services.fact_checker.fact_check_client.search_claims", new_callable=AsyncMock, return_value=[]):
-        result = await FactCheckerService().analyze(request())
+        sample = request()
+        sample.transcript = "A população aumentou em 2021. O PIB diminuiu em 2021. " * 2
+        result = await FactCheckerService().analyze(sample)
     assert len({claim.id for claim in result.claims}) == 2
     assert [claim.text for claim in result.claims] == ["A população aumentou em 2021.", "O PIB diminuiu em 2021."]
     for claim in result.claims:
         assert claim.uncertainty == "insufficient_evidence"
         assert claim.temporalContext.videoPublishedAt == "2021-04-15"
-        assert claim.text in claim.reflectionQuestions[0]
+        assert claim.reflectionQuestions == FactCheckerService.FALLBACK_REFLECTION_QUESTIONS
     assert all(len(call.args[0]) == 1 for call in provider.generate_reflection.call_args_list)
     AnalyzeResponse.model_validate(result.model_dump())
     with pytest.raises(ValidationError):

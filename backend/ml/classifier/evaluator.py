@@ -12,6 +12,8 @@ def train_test_split(
     seed: int = 42,
 ) -> Tuple[List[TrainingSample], List[TrainingSample]]:
     """Divide o dataset de forma estratificada preservando proporções de classe."""
+    if not 0 < test_size < 1:
+        raise ValueError("test_size deve estar entre 0 e 1")
     rng = random.Random(seed)
     fakes = [s for s in samples if s.label == "fake"]
     trues = [s for s in samples if s.label == "true"]
@@ -19,8 +21,8 @@ def train_test_split(
     rng.shuffle(fakes)
     rng.shuffle(trues)
 
-    n_test_fakes = int(len(fakes) * test_size)
-    n_test_trues = int(len(trues) * test_size)
+    n_test_fakes = min(len(fakes) - 1, max(1, int(len(fakes) * test_size))) if len(fakes) > 1 else 0
+    n_test_trues = min(len(trues) - 1, max(1, int(len(trues) * test_size))) if len(trues) > 1 else 0
 
     test_samples = fakes[:n_test_fakes] + trues[:n_test_trues]
     train_samples = fakes[n_test_fakes:] + trues[n_test_trues:]
@@ -76,7 +78,7 @@ def evaluate_model(
                     accepted_correct += 1
 
         acceptance_rate = (accepted_total / total) if total > 0 else 0.0
-        precision_at_tau = (accepted_correct / accepted_total) if accepted_total > 0 else 1.0
+        precision_at_tau = (accepted_correct / accepted_total) if accepted_total > 0 else None
         abstention_rate = 1.0 - acceptance_rate
 
         acceptance_curve.append({
@@ -85,8 +87,8 @@ def evaluate_model(
             "total_count": total,
             "acceptance_rate_pct": round(acceptance_rate * 100, 1),
             "abstention_rate_pct": round(abstention_rate * 100, 1),
-            "precision_on_accepted_pct": round(precision_at_tau * 100, 1),
-            "error_rate_on_accepted_pct": round((1.0 - precision_at_tau) * 100, 1),
+            "precision_on_accepted_pct": round(precision_at_tau * 100, 1) if precision_at_tau is not None else None,
+            "error_rate_on_accepted_pct": round((1.0 - precision_at_tau) * 100, 1) if precision_at_tau is not None else None,
         })
 
     return {
@@ -136,7 +138,7 @@ def generate_markdown_report(metrics: Dict[str, Any], cv_metrics: Optional[Dict[
         f"| **Verdadeiro / Fato** | {c['true']['precision'] * 100:.1f}% | {c['true']['recall'] * 100:.1f}% | {c['true']['f1'] * 100:.1f}% |",
         "",
         "## 4. Análise de Limiares de Aceitação (Curva de Decisão e Confiança)",
-        "> **Conceito de Governança:** O modelo adota calibração com limiar mínimo de confiança $\\tau$. Quando a confiança probabilística é inferior ao limiar estipulado, o modelo **absteve-se de emitir veredito unilateral** e encaminha a alegação para o modo *Evidence-First* (verificação manual por checagens oficiais rastreáveis).",
+        "> **Conceito de Governança:** O modelo adota abstenção por limiar de score; probabilidades não foram calibradas empiricamente. O limiar mínimo é $\\tau$. Quando a confiança probabilística é inferior ao limiar estipulado, o modelo **absteve-se de emitir veredito unilateral** e encaminha a alegação para o modo *Evidence-First* (verificação manual por checagens oficiais rastreáveis).",
         "",
         "| Limiar ($\\tau$) | Predições Aceitas | Taxa de Aceitação (%) | Taxa de Abstenção (%) | Precisão nos Aceitos (%) | Taxa de Erro nos Aceitos (%) |",
         "|:---:|:---:|:---:|:---:|:---:|:---:|",
@@ -144,14 +146,14 @@ def generate_markdown_report(metrics: Dict[str, Any], cv_metrics: Optional[Dict[
 
     for row in metrics["acceptance_curve"]:
         lines.append(
-            f"| **{row['threshold']:.2f}** | {row['accepted_count']} / {row['total_count']} | {row['acceptance_rate_pct']:.1f}% | {row['abstention_rate_pct']:.1f}% | **{row['precision_on_accepted_pct']:.1f}%** | {row['error_rate_on_accepted_pct']:.1f}% |"
+            f"| **{row['threshold']:.2f}** | {row['accepted_count']} / {row['total_count']} | {row['acceptance_rate_pct']:.1f}% | {row['abstention_rate_pct']:.1f}% | **{row['precision_on_accepted_pct'] if row['precision_on_accepted_pct'] is not None else 'N/A'}%** | {row['error_rate_on_accepted_pct'] if row['error_rate_on_accepted_pct'] is not None else 'N/A'}% |"
         )
 
     lines.extend([
         "",
         "## 5. Recomendação Operacional para Produção",
-        "- **Limiar Recomendado ($\\tau = 0.65$ ou $0.70$):** Oferece o equilíbrio ideal entre alta cobertura e margem mínima de erro.",
-        "- **Garantia Evidence-First:** Nenhuma decisão automatizada substitui a apresentação de fontes auditadas; alegações com score abaixo do limiar mantêm o estado de neutralidade investigativa.",
+        "- **Limiar:** Deve ser escolhido em validação separada, de acordo com o custo do erro; não otimizar no conjunto de teste.",
+        "- **Limitação:** Rótulos são padrões do corpus local; as métricas não demonstram veracidade factual de alegações externas. Nenhuma taxa é definida quando zero predições são aceitas.",
     ])
 
     return "\n".join(lines)

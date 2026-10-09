@@ -22,7 +22,7 @@ export function isAnalysis(value: unknown, videoId: string): value is AnalyzeRes
     typeof data.channelName === "string" &&
     data.channelName.trim().length > 0 &&
     typeof data.publishedAt === "string" &&
-    Number.isFinite(Date.parse(data.publishedAt)) &&
+    (data.publishedAt === "" || Number.isFinite(Date.parse(data.publishedAt))) &&
     Number.isFinite(data.processingTimeMs) &&
     data.processingTimeMs >= 0 &&
     Array.isArray(data.limitations) &&
@@ -34,7 +34,9 @@ export function isAnalysis(value: unknown, videoId: string): value is AnalyzeRes
         claim.id.trim().length > 0 &&
         typeof claim.text === "string" &&
         claim.text.trim().length > 0 &&
-        (claim.reflectionQuestions === undefined ||
+        [claim.timestampStart, claim.timestampEnd].every(t => t == null || (typeof t === "number" && Number.isFinite(t) && t >= 0)) &&
+        (claim.timestampStart == null || claim.timestampEnd == null || claim.timestampEnd >= claim.timestampStart) &&
+        (claim.reflectionQuestions == null ||
           (Array.isArray(claim.reflectionQuestions) &&
             claim.reflectionQuestions.length === 3 &&
             claim.reflectionQuestions.every((question) => typeof question === "string" && question.trim().length > 0))) &&

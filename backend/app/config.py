@@ -32,11 +32,17 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "qwen2.5:3b"
     OLLAMA_TIMEOUT_SECONDS: float = Field(15.0, gt=0, le=15, allow_inf_nan=False)
 
-    RATE_LIMIT_MAX_PER_MINUTE: int = 60
-    CORS_ALLOWED_ORIGINS: str = "*"
+    RATE_LIMIT_MAX_PER_MINUTE: int = Field(60, ge=1)
+    RATE_LIMIT_STORAGE_URI: str = "memory://"
+    MAX_REQUEST_BODY_BYTES: int = Field(524288, ge=1024, le=10485760)
+    CORS_ALLOWED_ORIGINS: str = "https://www.youtube.com,chrome-extension://*"
 
     AUTH_SECRET: str = "dev_evidencia_secret_key_change_in_production"
     REQUIRE_AUTH: bool = False
+
+    def is_production(self) -> bool:
+        return any((value or "").strip().lower() in ("production", "prod", "staging")
+                   for value in (self.ENV, self.ENVIRONMENT, self.APP_ENV, self.NODE_ENV))
 
     model_config = {
         "env_file": (

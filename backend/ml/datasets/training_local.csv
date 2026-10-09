@@ -1,0 +1,140 @@
+id,text,label,category,source_declared,provenance_status,split
+local-0001,O governo anunciou redução de impostos para pequenas empresas segundo relatório oficial do Ministério da Economia.,true,economia,Fake.br (NILC/USP),local_label_external_origin_not_verified,test
+local-0002,Cientistas descobriram que tomar café cura o câncer em três dias sem precisar de tratamento médico.,fake,saúde,Fake.br (NILC/USP),local_label_external_origin_not_verified,train
+local-0003,Estudo publicado na Nature comprova eficácia de vacina contra dengue com 90% de proteção.,true,saúde,Fake.br (NILC/USP),local_label_external_origin_not_verified,test
+local-0004,Presidente assinou decreto que proíbe uso de celular em escolas públicas a partir de 2026.,true,educação,Fake.br (NILC/USP),local_label_external_origin_not_verified,train
+local-0005,Água oxigenada diluída cura COVID-19 instantaneamente segundo médico famoso.,fake,saúde,Fake.br (NILC/USP),local_label_external_origin_not_verified,train
+local-0006,"IBGE divulga que desemprego caiu para 6,9% no terceiro trimestre de 2026.",true,economia,Fake.br (NILC/USP),local_label_external_origin_not_verified,train
+local-0007,Chip implantado em vacinas rastreia cidadãos pelo 5G conforme documento secreto vazado.,fake,tecnologia,Fake.br (NILC/USP),local_label_external_origin_not_verified,train
+local-0008,"Banco Central manteve taxa Selic em 10,5% ao ano após reunião do Copom.",true,economia,Fake.br (NILC/USP),local_label_external_origin_not_verified,train
+local-0009,Cientistas criaram pílula que elimina necessidade de dormir completamente.,fake,ciência,Fake.br (NILC/USP),local_label_external_origin_not_verified,train
+local-0010,Nova lei aprovada pelo Congresso garante seguro-desemprego por até 24 meses.,true,política,Fake.br (NILC/USP),local_label_external_origin_not_verified,test
+local-0011,Chá de casca de banana cura diabetes e zera a glicose no sangue em 3 dias,fake,saúde,FactChecks.br (Agência Lupa),local_label_external_origin_not_verified,test
+local-0012,Consumir água morna com limão pela manhã neutraliza o pH do corpo e previne infecções virais,fake,saúde,FactChecks.br (Aos Fatos),local_label_external_origin_not_verified,train
+local-0013,Vacinas passam por três fases de ensaios clínicos prévios antes de aprovação definitiva pela Anvisa,true,ciência,FactChecks.br (UOL Confere),local_label_external_origin_not_verified,train
+local-0014,O Brasil registrou balança comercial recorde com liderança de exportações do agronegócio e energia,true,economia,FactChecks.br (G1 Fato ou Fake),local_label_external_origin_not_verified,train
+local-0015,Mistura de bicarbonato e vinagre elimina 100% de bactérias e substitui antibióticos convencionais,fake,saúde,FactChecks.br (Agência Lupa),local_label_external_origin_not_verified,test
+local-0016,O desmatamento na Amazônia monitorado pelo sistema Prodes/INPE utiliza imagens de satélite calibradas,true,ciência,FactChecks.br (Aos Fatos),local_label_external_origin_not_verified,train
+local-0017,O Pix cobra taxa oculta de cinco por cento sobre transferências entre pessoas físicas,fake,economia,FactChecks.br (Boatos.org),local_label_external_origin_not_verified,test
+local-0018,O programa Estação SUS e a atenção primária promovem saúde e prevenção de doenças nos municípios brasileiros,true,saúde,FactChecks.br (Ministério da Saúde / Fiocruz),local_label_external_origin_not_verified,test
+local-0019,Atendimento médico e vacinação no SUS são universais e 100% gratuitos para qualquer cidadão,true,saúde,FactChecks.br (G1 Fato ou Fake),local_label_external_origin_not_verified,train
+local-0020,"O SUS passará a cobrar taxa de atendimento em consultas, exames especializados e procedimentos cirúrgicos",fake,saúde,FactChecks.br (Agência Lupa),local_label_external_origin_not_verified,train
+local-0021,Ministério da Saúde cancelou a distribuição de medicamentos gratuitos do programa Farmácia Popular,fake,saúde,FactChecks.br (Aos Fatos),local_label_external_origin_not_verified,train
+local-0022,Vacina contra a dengue Qdenga teve segurança e eficácia comprovadas e aprovadas pela Anvisa antes do SUS,true,saúde,FactChecks.br (UOL Confere),local_label_external_origin_not_verified,train
+local-0023,Vacina da dengue aplicada no SUS foi proibida pela Anvisa por causar mutações genéticas e doenças graves,fake,saúde,FactChecks.br (Agência Lupa),local_label_external_origin_not_verified,train
+local-0024,Ivermectina cura e previne a dengue e a febre amarela com eficácia clínica comprovada,fake,saúde,FactChecks.br (Boatos.org),local_label_external_origin_not_verified,train
+local-0025,Suco de inhame cura dengue hemorrágica e aumenta plaquetas em poucas horas,fake,saúde,FactChecks.br (G1 Fato ou Fake),local_label_external_origin_not_verified,train
+local-0026,Cloroquina e hidroxicloroquina são recomendadas pela OMS como tratamento eficaz para COVID-19,fake,saúde,FactChecks.br (Agência Lupa),local_label_external_origin_not_verified,train
+local-0027,Vacinas de RNA mensageiro alteram o DNA humano e inserem microchips rastreáveis no organismo,fake,ciência,FactChecks.br (Aos Fatos),local_label_external_origin_not_verified,train
+local-0028,Vacina contra poliomielite causa paralisia infantil nas crianças imunizadas,fake,saúde,FactChecks.br (Boatos.org),local_label_external_origin_not_verified,test
+local-0029,Brasil perdeu certificado de eliminação do sarampo após queda nas taxas de cobertura vacinal,true,saúde,FactChecks.br (G1 Fato ou Fake),local_label_external_origin_not_verified,train
+local-0030,Prática regular de atividade física e alimentação equilibrada reduzem o risco de doenças crônicas e cardiovasculares,true,saúde,FactChecks.br (Ministério da Saúde / Fiocruz),local_label_external_origin_not_verified,train
+local-0031,Bolsa Família cancela o benefício de quem arruma emprego formal de carteira assinada imediatamente,fake,economia,FactChecks.br (G1 Fato ou Fake),local_label_external_origin_not_verified,test
+local-0032,Urnas eletrônicas brasileiras realizam votação e apuração sem conexão física ou sem fio com a internet,true,ciência,FactChecks.br (Aos Fatos),local_label_external_origin_not_verified,train
+local-0033,Prova de vida do INSS passou a ser feita por cruzamento automático de dados do governo sem ida obrigatória ao banco,true,economia,FactChecks.br (G1 Fato ou Fake),local_label_external_origin_not_verified,train
+local-0034,"Ozonioterapia cura câncer, autismo e doenças degenerativas sem necessidade de medicamentos",fake,saúde,FactChecks.br (Agência Lupa),local_label_external_origin_not_verified,train
+local-0035,Aquecimento global e elevação da temperatura média global são causados por emissão antrópica de gases estufa,true,ciência,FactChecks.br (Aos Fatos),local_label_external_origin_not_verified,test
+local-0036,Chá milagroso de folhas de graviola elimina tumores cancerígenos sem quimioterapia ou cirurgia.,fake,saúde,Fake.br,local_label_external_origin_not_verified,test
+local-0037,Gargarejo com água morna e vinagre destrói o vírus antes de atingir os pulmões.,fake,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0038,Uso contínuo de máscaras de proteção provoca hipóxia e envenenamento por gás carbônico.,fake,saúde,FactChecks.br,local_label_external_origin_not_verified,test
+local-0039,Comer alho cru pela manhã com água fervente previne completamente qualquer infecção por gripe.,fake,saúde,Fake.br,local_label_external_origin_not_verified,train
+local-0040,Vacinas da infância contêm mercúrio em doses tóxicas que causam transtorno do espectro autista.,fake,saúde,FactChecks.br,local_label_external_origin_not_verified,test
+local-0041,Gotas de óleo de orégano diluído curam sinusite bacteriana em menos de duas horas.,fake,saúde,Fake.br,local_label_external_origin_not_verified,train
+local-0042,Transfusão de sangue de pessoas vacinadas transmite anticorpos alterados geneticamente.,fake,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0043,Beber água gelada após as refeições solidifica gorduras e causa infarto fulminante.,fake,saúde,Fake.br,local_label_external_origin_not_verified,train
+local-0044,Aplicar pasta de dente em queimaduras de segundo grau regenera a pele instantaneamente.,fake,saúde,Fake.br,local_label_external_origin_not_verified,train
+local-0045,Inalar vapor de eucalipto com álcool cura bronquite e asma crônica.,fake,saúde,Fake.br,local_label_external_origin_not_verified,train
+local-0046,"A vacina tríplice viral protege eficazmente contra sarampo, caxumba e rubéola.",true,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0047,O controle da hipertensão arterial reduz significativamente o risco de acidente vascular cerebral.,true,saúde,FactChecks.br,local_label_external_origin_not_verified,test
+local-0048,Antibióticos atuam exclusivamente contra bactérias e não têm efeito contra infecções causadas por vírus.,true,saúde,FactChecks.br,local_label_external_origin_not_verified,test
+local-0049,Lavar as mãos com água e sabão por 20 segundos reduz a transmissão de patógenos respiratórios.,true,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0050,O tabagismo ativo é a principal causa evitável de câncer de pulmão e doenças cardiovasculares.,true,saúde,FactChecks.br,local_label_external_origin_not_verified,test
+local-0051,A prática regular de exercícios físicos melhora a sensibilidade à insulina em pacientes com diabetes.,true,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0052,O aleitamento materno exclusivo é recomendado pela OMS até os seis meses de vida da criança.,true,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0053,A mamografia de rastreamento periódica auxilia no diagnóstico precoce do câncer de mama.,true,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0054,A dengue é transmitida pela picada da fêmea do mosquito Aedes aegypti infectada pelo vírus.,true,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0055,O Sistema Único de Saúde garante atendimento médico integral e distribuição gratuita de insulina.,true,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0056,Governo federal confiscará todas as contas poupança a partir do próximo mês.,fake,economia,Fake.br,local_label_external_origin_not_verified,train
+local-0057,Nota de duzentos reais deixará de circular e perderá o valor de compra imediatamente.,fake,economia,FactChecks.br,local_label_external_origin_not_verified,train
+local-0058,Receita Federal cobra taxa compulsória de dez por cento sobre qualquer chave Pix cadastrada.,fake,economia,FactChecks.br,local_label_external_origin_not_verified,train
+local-0059,Bancos anunciam encerramento de agências e bloqueio automático de cartões de débito.,fake,economia,Fake.br,local_label_external_origin_not_verified,train
+local-0060,Moeda digital oficial do Brasil substituirá o dinheiro físico e cancelará cédulas em circulação.,fake,economia,FactChecks.br,local_label_external_origin_not_verified,train
+local-0061,O Índice Nacional de Preços ao Consumidor Amplo (IPCA) é a medida oficial da inflação no Brasil.,true,economia,FactChecks.br,local_label_external_origin_not_verified,train
+local-0062,O Comitê de Política Monetária (Copom) do Banco Central define a taxa básica de juros Selic.,true,economia,FactChecks.br,local_label_external_origin_not_verified,test
+local-0063,O Fundo Garantidor de Créditos assegura depósitos bancários até o limite de 250 mil reais por CPF.,true,economia,FactChecks.br,local_label_external_origin_not_verified,train
+local-0064,O Produto Interno Bruto mede a soma de todos os bens e serviços finais produzidos no país.,true,economia,FactChecks.br,local_label_external_origin_not_verified,test
+local-0065,O salário mínimo nacional é reajustado anualmente com base em índices de inflação e legislação vigente.,true,economia,FactChecks.br,local_label_external_origin_not_verified,train
+local-0066,A Terra é plana e as imagens de satélite são projeções geradas por computação gráfica da NASA.,fake,ciência,Fake.br,local_label_external_origin_not_verified,train
+local-0067,Eclipse solar recente foi causado por dispositivo artificial construído para bloquear radiação.,fake,ciência,Fake.br,local_label_external_origin_not_verified,train
+local-0068,Antenas de telecomunicação 5G emitem radiação ionizante capaz de destruir pássaros em voo.,fake,ciência,Fake.br,local_label_external_origin_not_verified,train
+local-0069,Mudanças climáticas são um boato criado para impedir o desenvolvimento industrial de países pobres.,fake,ciência,FactChecks.br,local_label_external_origin_not_verified,train
+local-0070,Vacas alimentadas com capim transgênico produzem leite fosforescente tóxico para consumo.,fake,ciência,Fake.br,local_label_external_origin_not_verified,train
+local-0071,A teoria da gravitação universal e a relatividade geral explicam a dinâmica dos corpos celestes.,true,ciência,FactChecks.br,local_label_external_origin_not_verified,train
+local-0072,O efeito estufa é um fenômeno natural essencial para manter a temperatura habitável do planeta.,true,ciência,FactChecks.br,local_label_external_origin_not_verified,train
+local-0073,A fotossíntese realizada por plantas e fitoplâncton consome dióxido de carbono e libera oxigênio.,true,ciência,FactChecks.br,local_label_external_origin_not_verified,train
+local-0074,Fósseis catalogados por paleontólogos evidenciam a evolução biológica e a extinção de espécies antigas.,true,ciência,FactChecks.br,local_label_external_origin_not_verified,train
+local-0075,A camada de ozônio na estratosfera filtra os raios ultravioleta mais prejudiciais emitidos pelo Sol.,true,ciência,FactChecks.br,local_label_external_origin_not_verified,train
+local-0076,Urnas eletrônicas contêm voto impresso secreto em chip escondido que altera os resultados.,fake,política,FactChecks.br,local_label_external_origin_not_verified,train
+local-0077,Constituição Federal de 1988 foi revogada por decisão monocrática de tribunal internacional.,fake,política,Fake.br,local_label_external_origin_not_verified,test
+local-0078,Censo do IBGE pede senhas bancárias e números de cartões de crédito dos moradores entrevistados.,fake,sociedade,FactChecks.br,local_label_external_origin_not_verified,test
+local-0079,Todas as eleições municipais foram canceladas definitivamente por portaria ministerial.,fake,política,Fake.br,local_label_external_origin_not_verified,train
+local-0080,Passaporte brasileiro deixará de ser aceito em viagens internacionais para a América do Sul.,fake,sociedade,Fake.br,local_label_external_origin_not_verified,test
+local-0081,O voto no Brasil é obrigatório para cidadãos alfabetizados entre 18 e 70 anos de idade.,true,política,FactChecks.br,local_label_external_origin_not_verified,train
+local-0082,A Constituição de 1988 consagrou os direitos fundamentais e a tripartição dos poderes da República.,true,política,FactChecks.br,local_label_external_origin_not_verified,train
+local-0083,O Supremo Tribunal Federal é o guardião da Constituição e atua como corte de última instância.,true,política,FactChecks.br,local_label_external_origin_not_verified,train
+local-0084,O Código de Trânsito Brasileiro estabelece normas e penalidades para condutores em vias terrestres.,true,sociedade,FactChecks.br,local_label_external_origin_not_verified,train
+local-0085,A Lei de Acesso à Informação garante aos cidadãos o direito de obter dados de órgãos públicos.,true,política,FactChecks.br,local_label_external_origin_not_verified,train
+local-0086,Banco Central anunciou cobrança de taxa de quinze por cento sobre transferências via Pix entre pessoas físicas.,fake,economia,FactChecks.br,local_label_external_origin_not_verified,train
+local-0087,O Banco Central do Brasil lançou o sistema Pix para liquidação instantânea de pagamentos em 2020.,true,economia,FactChecks.br,local_label_external_origin_not_verified,train
+local-0088,Banco Central encerra operações de dinheiro físico e confisca cédulas em circulação a partir do próximo mês.,fake,economia,FactChecks.br,local_label_external_origin_not_verified,train
+local-0089,O Banco Central do Brasil define diretrizes para funcionamento e segurança de instituições financeiras no país.,true,economia,FactChecks.br,local_label_external_origin_not_verified,train
+local-0090,Receita Federal e Banco Central bloquearão contas com movimentações via Pix acima de duzentos reais sem declaração prévia.,fake,economia,FactChecks.br,local_label_external_origin_not_verified,train
+local-0091,O Banco Central não cobra taxa de transferências por Pix realizadas entre pessoas físicas para operações de rotina.,true,economia,FactChecks.br,local_label_external_origin_not_verified,train
+local-0092,Beneficiários do Bolsa Família que receberem Pix de qualquer valor terão o benefício cancelado no mesmo dia.,fake,sociedade,FactChecks.br,local_label_external_origin_not_verified,train
+local-0093,O programa Bolsa Família prevê condicionalidades de saúde e educação como frequência escolar e acompanhamento nutricional.,true,sociedade,FactChecks.br,local_label_external_origin_not_verified,train
+local-0094,Governo federal liberou saque extraordinário de cinco mil reais no Bolsa Família mediante cadastro em link externo.,fake,sociedade,FactChecks.br,local_label_external_origin_not_verified,train
+local-0095,O Bolsa Família transfere renda mensalmente para famílias em situação de vulnerabilidade inscritas no Cadastro Único.,true,sociedade,FactChecks.br,local_label_external_origin_not_verified,train
+local-0096,Bolsa Família foi cancelado em todo o país após corte orçamentário aprovado pelo Congresso.,fake,sociedade,FactChecks.br,local_label_external_origin_not_verified,train
+local-0097,O Cadastro Único é gerido pelo governo federal em parceria com as prefeituras para identificar famílias de baixa renda.,true,sociedade,FactChecks.br,local_label_external_origin_not_verified,test
+local-0098,Vacina contra poliomielite causa paralisia infantil nas crianças imunizadas e foi proibida em países desenvolvidos.,fake,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0099,A vacina contra a poliomielite erradicou a transmissão do poliovírus selvagem no território brasileiro desde 1989.,true,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0100,Vacina da febre amarela foi contaminada em laboratório e transmite a doença para adultos saudáveis.,fake,saúde,FactChecks.br,local_label_external_origin_not_verified,test
+local-0101,A vacinação contra a febre amarela é indicada e segura para residentes e viajantes que se deslocam para áreas de recomendação.,true,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0102,Vacina contra a dengue Qdenga teve registro cassado pela Anvisa por falta de comprovação de eficácia.,fake,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0103,A vacina contra dengue Qdenga foi aprovada pela Anvisa e incorporada ao Programa Nacional de Imunizações para faixas prioritárias.,true,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0104,Vacina da gripe comum altera o código genético humano e enfraquece a imunidade natural contra outras infecções.,fake,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0105,A vacina contra a gripe é atualizada anualmente com base nas cepas do vírus influenza em circulação.,true,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0106,Estudos científicos globais com milhões de crianças comprovaram a inexistência de relação entre vacinas e o desenvolvimento de autismo.,true,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0107,Tribunal Superior Eleitoral proibiu uso de caneta esferográfica azul na cabine de votação sob pena de anulação.,fake,política,FactChecks.br,local_label_external_origin_not_verified,test
+local-0108,O Tribunal Superior Eleitoral coordena a realização das eleições e a fiscalização de contas de campanhas partidárias.,true,política,FactChecks.br,local_label_external_origin_not_verified,train
+local-0109,As urnas eletrônicas brasileiras funcionam sem conexão à internet e imprimem o boletim de urna ao final da votação.,true,política,FactChecks.br,local_label_external_origin_not_verified,train
+local-0110,Se mais de cinquenta por cento dos votos forem nulos a eleição inteira é anulada e novo pleito é convocado.,fake,política,FactChecks.br,local_label_external_origin_not_verified,train
+local-0111,Os votos nulos e brancos não são considerados no cálculo dos votos válidos e não anulam a eleição.,true,política,FactChecks.br,local_label_external_origin_not_verified,train
+local-0112,Chá de casca de banana com canela cura diabetes e elimina a necessidade de aplicação de insulina em três dias.,fake,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0113,"A diabetes mellitus é uma condição crônica controlada com acompanhamento médico, alimentação equilibrada, atividade física e medicamentos.",true,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0114,Água morna com limão em jejum alcaliniza o sangue e impede a proliferação de vírus e células de câncer.,fake,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0115,"O organismo humano possui mecanismos fisiológicos e renais próprios que mantêm o pH sanguíneo estável entre 7,35 e 7,45.",true,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0116,Máscaras cirúrgicas e de proteção respiratória são seguras e amplamente utilizadas por profissionais de saúde há décadas sem causar hipóxia.,true,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0117,Infecções respiratórias virais afetam as células do trato respiratório e não são eliminadas por gargarejos com vinagre ou sal.,true,saúde,FactChecks.br,local_label_external_origin_not_verified,test
+local-0118,Ivermectina e hidroxicloroquina são comprovadamente eficazes para prevenir qualquer forma de dengue ou virose.,fake,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0119,"A dengue é tratada principalmente com hidratação rigorosa e analgésicos adequados, sob orientação médica para evitar complicações.",true,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0120,Inalar vapor de álcool com eucalipto cura pneumonia e substitui internação hospitalar.,fake,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0121,A pneumonia bacteriana exige tratamento com antibióticos específicos prescritos por profissional de saúde.,true,saúde,FactChecks.br,local_label_external_origin_not_verified,test
+local-0122,Imagens de satélite da NASA e do INPE sobre o desmatamento na Amazônia são geradas artificialmente para prejudicar o agronegócio.,fake,ciência,FactChecks.br,local_label_external_origin_not_verified,train
+local-0123,O sistema Prodes do INPE utiliza imagens de satélites com sensoriamento remoto óptico para mapear o desmatamento na Amazônia Legal.,true,ciência,FactChecks.br,local_label_external_origin_not_verified,train
+local-0124,A radiação emitida por antenas de telefonia celular e 5G é não-ionizante e não possui energia suficiente para danificar o DNA celular.,true,ciência,FactChecks.br,local_label_external_origin_not_verified,train
+local-0125,Cientistas internacionais comprovaram que a Terra é plana e que fotos espaciais são ilustrações computadorizadas.,fake,ciência,FactChecks.br,local_label_external_origin_not_verified,train
+local-0126,Fotografias espaciais e a observação de constelações e eclipses comprovam a esfericidade do planeta Terra.,true,ciência,FactChecks.br,local_label_external_origin_not_verified,train
+local-0127,Tempestades e inundações recentes foram causadas artificialmente por transmissões da estação eletromagnética HAARP.,fake,ciência,FactChecks.br,local_label_external_origin_not_verified,train
+local-0128,"Eventos climáticos extremos decorrem da dinâmica atmosférica, fatores oceânicos como El Niño e alterações no clima global.",true,ciência,FactChecks.br,local_label_external_origin_not_verified,train
+local-0129,Militares assumiram o controle das cortes superiores após decreto extraordinário secreto do Ministério da Defesa.,fake,política,FactChecks.br,local_label_external_origin_not_verified,train
+local-0130,As Forças Armadas são instituições nacionais permanentes que atuam sob a autoridade suprema do Presidente da República e da Constituição.,true,política,FactChecks.br,local_label_external_origin_not_verified,train
+local-0131,Todos os cidadãos que utilizarem redes sociais sem cadastro governamental terão suas contas bancárias bloqueadas por lei emergencial.,fake,sociedade,FactChecks.br,local_label_external_origin_not_verified,train
+local-0132,A Lei Geral de Proteção de Dados (LGPD) garante aos cidadãos o controle e a privacidade de seus dados pessoais.,true,sociedade,FactChecks.br,local_label_external_origin_not_verified,train
+local-0133,Vacinas da infância causam autismo e transtornos de desenvolvimento devido a conservantes com mercúrio.,fake,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0134,"Uso contínuo de máscaras faciais de proteção provoca hipóxia, asfixia celular e envenenamento por dióxido de carbono.",fake,saúde,FactChecks.br,local_label_external_origin_not_verified,train
+local-0135,Gargarejo com vinagre e sal destrói o vírus no trato respiratório superior antes que ele atinja os pulmões.,fake,saúde,FactChecks.br,local_label_external_origin_not_verified,test
+local-0136,Tribunal internacional em Haia revogou a Constituição Federal do Brasil e destituiu os três poderes.,fake,política,FactChecks.br,local_label_external_origin_not_verified,train
+local-0137,Antenas de tecnologia 5G emitem radiação perigosa que mata aves em pleno voo e transmite vírus biológicos.,fake,ciência,FactChecks.br,local_label_external_origin_not_verified,train
+local-0138,"A Constituição de 1988 é a norma jurídica fundamental do Brasil e define a organização dos poderes Executivo, Legislativo e Judiciário.",true,política,FactChecks.br,local_label_external_origin_not_verified,train
+local-0139,Urnas eletrônicas realizam apuração em servidor secreto e foram programadas para desviar votos de candidatos.,fake,política,FactChecks.br,local_label_external_origin_not_verified,train

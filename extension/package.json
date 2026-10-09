@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite build --watch --mode development",
-    "build": "tsc && vite build && node -e \"require('fs').copyFileSync('manifest.json', 'dist/manifest.json')\"",
-    "build:prod": "tsc && vite build --mode production && node -e \"require('fs').copyFileSync('manifest.json', 'dist/manifest.json')\"",
+    "build": "tsc && vite build --mode development",
+    "build:prod": "tsc && vite build --mode production",
     "package": "npm run build && node -e \"const { execSync } = require('child_process'); execSync('cd dist && zip -r ../extension.zip .'); console.log('extension.zip gerado com sucesso!');\"",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
@@ -21,14 +21,14 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
-    "@preact/preset-vite": "^2.8.2",
+    "@preact/preset-vite": "2.10.6",
     "@types/chrome": "^0.0.268",
-    "@types/node": "^20.14.0",
-    "@vitest/coverage-v8": "^1.6.1",
+    "@types/node": "^24.0.0",
+    "@vitest/coverage-v8": "5.0.3",
     "axe-core": "^4.13.0",
     "jsdom": "^24.1.3",
     "typescript": "^5.4.5",
-    "vite": "^5.2.11",
-    "vitest": "^1.6.0"
+    "vite": "8.3.4",
+    "vitest": "5.0.3"
   }
 }

@@ -55,7 +55,7 @@ describe("cache-manager", () => {
     it("valida registro correto e íntegro", () => {
       const entry: LocalCacheEntry = {
         ...mockAnalysis,
-        timestamp: FIXED_NOW - 1000,
+        cacheVersion: 2, timestamp: FIXED_NOW - 1000,
         ttl: CACHE_TTL_MS,
       };
       expect(isValidCacheEntry(entry, "video-test", FIXED_NOW)).toBe(true);
@@ -64,7 +64,7 @@ describe("cache-manager", () => {
     it("valida registro íntegro quando ttl não foi explicitado (assume CACHE_TTL_MS)", () => {
       const entry = {
         ...mockAnalysis,
-        timestamp: FIXED_NOW - 1000,
+        cacheVersion: 2, timestamp: FIXED_NOW - 1000,
       };
       expect(isValidCacheEntry(entry, "video-test", FIXED_NOW)).toBe(true);
     });
@@ -72,7 +72,7 @@ describe("cache-manager", () => {
     it("rejeita expiração exatamente no limite de 24 horas (86400000 ms)", () => {
       const expiredAtLimit: LocalCacheEntry = {
         ...mockAnalysis,
-        timestamp: FIXED_NOW - 86400000,
+        cacheVersion: 2, timestamp: FIXED_NOW - 86400000,
         ttl: CACHE_TTL_MS,
       };
       expect(isValidCacheEntry(expiredAtLimit, "video-test", FIXED_NOW)).toBe(false);
@@ -81,7 +81,7 @@ describe("cache-manager", () => {
     it("aceita registro com 24 horas menos 1 milissegundo (86399999 ms)", () => {
       const validJustBeforeLimit: LocalCacheEntry = {
         ...mockAnalysis,
-        timestamp: FIXED_NOW - 86399999,
+        cacheVersion: 2, timestamp: FIXED_NOW - 86399999,
         ttl: CACHE_TTL_MS,
       };
       expect(isValidCacheEntry(validJustBeforeLimit, "video-test", FIXED_NOW)).toBe(true);
@@ -90,7 +90,7 @@ describe("cache-manager", () => {
     it("rejeita registro com timestamp no futuro", () => {
       const futureEntry: LocalCacheEntry = {
         ...mockAnalysis,
-        timestamp: FIXED_NOW + 1,
+        cacheVersion: 2, timestamp: FIXED_NOW + 1,
         ttl: CACHE_TTL_MS,
       };
       expect(isValidCacheEntry(futureEntry, "video-test", FIXED_NOW)).toBe(false);
@@ -101,7 +101,7 @@ describe("cache-manager", () => {
       (invalidTimestamp) => {
         const entry = {
           ...mockAnalysis,
-          timestamp: invalidTimestamp,
+          cacheVersion: 2, timestamp: invalidTimestamp,
           ttl: CACHE_TTL_MS,
         };
         expect(isValidCacheEntry(entry, "video-test", FIXED_NOW)).toBe(false);
@@ -112,7 +112,7 @@ describe("cache-manager", () => {
       const divergentEntry: LocalCacheEntry = {
         ...mockAnalysis,
         videoId: "outro-video",
-        timestamp: FIXED_NOW - 500,
+        cacheVersion: 2, timestamp: FIXED_NOW - 500,
         ttl: CACHE_TTL_MS,
       };
       expect(isValidCacheEntry(divergentEntry, "video-test", FIXED_NOW)).toBe(false);
@@ -127,7 +127,7 @@ describe("cache-manager", () => {
       // Sem título do vídeo
       expect(
         isValidCacheEntry(
-          { ...mockAnalysis, videoTitle: "", timestamp: FIXED_NOW - 100, ttl: CACHE_TTL_MS },
+          { ...mockAnalysis, videoTitle: "", cacheVersion: 2, timestamp: FIXED_NOW - 100, ttl: CACHE_TTL_MS },
           "video-test",
           FIXED_NOW
         )
@@ -136,7 +136,7 @@ describe("cache-manager", () => {
       // processingTimeMs inválido
       expect(
         isValidCacheEntry(
-          { ...mockAnalysis, processingTimeMs: -1, timestamp: FIXED_NOW - 100, ttl: CACHE_TTL_MS },
+          { ...mockAnalysis, processingTimeMs: -1, cacheVersion: 2, timestamp: FIXED_NOW - 100, ttl: CACHE_TTL_MS },
           "video-test",
           FIXED_NOW
         )
@@ -145,7 +145,7 @@ describe("cache-manager", () => {
       // analysisMode inválido
       expect(
         isValidCacheEntry(
-          { ...mockAnalysis, analysisMode: "invalido", timestamp: FIXED_NOW - 100, ttl: CACHE_TTL_MS },
+          { ...mockAnalysis, analysisMode: "invalido", cacheVersion: 2, timestamp: FIXED_NOW - 100, ttl: CACHE_TTL_MS },
           "video-test",
           FIXED_NOW
         )
@@ -156,14 +156,14 @@ describe("cache-manager", () => {
       const customTtl = 5000;
       const entry: LocalCacheEntry = {
         ...mockAnalysis,
-        timestamp: FIXED_NOW - 5000,
+        cacheVersion: 2, timestamp: FIXED_NOW - 5000,
         ttl: customTtl,
       };
       expect(isValidCacheEntry(entry, "video-test", FIXED_NOW)).toBe(false);
 
       const entryStillValid: LocalCacheEntry = {
         ...mockAnalysis,
-        timestamp: FIXED_NOW - 4999,
+        cacheVersion: 2, timestamp: FIXED_NOW - 4999,
         ttl: customTtl,
       };
       expect(isValidCacheEntry(entryStillValid, "video-test", FIXED_NOW)).toBe(true);
@@ -172,7 +172,7 @@ describe("cache-manager", () => {
     it.each([0, -500, NaN, Infinity, null, "86400000", CACHE_TTL_MS + 1])(
       "rejeita TTL corrompido ou superior a 24 horas: %s",
       (ttl) => {
-        expect(isValidCacheEntry({ ...mockAnalysis, timestamp: FIXED_NOW - 1000, ttl }, "video-test", FIXED_NOW)).toBe(false);
+        expect(isValidCacheEntry({ ...mockAnalysis, cacheVersion: 2, timestamp: FIXED_NOW - 1000, ttl }, "video-test", FIXED_NOW)).toBe(false);
       }
     );
 
@@ -182,7 +182,7 @@ describe("cache-manager", () => {
     it("recupera resultado válido presente no storage", async () => {
       const validEntry: LocalCacheEntry = {
         ...mockAnalysis,
-        timestamp: FIXED_NOW - 10000,
+        cacheVersion: 2, timestamp: FIXED_NOW - 10000,
         ttl: CACHE_TTL_MS,
       };
       storage.get.mockResolvedValue({ "video-test": validEntry });
@@ -202,7 +202,7 @@ describe("cache-manager", () => {
     it("descarta e remove registro expirado (lazy eviction)", async () => {
       const expiredEntry: LocalCacheEntry = {
         ...mockAnalysis,
-        timestamp: FIXED_NOW - 86400000,
+        cacheVersion: 2, timestamp: FIXED_NOW - 86400000,
         ttl: CACHE_TTL_MS,
       };
       storage.get.mockResolvedValue({ "video-test": expiredEntry });
@@ -230,7 +230,7 @@ describe("cache-manager", () => {
       const divergent: LocalCacheEntry = {
         ...mockAnalysis,
         videoId: "outro-id",
-        timestamp: FIXED_NOW - 100,
+        cacheVersion: 2, timestamp: FIXED_NOW - 100,
         ttl: CACHE_TTL_MS,
       };
       storage.get.mockResolvedValue({ "video-test": divergent });
@@ -243,7 +243,7 @@ describe("cache-manager", () => {
     it("não falha se remoção do storage rejeitar", async () => {
       const expiredEntry: LocalCacheEntry = {
         ...mockAnalysis,
-        timestamp: FIXED_NOW - 86400000,
+        cacheVersion: 2, timestamp: FIXED_NOW - 86400000,
         ttl: CACHE_TTL_MS,
       };
       storage.get.mockResolvedValue({ "video-test": expiredEntry });
@@ -267,7 +267,7 @@ describe("cache-manager", () => {
       expect(storage.set).toHaveBeenCalledWith({
         "video-test": {
           ...mockAnalysis,
-          timestamp: FIXED_NOW,
+          cacheVersion: 2, timestamp: FIXED_NOW,
           ttl: CACHE_TTL_MS,
         },
       });
@@ -287,4 +287,9 @@ describe("cache-manager", () => {
       await expect(saveCachedResult(mockAnalysis, "video-test", FIXED_NOW)).resolves.toBeUndefined();
     });
   });
+});
+
+
+it("invalida caches da versão anterior à correção factual", () => {
+  expect(isValidCacheEntry({ ...mockAnalysis, timestamp: Date.now() - 1, ttl: CACHE_TTL_MS }, "video-test")).toBe(false);
 });

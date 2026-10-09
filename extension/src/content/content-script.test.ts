@@ -87,7 +87,8 @@ it("ausência de legendas encerra carregamento; erro inesperado tem fallback", a
   vi.mocked(detectCaptionTracks).mockResolvedValueOnce({ tracks: [] });
   button().click(); await flush();
   expect(button().textContent).toContain("Sem legendas");
-  expect(sendMessage).not.toHaveBeenCalled();
+  expect(sendMessage).toHaveBeenCalledWith({ type: "GET_CACHE", videoId: "video" });
+  expect(sendMessage.mock.calls.some(([message]) => message.type === "ANALYZE_VIDEO")).toBe(false);
   expect(extractCaptionsFromPage).not.toHaveBeenCalled();
   expect(post).toHaveBeenCalledWith({ type: "NO_CAPTIONS" }, "https://extension.test");
   panelMessage("RETRY_ANALYSIS");
@@ -142,7 +143,7 @@ it("ausência de legendas em até 1s ignora cache lento e encerra carregamento",
   expect(post).toHaveBeenCalledWith({ type: "NO_CAPTIONS" }, "https://extension.test");
   expect(button().getAttribute("aria-disabled")).toBe("false");
   expect(button().classList.contains("evidencia-loading")).toBe(false);
-  expect(sendMessage).not.toHaveBeenCalled();
+  expect(sendMessage).toHaveBeenCalledWith({ type: "GET_CACHE", videoId: "video" });
 });
 it("falha de detecção de legendas permite recuperação pelo painel", async () => {
   await import("./content-script"); panelMessage("PANEL_READY");
@@ -150,7 +151,7 @@ it("falha de detecção de legendas permite recuperação pelo painel", async ()
   vi.mocked(detectCaptionTracks).mockRejectedValueOnce(new Error("Falha temporária"));
   button().click(); await flush();
   expect(post).toHaveBeenCalledWith({ type: "ANALYSIS_ERROR", error: "Não conseguimos checar este vídeo agora. Tente de novo em instantes." }, "https://extension.test");
-  expect(sendMessage).not.toHaveBeenCalled();
+  expect(sendMessage.mock.calls.every(([message]) => message.type === "GET_CACHE")).toBe(true);
   panelMessage("RETRY_ANALYSIS"); await flush();
   expect(button().textContent).toContain("Checagem concluída");
 });

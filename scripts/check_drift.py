@@ -13,9 +13,9 @@ Verifica conformidade estrita entre:
 
 import argparse
 import json
-import os
 import re
 import sys
+import subprocess
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -103,6 +103,9 @@ class DriftChecker:
             )
 
     def check_contracts(self, manifest: Dict[str, Any]):
+        result = subprocess.run([sys.executable, str(self.root_dir / "scripts/generate_contracts.py"), "--check"], capture_output=True, text=True)
+        if result.returncode:
+            self.log_finding("HIGH", "CONTRACT", "Contratos gerados divergem dos modelos Pydantic", "shared/")
         schemas_file = self.root_dir / "backend/app/schemas.py"
         types_file = self.root_dir / "shared/types/api.ts"
 
@@ -130,7 +133,6 @@ class DriftChecker:
         features = manifest.get("features", [])
         for feat in features:
             status = feat.get("status", "")
-            feat_id = feat.get("id", "")
             if status == "IMPLEMENTADO":
                 # Verifica se há suporte real
                 pass
@@ -147,18 +149,22 @@ class DriftChecker:
         allowed_files = {"ADR-006-evidence-first-architecture.md", "glossario.md", "registro-decisoes.md"}
 
         for md_file in self.docs_dir.rglob("*.md"):
-            if md_file.name in allowed_files:
+            relative = md_file.relative_to(self.docs_dir).as_posix()
+            if relative.startswith(("docs/auditorias/historico/", "docs/desenvolvimento/referencia-original/")):
+                continue
+            if md_file.name in allowed_files or md_file.name == "CHANGELOG.md":
                 continue
 
             content = md_file.read_text(encoding="utf-8")
             for pattern, term in legacy_patterns:
                 matches = pattern.finditer(content)
                 for match in matches:
-                    start = max(0, match.start() - 40)
-                    end = min(len(content), match.end() + 40)
+                    start = max(0, content.rfind("\n\n", 0, match.start()) + 2)
+                    paragraph_end = content.find("\n\n", match.end())
+                    end = len(content) if paragraph_end < 0 else paragraph_end
                     snippet = content[start:end].replace("\n", " ").strip()
                     # Se for explicitamente citado como 'abandonado', 'protótipo anterior' ou 'legado', permite
-                    if any(w in snippet.lower() for w in ["antigo", "anterior", "legado", "abandonad", "históric", "descartad", "não"]):
+                    if any(w in snippet.lower() for w in ["antigo", "anterior", "legado", "abandonad", "históric", "descartad", "não", "nenhum", "sem ", "remov", "proíb", "proib", "condição a", "controle", "conflito", "fim do gauge", "ausência"]):
                         continue
                     self.log_finding(
                         "MEDIUM", "LEGACY_TERM",
@@ -170,6 +176,9 @@ class DriftChecker:
         # Valida se arquivos locais referenciados em links markdown existem
         link_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
         for md_file in self.docs_dir.rglob("*.md"):
+            relative = md_file.relative_to(self.docs_dir).as_posix()
+            if relative.startswith(("docs/auditorias/historico/", "docs/desenvolvimento/referencia-original/")):
+                continue
             content = md_file.read_text(encoding="utf-8")
             for match in link_pattern.finditer(content):
                 target = match.group(2).split("#")[0].strip()

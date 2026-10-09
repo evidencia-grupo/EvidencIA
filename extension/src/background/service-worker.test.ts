@@ -29,12 +29,12 @@ beforeEach(() => {
 });
 afterEach(() => { vi.useRealTimers(); vi.clearAllMocks(); });
 it("recupera cache recente sem rede", async () => {
-  storage.get.mockResolvedValue({ video: { ...data, timestamp: Date.now() - 1 } });
+  storage.get.mockResolvedValue({ video: { ...data, cacheVersion: 2, timestamp: Date.now() - 1 } });
   expect(await handleAnalyzeRequest(payload)).toMatchObject(data);
   expect(fetch).not.toHaveBeenCalled();
 });
 it.each([86400000, 86400001, -1, NaN])("descarta idade inválida/expirada %s", async age => {
-  storage.get.mockResolvedValue({ video: { ...data, timestamp: Date.now() - age } });
+  storage.get.mockResolvedValue({ video: { ...data, cacheVersion: 2, timestamp: Date.now() - age } });
   expect(await getCachedResult("video")).toBeNull();
   expect(storage.remove).toHaveBeenCalledWith("video");
 });
@@ -45,7 +45,7 @@ it("tolera falha de leitura e persistência", async () => {
 });
 it("salva apenas análise bem-sucedida com TTL de 24h", async () => {
   await handleAnalyzeRequest(payload);
-  expect(storage.set).toHaveBeenCalledWith({ video: { ...data, timestamp: Date.now(), ttl: 86400000 } });
+  expect(storage.set).toHaveBeenCalledWith({ video: { ...data, cacheVersion: 2, timestamp: Date.now(), ttl: 86400000 } });
 });
 it("não persiste erro HTTP", async () => {
   vi.mocked(fetch).mockResolvedValue({ ok: false, status: 503 } as Response);
@@ -86,7 +86,10 @@ it("mensagens autorizadas recebem sucesso, erros e cache miss", async () => {
   expect(response).toHaveBeenCalledWith({ success: false, error: "Offline" });
   expect(listener({ type: "UNKNOWN" }, sender, response)).toBeUndefined();
   response.mockClear();
-  listener({ type: "GET_CACHE" }, { ...sender, id: "other" }, response);
+  const reads = storage.get.mock.calls.length;
+  expect(listener({ type: "GET_CACHE" }, { ...sender, id: "other" }, response)).toBeUndefined();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(storage.get).toHaveBeenCalledTimes(reads);
   listener({ type: "GET_CACHE" }, { ...sender, url: "https://evil.test" }, response);
   expect(response).not.toHaveBeenCalled();
 });
@@ -186,3 +189,30 @@ it("processa mensagens GET_CAPTION_TRACKS e OPEN_TAB no listener", async () => {
   expect(response).toHaveBeenCalledWith({ success: true, data: { id: 123 } });
 });
 
+
+it.each([401, 403])("emite/renova token após HTTP %s e repete uma vez", async status => {
+  vi.mocked(fetch)
+    .mockResolvedValueOnce({ ok: false, status } as Response)
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ token: "fresh-test-token" }) } as Response)
+    .mockResolvedValueOnce({ ok: true, json: async () => data } as Response);
+  expect(await handleAnalyzeRequest(payload)).toEqual(data);
+  expect(fetch).toHaveBeenCalledTimes(3);
+  expect(fetch).toHaveBeenNthCalledWith(2, expect.stringContaining("/auth/token"), expect.anything());
+  const headers = vi.mocked(fetch).mock.calls[2][1]?.headers as Headers;
+  expect(headers.get("Authorization")).toBe("Bearer fresh-test-token");
+});
+it("não entra em loop quando o token renovado continua rejeitado", async () => {
+  vi.mocked(fetch)
+    .mockResolvedValueOnce({ ok: false, status: 401 } as Response)
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ token: "fresh-test-token" }) } as Response)
+    .mockResolvedValueOnce({ ok: false, status: 403 } as Response);
+  await expect(handleAnalyzeRequest(payload)).rejects.toThrow("HTTP 403");
+  expect(fetch).toHaveBeenCalledTimes(3);
+});
+it("falha explícita quando a emissão do token não está disponível", async () => {
+  vi.mocked(fetch)
+    .mockResolvedValueOnce({ ok: false, status: 401 } as Response)
+    .mockResolvedValueOnce({ ok: false, status: 503 } as Response);
+  await expect(handleAnalyzeRequest(payload)).rejects.toThrow("credencial");
+  expect(fetch).toHaveBeenCalledTimes(2);
+});

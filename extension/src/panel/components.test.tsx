@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { REFLECTION_QUESTIONS } from "../../../shared/reflection-catalog";
 import { describe, it, expect, vi } from "vitest";
 import { render } from "preact";
 import { act } from "preact/test-utils";
@@ -22,22 +23,18 @@ describe("ReflectionQuestions Component", () => {
 
   it("renderiza lista numerada de perguntas reflexivas para pensamentos críticos", () => {
     const container = document.createElement("div");
-    const questions = [
-      "Quais fontes comprovam essa afirmação?",
-      "Existe algum conflito de interesse no conteúdo?",
-      "Os dados apresentados são recentes?",
-    ];
+    const questions = [...REFLECTION_QUESTIONS.slice(0, 3)];
     render(<ReflectionQuestions questions={questions} />, container);
 
     expect(container.querySelector(".reflection-title")?.textContent).toContain("Perguntas para Reflexão Crítica");
     const items = container.querySelectorAll(".reflection-item");
     expect(items.length).toBe(3);
-    expect(items[0].textContent).toContain("1.Quais fontes comprovam essa afirmação?");
-    expect(items[1].textContent).toContain("2.Existe algum conflito de interesse no conteúdo?");
-    expect(items[2].textContent).toContain("3.Os dados apresentados são recentes?");
+    expect(items[0].textContent).toContain(REFLECTION_QUESTIONS[0]);
+    expect(items[1].textContent).toContain(REFLECTION_QUESTIONS[1]);
+    expect(items[2].textContent).toContain(REFLECTION_QUESTIONS[2]);
   });
 
-  it("mantém todas as perguntas quando recebe mais de três", () => {
+  it("usa catálogo seguro quando recebe perguntas extras não aprovadas", () => {
     const container = document.createElement("div");
 
     const questions = [
@@ -51,10 +48,9 @@ describe("ReflectionQuestions Component", () => {
 
     const items = container.querySelectorAll(".reflection-item");
 
-    expect(items).toHaveLength(4);
-    expect(items[3].textContent).toContain(
-      "Há informações adicionais que deveriam ser consideradas?"
-    );
+    expect(items).toHaveLength(3);
+    expect(items[0].textContent).toContain(REFLECTION_QUESTIONS[0]);
+    expect(container.textContent).not.toContain("Há informações adicionais que deveriam ser consideradas?");
   });
 });
 
@@ -509,3 +505,12 @@ describe("FeedbackSection Component", () => {
   });
 });
 
+
+
+it("não exibe referências livres de cache ou mensagem antiga", () => {
+  const container = document.createElement("div");
+  render(<ReflectionQuestions questions={["https://inventado.example/prova de 2099 comprova isso?", "A?", "B?"]} />, container);
+  expect(container.textContent).not.toContain("inventado.example");
+  expect(container.textContent).not.toContain("2099");
+  expect(container.querySelectorAll(".reflection-item")).toHaveLength(3);
+});

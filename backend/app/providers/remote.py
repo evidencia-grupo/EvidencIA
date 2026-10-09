@@ -50,7 +50,7 @@ class RemoteLLMProvider(LLMProvider):
             "Responda estritamente em JSON: {\"claims\": [{\"text\": \"...\", \"search_query\": \"...\"}]}"
         )
         system_prompt += (
-            " Cada alegação deve conter uma única proposição verificável, preservando sujeitos, datas e qualificadores. "
+            " Cada text deve ser um trecho exato da transcrição, não uma paráfrase. Cada alegação deve conter uma única proposição verificável, preservando sujeitos, datas e qualificadores. "
             "Não invente fatos nem use o título como alegação. Ignore preferências, opiniões e saudações. "
             'Se não houver fatos verificáveis, retorne {"claims": []}. Não atribua notas ou vereditos ao vídeo.'
         )

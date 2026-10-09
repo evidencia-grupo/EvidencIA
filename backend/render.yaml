@@ -20,4 +20,10 @@ services:
       - key: LLM_TIMEOUT_SECONDS
         value: "15.0"
       - key: CORS_ALLOWED_ORIGINS
-        value: "*"
+        sync: false
+      - key: REQUIRE_AUTH
+        value: "true"
+      - key: AUTH_SECRET
+        sync: false
+      - key: RATE_LIMIT_STORAGE_URI
+        sync: false

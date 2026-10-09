@@ -14,6 +14,7 @@ from __future__ import annotations
 import re
 from typing import List
 from app.providers.base import LLMProvider
+from app.providers.reflection_catalog import REFLECTION_QUESTIONS
 from app.providers.types import Claim, Evidence
 
 ANALYSIS_MODE = "mock"
@@ -43,12 +44,7 @@ class MockLLMProvider(LLMProvider):
         """Retorna perguntas reflexivas padrão determinísticas sem inferência real."""
         if not claims:
             return []
-        claim_text = claims[0].text
-        return [
-            f'Quais fontes primárias ajudam a investigar a afirmação "{claim_text}"?',
-            "Que dados independentes permitem comparar as evidências desta alegação?",
-            "Como a data e o contexto desta afirmação influenciam sua interpretação?",
-        ]
+        return REFLECTION_QUESTIONS[:3].copy()
 
 
 # Compatibilidade com consumidores existentes.
