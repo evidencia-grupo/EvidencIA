@@ -45,7 +45,7 @@ async function setup(context: BrowserContext, id = "video", captions = true) {
         contentType: "text/html",
         body: `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Vídeo de teste - Checagem sob demanda</title></head><body>
         <main><h1 class="ytd-watch-metadata">Ciência</h1><div id="channel-name">Canal de testes</div><div id="above-the-fold"></div><div id="movie_player"></div><video></video><a href="#footer">Próximo</a></main>
-        <script>window.ytInitialPlayerResponse = {videoDetails:{videoId:new URLSearchParams(location.search).get('v')},captions:{playerCaptionsTracklistRenderer:{captionTracks:${captions ? JSON.stringify([{ baseUrl: "https://www.youtube.com/api/timedtext?v=" + id, languageCode: "pt" }]) : "[]"}}}};
+        <script>window.ytInitialPlayerResponse = {videoDetails:{videoId:new URLSearchParams(location.search).get('v'),shortDescription:'DESCRICAO NAO DITA NO VIDEO com conteúdo longo sobre política e economia que não pertence à legenda.'},captions:{playerCaptionsTracklistRenderer:{captionTracks:${captions ? JSON.stringify([{ baseUrl: "https://www.youtube.com/api/timedtext?v=" + id, languageCode: "pt" }]) : "[]"}}}};
         window.__evidencia_perf__ = {click:0, feedback:null, blocking:0};
         new PerformanceObserver(list => { for (const entry of list.getEntries()) window.__evidencia_perf__.blocking += Math.max(0,entry.duration-50); }).observe({type:'longtask',buffered:true});
         document.addEventListener('click', () => {
@@ -166,7 +166,7 @@ test("Checagem sob demanda: cache expirado é substituído e iframe frio recebe 
             evidence: [],
           },
         ],
-        cacheVersion: 2, timestamp: Date.now() - 86400000,
+        cacheVersion: 3, timestamp: Date.now() - 86400000,
         ttl: 86400000,
       },
     })
@@ -341,4 +341,40 @@ test("Checagem sob demanda: WCAG nos estados de carregamento, falha e classifica
     await audit(uncertainty);
   }
   await info.attach("axe-estados.json", { body: JSON.stringify(states), contentType: "application/json" });
+});
+
+async function captureAnalysisPayloads(worker: Worker) {
+  await worker.evaluate(() => {
+    const original = globalThis.fetch;
+    (globalThis as any).__analysisBodies = [];
+    globalThis.fetch = async (input, init) => {
+      if (String(input).includes("/api/v1/analyze") && typeof init?.body === "string") {
+        (globalThis as any).__analysisBodies.push(JSON.parse(init.body));
+      }
+      return original(input, init);
+    };
+  });
+}
+
+test("somente a legenda SRV3 chega ao backend, com seus timestamps reais", async ({ extension }) => {
+  await captureAnalysisPayloads(extension.worker);
+  const { button, panel } = await setup(extension.context);
+  await extension.context.route("https://www.youtube.com/api/timedtext**", route => route.fulfill({ contentType: "text/xml", body: `<timedtext><body><p t="300000" d="7000"><s>${transcript}</s></p></body></timedtext>` }));
+  await button.click();
+  await expect(panel.getByText(/Alegações Analisadas/)).toBeVisible();
+  const requests = await extension.worker.evaluate(() => (globalThis as any).__analysisBodies);
+  expect(requests).toHaveLength(1);
+  expect(requests[0].transcript).toBe(transcript);
+  expect(requests[0].transcript).not.toContain("DESCRICAO");
+  expect(requests[0].segments).toEqual([{ text: transcript, start: 300, duration: 7 }]);
+});
+
+test("legenda vazia com descrição longa não dispara análise", async ({ extension }) => {
+  await captureAnalysisPayloads(extension.worker);
+  const { button, page } = await setup(extension.context);
+  await extension.context.route("https://www.youtube.com/api/timedtext**", route => route.fulfill({ contentType: "text/xml", body: "<transcript></transcript>" }));
+  await button.click();
+  await expect(page.getByRole("status")).toContainText("Legendas indisponíveis");
+  await expect(page.getByRole("button", { name: "Sem legendas — tentar novamente" })).toBeVisible();
+  expect(await extension.worker.evaluate(() => (globalThis as any).__analysisBodies)).toHaveLength(0);
 });

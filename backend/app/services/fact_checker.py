@@ -158,6 +158,7 @@ class FactCheckerService:
                 claim_text = p_claim.text
                 evidence_list: List[Evidence] = []
                 uncertainty: UncertaintyState = "insufficient_evidence"
+                claim_temporal_ctx = temporal_ctx.model_copy(deep=True)
 
                 # Prioridade 1: Casamento direto com dataset curado FactChecks.br
                 matched = brazilian_fact_matcher.find_match(claim_text)
@@ -214,8 +215,8 @@ class FactCheckerService:
                         if ml_diag.get("heuristic_reasons"):
                             reasons = "; ".join(ml_diag["heuristic_reasons"])
                             ml_note = f"Análise linguística (ML): {reasons}"
-                            existing_note = temporal_ctx.note
-                            temporal_ctx = TemporalContext(
+                            existing_note = claim_temporal_ctx.note
+                            claim_temporal_ctx = TemporalContext(
                                 claimDate=temporal_ctx.claimDate,
                                 videoPublishedAt=temporal_ctx.videoPublishedAt,
                                 note=f"{existing_note} | {ml_note}" if existing_note else ml_note,
@@ -232,7 +233,7 @@ class FactCheckerService:
                         transcriptSnippet=snippet,
                         timestampStart=t_start,
                         timestampEnd=t_end,
-                        temporalContext=temporal_ctx,
+                        temporalContext=claim_temporal_ctx,
                         evidence=evidence_list,
                         uncertainty=uncertainty,
                         reflectionQuestions=[],
@@ -269,13 +270,10 @@ class FactCheckerService:
         # 5. Processamento no modo Evidence-Only (Fallback sem LLM)
         else:
             analysis_mode = "evidence_only"
-            retrieved = await asyncio.to_thread(retrieve_evidence, request.transcript)
             candidate_claims = extract_candidate_claims(request.transcript, max_claims=3)
-            if not candidate_claims:
-                whole_match = None if retrieved else brazilian_fact_matcher.find_match(request.transcript)
-                if retrieved or (whole_match and whole_match.get("evidence")):
-                    candidate_claims = [request.transcript]
             for index, text in enumerate(candidate_claims):
+                # Retrieve for this proposition; never share whole-video hits across claims.
+                retrieved = await asyncio.to_thread(retrieve_evidence, text)
                 matched = None if retrieved else brazilian_fact_matcher.find_match(text)
                 evidence_list = [evidence for _, evidence in retrieved]
                 if not evidence_list and matched and matched.get("evidence"):

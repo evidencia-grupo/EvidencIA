@@ -29,12 +29,12 @@ beforeEach(() => {
 });
 afterEach(() => { vi.useRealTimers(); vi.clearAllMocks(); });
 it("recupera cache recente sem rede", async () => {
-  storage.get.mockResolvedValue({ video: { ...data, cacheVersion: 2, timestamp: Date.now() - 1 } });
+  storage.get.mockResolvedValue({ video: { ...data, cacheVersion: 3, timestamp: Date.now() - 1 } });
   expect(await handleAnalyzeRequest(payload)).toMatchObject(data);
   expect(fetch).not.toHaveBeenCalled();
 });
 it.each([86400000, 86400001, -1, NaN])("descarta idade inválida/expirada %s", async age => {
-  storage.get.mockResolvedValue({ video: { ...data, cacheVersion: 2, timestamp: Date.now() - age } });
+  storage.get.mockResolvedValue({ video: { ...data, cacheVersion: 3, timestamp: Date.now() - age } });
   expect(await getCachedResult("video")).toBeNull();
   expect(storage.remove).toHaveBeenCalledWith("video");
 });
@@ -45,7 +45,7 @@ it("tolera falha de leitura e persistência", async () => {
 });
 it("salva apenas análise bem-sucedida com TTL de 24h", async () => {
   await handleAnalyzeRequest(payload);
-  expect(storage.set).toHaveBeenCalledWith({ video: { ...data, cacheVersion: 2, timestamp: Date.now(), ttl: 86400000 } });
+  expect(storage.set).toHaveBeenCalledWith({ video: { ...data, cacheVersion: 3, timestamp: Date.now(), ttl: 86400000 } });
 });
 it("não persiste erro HTTP", async () => {
   vi.mocked(fetch).mockResolvedValue({ ok: false, status: 503 } as Response);

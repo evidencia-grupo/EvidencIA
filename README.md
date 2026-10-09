@@ -60,4 +60,20 @@ A URL acima é ilustrativa; substitua pela origem provisionada. No backend de pr
 - `evaluation/`: dados de avaliação aguardando anotação humana.
 - `scripts/`: geração/checagem de contratos e avaliação.
 
-[Arquitetura, requisitos e decisões](https://github.com/evidencia-grupo/documentation). [Narrativas históricas migradas](https://github.com/evidencia-grupo/documentation/tree/codex/audit-remediation/docs/auditorias/historico/0ffe395). Prontidão científica e de produção depende de dados/licenças, infraestrutura e validação humana; resultados locais não a substituem.
+[Arquitetura, requisitos e decisões](https://github.com/evidencia-grupo/documentation). [Narrativas históricas migradas](https://github.com/evidencia-grupo/documentation/tree/main/docs/auditorias/historico/0ffe395). Prontidão científica e de produção depende de dados/licenças, infraestrutura e validação humana; resultados locais não a substituem.
+
+
+## Experimento de IA reproduzido
+
+[Fake.br e regressão logística calibrada](experiments/fakebr/README.md): notebook executado, código de reprodução, modelo `.pkl` e `.plk`, manifesto e partições. No teste de 1.088 notícias: acurácia 93,47% e macro-F1 0,9347. Esses números avaliam notícias históricas; não demonstram veracidade de vídeos ou relação com uma evidência. O modelo da API permanece um diagnóstico linguístico, subordinado às fontes.
+
+Para diagnosticar o ambiente sem mostrar credenciais:
+
+```bash
+backend/.venv/bin/python scripts/check_readiness.py
+backend/.venv/bin/python scripts/check_readiness.py --check-services
+```
+
+A segunda opção consulta os modelos Ollama e, quando disponível, a coleção Chroma local. A existência de uma chave não comprova validade ou quota. O modo mock continua disponível para desenvolvimento.
+
+A análise usa somente legendas. Descrição, tempos inventados e cache de versão anterior não entram na checagem. Sem legenda suficiente, a extensão permite tentar novamente e não envia uma análise.

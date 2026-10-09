@@ -172,7 +172,7 @@ async def test_extraction_failure_returns_vector_evidence(sample_request, record
         patch("app.services.fact_checker.brazilian_fact_matcher.find_match") as lexical,
     ):
         result = await FactCheckerService().analyze(sample_request)
-    search.assert_called_once_with(sample_request.transcript, k=5)
+    search.assert_called_once_with(result.claims[0].text, k=5)
     lexical.assert_not_called()
     provider.generate_reflection.assert_not_awaited()
     assert result.analysisMode == "evidence_only"
