@@ -55,10 +55,7 @@ def normalize_rating_to_status(rating_text: str) -> ClaimVerificationStatus:
     para um dos três status permitidos pelo contrato de dados: apoiada, contraditada ou inconclusiva.
     """
     clean_text = rating_text.lower().strip()
-    for keyword, status in RATING_MAP.items():
-        if keyword in clean_text:
-            return status
-    return "inconclusiva"
+    return RATING_MAP.get(clean_text, "inconclusiva")
 
 
 def extract_domain_from_url(url: str) -> str:
@@ -103,14 +100,14 @@ class FactCheckClient:
                 response = await client.get(self.base_url, params=params)
                 if response.status_code != 200:
                     logger.warning(
-                        f"Google Fact Check API respondeu com status {response.status_code}: {response.text}"
+                        "Google Fact Check API respondeu HTTP %s", response.status_code
                     )
                     return []
 
                 data = response.json()
                 return self.parse_claims_response(data, max_results=max_results)
         except Exception as exc:
-            logger.warning(f"Falha ao consultar Google Fact Check API ({str(exc)}); degradando com segurança.")
+            logger.warning("Google Fact Check indisponível (%s)", type(exc).__name__)
             return []
 
     def parse_claims_response(self, data: Dict, max_results: int = 3) -> List[Dict]:

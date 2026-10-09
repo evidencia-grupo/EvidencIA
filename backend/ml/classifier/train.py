@@ -19,7 +19,7 @@ def run_training(
     acceptance_threshold: float = 0.60,
 ) -> dict:
     print("=" * 70)
-    print("  EVIDENCIA ML — TREINAMENTO E CALIBRAÇÃO DO CLASSIFICADOR")
+    print("  EVIDENCIA ML — TREINAMENTO E AVALIAÇÃO DO CLASSIFICADOR")
     print("=" * 70)
 
     # 1. Carrega dados
@@ -56,7 +56,7 @@ def run_training(
     print("  | Limiar | Aceitas | Taxa Aceitação | Precisão nos Aceitos | Abstenção |")
     print("  |:------:|:-------:|:--------------:|:---------------------:|:---------:|")
     for r in metrics["acceptance_curve"]:
-        print(f"  |  {r['threshold']:.2f}  |  {r['accepted_count']:>2}/{r['total_count']:<2}  |     {r['acceptance_rate_pct']:>5.1f}%    |         {r['precision_on_accepted_pct']:>5.1f}%        |   {r['abstention_rate_pct']:>5.1f}%  |")
+        print(f"  |  {r['threshold']:.2f}  |  {r['accepted_count']:>2}/{r['total_count']:<2}  |     {r['acceptance_rate_pct']:>5.1f}%    |         {str(r['precision_on_accepted_pct']) if r['precision_on_accepted_pct'] is not None else 'N/A'}%        |   {r['abstention_rate_pct']:>5.1f}%  |")
     print("-" * 70)
 
     # 5. Salva artefato do modelo

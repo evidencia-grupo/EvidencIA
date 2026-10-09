@@ -11,6 +11,7 @@ dependencies = [
     "pydantic-settings>=2.2.0",
     "httpx>=0.27.0",
     "slowapi>=0.1.9",
+    "redis>=5.0",
 ]
 
 [project.optional-dependencies]
@@ -20,6 +21,8 @@ dev = [
     "pytest-cov>=7.0",
     "httpx2>=2.13.1",
     "ruff>=0.4.0",
+    "pyyaml>=6.0",
+    "jsonschema>=4.0",
 ]
 
 [dependency-groups]
@@ -29,6 +32,8 @@ dev = [
     "pytest-cov>=7.0",
     "httpx2>=2.13.1",
     "ruff>=0.4.0",
+    "pyyaml>=6.0",
+    "jsonschema>=4.0",
 ]
 
 [build-system]
@@ -37,7 +42,11 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["app*"]
+include = ["app*", "ml*"]
+
+[tool.setuptools.package-data]
+"ml.datasets" = ["*.json", "*.yaml"]
+"ml.classifier" = ["model.json"]
 
 [tool.ruff]
 target-version = "py312"

@@ -70,15 +70,16 @@ async def analyze_video(
     try:
         response = await fact_checker_service.analyze(payload)
         return response
-    except TimeoutError as te:
+    except TimeoutError:
         raise HTTPException(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            detail=str(te),
+            detail="Tempo limite da análise excedido.",
         )
     except Exception as exc:
+        logger.error("Análise indisponível (%s)", type(exc).__name__)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Falha ao consultar serviços upstream de IA e busca: {str(exc)}",
+            detail="Falha ao consultar serviços upstream de IA e busca.",
         )
 
 
@@ -138,7 +139,7 @@ async def health_check():
             pass
 
     is_mock = settings.LLM_PROVIDER == "mock"
-    overall_status = "degraded" if is_mock else ("operational" if fact_checker_service.provider else "down")
+    overall_status = "degraded" if is_mock else ("healthy" if fact_checker_service.provider else "unhealthy")
     llm_desc = "demo" if is_mock else ("operational" if fact_checker_service.provider else "not_initialized")
 
     return HealthResponse(

@@ -219,12 +219,12 @@ def test_brazilian_fact_matcher_heuristics():
 
     match_contra = brazilian_fact_matcher.find_match("Chá de casca de banana cura diabetes e zera a glicose")
     assert match_contra is not None
-    assert match_contra["relation"] == "contradicts"
+    assert match_contra["relation"] == "contextualizes"
     assert match_contra["evidence"].publisher == "Agência Lupa"
 
     match_apoiada = brazilian_fact_matcher.find_match("Vacinas passam por três fases de ensaios clínicos prévios antes de aprovação")
     assert match_apoiada is not None
-    assert match_apoiada["relation"] == "supports"
+    assert match_apoiada["relation"] == "contextualizes"
 
 
 @pytest.mark.asyncio

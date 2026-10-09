@@ -164,8 +164,8 @@ class TFIDFVectorizer:
             (term, freq) for term, freq in df_counter.items()
             if freq >= self.min_df
         ]
-        # Ordena por frequência decrescente
-        valid_items.sort(key=lambda x: x[1], reverse=True)
+        # Empates lexicais estáveis, independentes de PYTHONHASHSEED.
+        valid_items.sort(key=lambda x: (-x[1], x[0]))
         top_items = valid_items[:self.max_features]
 
         self.vocabulary_ = {term: idx for idx, (term, _) in enumerate(top_items)}

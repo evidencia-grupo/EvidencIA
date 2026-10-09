@@ -1,4 +1,4 @@
-"""Modelo de classificação supervisionada probabilística com calibração e limiares de aceitação."""
+"""Modelo de classificação supervisionada probabilística com abstenção e limiares de aceitação."""
 
 import json
 import math
@@ -8,9 +8,9 @@ from ml.classifier.features import TFIDFVectorizer
 
 
 class ClaimClassifier:
-    """Classificador estatístico probabilístico calibrado para detecção de desinformação em PT-BR.
+    """Classificador estatístico probabilístico para detecção de desinformação em PT-BR.
     
-    Implementa Naive Bayes Multinomial com calibração de log-odds e análise de limiares.
+    Implementa Naive Bayes Multinomial com scores normalizados e análise de limiares.
     100% determinístico, reproduzível e serializável sem dependências externas compiladas.
     """
 
@@ -124,7 +124,7 @@ class ClaimClassifier:
         return {"fake": prob_fake, "true": prob_true}
 
     def predict(self, text: str, threshold: Optional[float] = None) -> Dict[str, Any]:
-        """Realiza predição com calibração por limiar de aceitação.
+        """Realiza predição com abstenção por limiar de score.
         
         Retorna:
             - label: "fake", "true" ou "unverified" (se abaixo do limiar)
@@ -191,7 +191,7 @@ class ClaimClassifier:
         }
         os.makedirs(os.path.dirname(os.path.abspath(filepath)), exist_ok=True)
         with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+            json.dump(data, f, indent=2, ensure_ascii=False, sort_keys=True)
 
     @classmethod
     def load(cls, filepath: str) -> "ClaimClassifier":

@@ -148,7 +148,7 @@ export function ClaimCard({ claim, expanded = false, onSelect }: ClaimCardProps)
         </p>
       )}
 
-      {claim.timestampStart !== undefined && (
+      {typeof claim.timestampStart === "number" && Number.isFinite(claim.timestampStart) && (
         <div class="claim-timestamp-row" style={{ marginBottom: "8px" }}>
           <button
             type="button"

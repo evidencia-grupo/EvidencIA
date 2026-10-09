@@ -166,7 +166,7 @@ test("Checagem sob demanda: cache expirado é substituído e iframe frio recebe 
             evidence: [],
           },
         ],
-        timestamp: Date.now() - 86400000,
+        cacheVersion: 2, timestamp: Date.now() - 86400000,
         ttl: 86400000,
       },
     })

@@ -80,3 +80,6 @@ test-results/
 # Caches de modelos Hugging Face / sentence-transformers
 ~/.cache/huggingface/
 backend/.cache/
+
+# Saídas de avaliação executadas a partir dos notebooks
+work/

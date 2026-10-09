@@ -70,10 +70,8 @@ async def test_timestamps_and_snippet_extracted():
     )
     assert snippet is not None
     assert "chá cura diabetes" in snippet
-    assert t_start is not None
-    assert t_start > 0
-    assert t_end is not None
-    assert t_end > t_start
+    assert t_start is None
+    assert t_end is None  # No timing segments: never interpolate by character position.
 
 
 # =========================================================================

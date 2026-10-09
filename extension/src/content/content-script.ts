@@ -203,11 +203,17 @@ function injectTriggerBadge() {
     };
     try {
       const work = async () => {
+        const cachedPromise = chrome.runtime.sendMessage({ type: "GET_CACHE", videoId }).then(
+          data => ({ data, error: undefined }),
+          error => ({ data: undefined, error }),
+        );
         const tracks = await detectCaptionTracks(videoId, controller.signal);
         checkActive();
-        if (!tracks.tracks.length) return null;
-        const cached = await chrome.runtime.sendMessage({ type: "GET_CACHE", videoId });
+        if (!tracks.tracks.length) return null; // Never wait for slow cache when captions are absent.
+        const cacheResult = await cachedPromise;
         checkActive();
+        if (cacheResult.error) throw cacheResult.error;
+        const cached = cacheResult.data;
         if (cached?.success && cached.data) return cached.data;
         const captions = await extractCaptionsFromPage(videoId, controller.signal, tracks);
         checkActive();
@@ -219,6 +225,7 @@ function injectTriggerBadge() {
           uploadDate: captions.uploadDate,
           durationSeconds: captions.durationSeconds,
           transcript: captions.transcript,
+          ...(captions.segments ? { segments: captions.segments } : {}),
           language: captions.language,
         };
         const response = await chrome.runtime.sendMessage({ type: "ANALYZE_VIDEO", payload, deadline });

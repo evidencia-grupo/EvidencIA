@@ -6,6 +6,7 @@ import type { AnalyzeResponse, LocalCacheEntry } from "../../../shared/types/api
  * Rastreabilidade: ADR-003, RNF-01 e RNF-05.
  */
 export const CACHE_TTL_MS = 86400000;
+export const CACHE_VERSION = 2;
 
 /**
  * Valida minuciosamente um registro recuperado do chrome.storage.local:
@@ -21,6 +22,7 @@ export function isValidCacheEntry(entry: unknown, expectedVideoId: string, now =
     return false;
   }
   const candidate = entry as Partial<LocalCacheEntry>;
+  if (candidate.cacheVersion !== CACHE_VERSION) return false;
 
   // Validação estrita do timestamp: número finito, positivo e nunca no futuro
   if (
@@ -88,6 +90,7 @@ export async function saveCachedResult(data: AnalyzeResponse, videoId: string, n
   }
   const entry: LocalCacheEntry = {
     ...data,
+    cacheVersion: CACHE_VERSION,
     timestamp: now,
     ttl: CACHE_TTL_MS,
   };

@@ -1,17 +1,15 @@
+import { REFLECTION_QUESTIONS } from "../../../../shared/reflection-catalog";
+
 interface ReflectionQuestionsProps {
-  questions?: string[];
+  questions?: string[] | null;
   headingId?: string;
 }
 
-const fallbackQuestions = [
-  "Que evidências independentes poderiam ajudar a avaliar esta alegação?",
-  "Quais aspectos das fontes, como autoria, data e método, vale a pena verificar?",
-  "Que contexto ou evidência adicional ajudaria você a formar sua própria interpretação?",
-];
+const fallbackQuestions = REFLECTION_QUESTIONS.slice(0, 3);
 
 export function ReflectionQuestions({ questions, headingId = "reflection-heading" }: ReflectionQuestionsProps) {
   const visibleQuestions =
-    questions && questions.length >= 3
+    questions && questions.length === 3 && new Set(questions).size === 3 && questions.every(q => (REFLECTION_QUESTIONS as readonly string[]).includes(q))
       ? questions
       : fallbackQuestions;
 

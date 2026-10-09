@@ -3,6 +3,7 @@
 export interface ExtractedCaptions {
   videoId: string;
   transcript: string;
+  segments?: CaptionSegment[];
   language: string;
   videoTitle: string;
   channelName: string;
@@ -81,13 +82,11 @@ export function parseCaptionJson(jsonText: string): CaptionSegment[] {
         const raw = event.segs.map((segment) => segment.utf8 ?? "").join("");
         const text = sanitizeTranscriptText(raw.replace(/^\s*>>\s*/, ""));
 
-        if (!text) return null;
+        if (!text || typeof event.tStartMs !== "number" || typeof event.dDurationMs !== "number"
+          || !Number.isFinite(event.tStartMs) || !Number.isFinite(event.dDurationMs)
+          || event.tStartMs < 0 || event.dDurationMs < 0) return null;
 
-        return {
-          text,
-          start: (event.tStartMs ?? 0) / 1000,
-          duration: (event.dDurationMs ?? 0) / 1000,
-        };
+        return { text, start: event.tStartMs / 1000, duration: event.dDurationMs / 1000 };
       })
       .filter((segment): segment is CaptionSegment => segment !== null);
   } catch {
@@ -237,15 +236,20 @@ export async function extractCaptionsFromPage(
   }
 
   let transcript = "";
+  let segments: CaptionSegment[] = [];
   try {
     const text = await response.text();
     transcript = parseCaptionBody(text);
+    const timed = text.trimStart().startsWith("{") ? parseCaptionJson(text) : parseCaptionXml(text);
+    if (timed.length && timed.every(s => Number.isFinite(s.start) && s.start >= 0 && Number.isFinite(s.duration) && s.duration >= 0)
+      && sanitizeTranscriptText(timed.map(s => s.text).join(" ")) === transcript) segments = timed;
   } catch {
     transcript = "";
   }
 
   if (transcript.length < 50 && payload.metadata?.description && payload.metadata.description.length >= 50) {
     transcript = sanitizeTranscriptText(payload.metadata.description);
+    segments = [];
   }
 
   if (transcript.length < 50) {
@@ -255,6 +259,7 @@ export async function extractCaptionsFromPage(
   return {
     videoId,
     transcript,
+    ...(segments.length ? { segments } : {}),
     language: track.languageCode,
     videoTitle: payload.metadata?.videoTitle ?? document.title,
     channelName: payload.metadata?.channelName ?? document.querySelector("#channel-name")?.textContent?.trim() ?? "Canal YouTube",

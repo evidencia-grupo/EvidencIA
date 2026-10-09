@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { REFLECTION_QUESTIONS } from "../../../shared/reflection-catalog";
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import { render } from "preact";
 import { act } from "preact/test-utils";
@@ -185,7 +186,7 @@ it("avisos de carregamento, erro e falta de legendas não usam termos técnicos"
 });
 
 it("expande apenas evidências e perguntas da alegação selecionada sem score global", () => {
-  const other = { ...data.claims[0], id: "other", text: "Outra alegação", reflectionQuestions: ["Pergunta exclusiva 1?", "Pergunta exclusiva 2?", "Pergunta exclusiva 3?"], evidence: [{ ...data.claims[0].evidence[0], sourceId: "other-source", title: "Fonte exclusiva" }] };
+  const other = { ...data.claims[0], id: "other", text: "Outra alegação", reflectionQuestions: [...REFLECTION_QUESTIONS.slice(3)], evidence: [{ ...data.claims[0].evidence![0], sourceId: "other-source", title: "Fonte exclusiva" }] };
   message({ type: "ANALYSIS_SUCCESS", data: { ...data, claims: [...data.claims, other] } });
   expect(document.querySelectorAll(".claim-card")).toHaveLength(2);
   expect(document.querySelectorAll(".claim-evidences")).toHaveLength(0);
@@ -198,7 +199,7 @@ it("expande apenas evidências e perguntas da alegação selecionada sem score g
   expect(buttons[1].getAttribute("aria-expanded")).toBe("true");
   expect(document.body.textContent).not.toContain("Fonte de teste");
   expect(document.body.textContent).toContain("Fonte exclusiva");
-  expect(document.body.textContent).toContain("Pergunta exclusiva 1?");
+  expect(document.body.textContent).toContain(REFLECTION_QUESTIONS[3]);
   expect(document.querySelectorAll(".reflection-section")).toHaveLength(1);
   expect(document.querySelector('[role="meter"], .gauge')).toBeNull();
   expect(document.body.textContent).not.toMatch(/\d+%|veracidade/i);

@@ -1,7 +1,11 @@
 import re
+import json
+import hashlib
+from datetime import datetime, timezone
 import unicodedata
 from typing import Dict, List, Optional
 from ml.datasets.dataset_downloader import load_local_sample_dataset
+from app.config import settings
 from app.schemas import Evidence, EvidenceProvenance, EvidenceRelation
 
 
@@ -14,11 +18,13 @@ class BrazilianFactMatcher:
 
     def __init__(self):
         self._dataset: List[Dict] = []
+        self._loaded_at = ""
         self._load()
 
     def _load(self):
         try:
             self._dataset = load_local_sample_dataset()
+            self._loaded_at = datetime.now(timezone.utc).isoformat()
         except Exception:
             self._dataset = []
 
@@ -27,6 +33,9 @@ class BrazilianFactMatcher:
         Busca casamento semântico/lexical no dataset de checagens brasileiras.
         Retorna a checagem mais similar ou None caso não atinja o limiar de relevância.
         """
+        # The bundled demo corpus is never served as factual evidence in production.
+        if settings.is_production():
+            return None
         if not self._dataset:
             self._load()
 
@@ -92,9 +101,14 @@ class BrazilianFactMatcher:
 
             # Regra estrita contra falso positivo factual:
             # Similaridade lexical indica apenas relevância de recuperação (candidato de fact-check).
-            # Para emitir 'contradicts' ou 'supports', exige-se correspondência proposicional alta
-            # (jaccard >= 0.50 e overlap >= 0.65) SEM divergência de polaridade.
-            is_high_propositional_match = (jaccard >= 0.50 and overlap >= 0.65 and not polarity_mismatch)
+            # Emit factual stance only for the same textual proposition.
+            # Paraphrases, changed numbers/predicates and negation stay contextual.
+            def normalize_proposition(value):
+                return " ".join(value.casefold().strip(" .!?").split())
+            is_high_propositional_match = (
+                normalize_proposition(text) == normalize_proposition(best_match.get("claim", ""))
+                and not polarity_mismatch
+            )
 
             if is_high_propositional_match:
                 if "contraditada" in raw_status or "falso" in raw_status or "falsa" in raw_status:
@@ -124,8 +138,10 @@ class BrazilianFactMatcher:
                 matchReason=match_reason,
                 provenance=EvidenceProvenance(
                     dataset="factchecksbr",
-                    indexedAt="2026-08-01T10:00:00Z",
-                    contentHash=f"sha256:{best_match['id']}",
+                    indexedAt=self._loaded_at,
+                    contentHash="sha256:" + hashlib.sha256(
+                        json.dumps(best_match, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+                    ).hexdigest(),
                 ),
             )
             return {

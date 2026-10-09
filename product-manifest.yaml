@@ -2,7 +2,7 @@ product:
   name: "EvidencIA"
   description: "Extensão de navegador para checagem factual Evidence-First e estímulo à reflexão crítica em vídeos do YouTube"
   version: "1.0.0"
-  status: "PRERELEASE_CANDIDATE"
+  status: "DEVELOPMENT"
   repository: "https://github.com/evidencia-grupo/EvidencIA"
   documentation_repository: "https://github.com/evidencia-grupo/documentation"
 
@@ -27,7 +27,7 @@ endpoints:
     method: "POST"
     description: "Emite token de sessão efêmero assinado para clientes anônimos da extensão"
     rate_limit: "30/minuto"
-    auth: "Livre (Valida integridade da instalação)"
+    auth: "Livre (Emissão anônima limitada por IP; não comprova identidade)"
     request_schema: "AuthTokenRequest"
     response_schema: "AuthTokenResponse"
     status: "IMPLEMENTADO"

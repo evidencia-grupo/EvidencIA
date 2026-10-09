@@ -13,6 +13,7 @@ const AUTH_URL = `${API_BASE}/api/v1/auth/token`;
 export { getCachedResult, saveCachedResult, CACHE_TTL_MS };
 
 let inMemoryToken: string | null = null;
+let tokenRefresh: Promise<string | null> | null = null;
 
 export async function getAuthToken(): Promise<string | null> {
   if (inMemoryToken) return inMemoryToken;
@@ -28,19 +29,21 @@ export async function getAuthToken(): Promise<string | null> {
   return null;
 }
 
-export async function refreshAuthToken(): Promise<string | null> {
+async function issueAuthToken(signal?: AbortSignal): Promise<string | null> {
   try {
     const stored = await chrome.storage?.local?.get("evidencia_inst_id");
     const instId = stored?.evidencia_inst_id || `inst-${crypto.randomUUID()}`;
     await chrome.storage?.local?.set({ evidencia_inst_id: instId });
 
     const res = await fetch(AUTH_URL, {
+      signal,
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ installationId: instId, clientVersion: "1.0.0" }),
     });
     if (res.ok) {
       const data = (await res.json()) as { token: string };
+      if (typeof data.token !== "string" || !data.token) return null;
       inMemoryToken = data.token;
       await chrome.storage?.local?.set({ evidencia_auth_token: data.token });
       return data.token;
@@ -49,6 +52,26 @@ export async function refreshAuthToken(): Promise<string | null> {
     // Falha silenciosa em dev/offline
   }
   return null;
+}
+
+export async function refreshAuthToken(signal?: AbortSignal): Promise<string | null> {
+  if (!tokenRefresh) {
+    inMemoryToken = null;
+    tokenRefresh = issueAuthToken(signal).finally(() => { tokenRefresh = null; });
+  }
+  return tokenRefresh;
+}
+
+async function authenticatedFetch(url: string, init: RequestInit): Promise<Response> {
+  const headers = new Headers(init.headers);
+  const token = await getAuthToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const first = await fetch(url, { ...init, headers });
+  if (first.status !== 401 && first.status !== 403) return first;
+  const refreshed = await refreshAuthToken(init.signal ?? undefined);
+  if (!refreshed) throw new Error("Não foi possível renovar a credencial de acesso.");
+  headers.set("Authorization", `Bearer ${refreshed}`);
+  return fetch(url, { ...init, headers }); // At most one retry, sharing the original abort deadline.
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -73,14 +96,12 @@ export async function handleAnalyzeRequest(payload: AnalyzeRequest, deadline = D
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), remaining);
   try {
-    const token = await getAuthToken();
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       "X-Client-Version": "1.0.0",
     };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const response = await fetch(BACKEND_URL, {
+    const response = await authenticatedFetch(BACKEND_URL, {
       method: "POST",
       headers,
       body: JSON.stringify(payload),
@@ -100,14 +121,12 @@ export async function handleAnalyzeRequest(payload: AnalyzeRequest, deadline = D
 }
 
 export async function handleFeedbackRequest(payload: FeedbackRequest): Promise<FeedbackResponse> {
-  const token = await getAuthToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "X-Client-Version": "1.0.0",
   };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const response = await fetch(FEEDBACK_URL, {
+  const response = await authenticatedFetch(FEEDBACK_URL, {
     method: "POST",
     headers,
     body: JSON.stringify(payload),
