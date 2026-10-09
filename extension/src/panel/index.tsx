@@ -84,6 +84,22 @@ export function App({ onSubmitFeedback }: AppProps = {}) {
     <main class="panel-container" aria-label="Painel de checagem factual">
       <header class="panel-header">
         <div>
+          <div class="panel-brand" style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <svg width="22" height="22" viewBox="0 0 80 80" aria-hidden="true" focusable="false" style="border-radius: 6px; flex-shrink: 0;">
+              <defs>
+                <linearGradient id="panelBrandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#E50914" />
+                  <stop offset="100%" stop-color="#FF9800" />
+                </linearGradient>
+              </defs>
+              <rect x="4" y="4" width="72" height="72" rx="18" fill="url(#panelBrandGrad)"/>
+              <circle cx="36" cy="36" r="20" stroke="#FFFFFF" stroke-width="4.5" fill="none" opacity="0.95"/>
+              <path d="M50 50 L64 64" stroke="#FFFFFF" stroke-width="5.5" stroke-linecap="round"/>
+              <path d="M26 36 L34 44 L48 28" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <circle cx="56" cy="20" r="4.5" fill="#FFE082" />
+            </svg>
+            <span style="font-weight: 800; font-size: 0.95rem; letter-spacing: -0.02em; color: var(--color-primary, #d32f2f);">EvidencIA</span>
+          </div>
           <h1 class="panel-title">Checagem Factual</h1>
           <p class="panel-subtitle">Investigação orientada por evidências e fontes curadas</p>
           {data && (

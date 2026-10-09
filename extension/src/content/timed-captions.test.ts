@@ -4,7 +4,9 @@ import { extractCaptionsFromPage } from "./caption-parser";
 
 const text = "A vacina passou por estudos clínicos e protege a população contra a dengue.";
 const tracks = { tracks: [{ baseUrl: "https://www.youtube.com/api/timedtext?v=video", languageCode: "pt" }], metadata: { videoTitle: "Vídeo", channelName: "Canal", durationSeconds: 600 } };
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 it.each([
   `<transcript><text start="300" dur="7">${text}</text></transcript>`,
   JSON.stringify({ events: [{ tStartMs: 300000, dDurationMs: 7000, segs: [{ utf8: text }] }] }),
