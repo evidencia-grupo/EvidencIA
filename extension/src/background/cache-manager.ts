@@ -6,7 +6,7 @@ import type { AnalyzeResponse, LocalCacheEntry } from "../../../shared/types/api
  * Rastreabilidade: ADR-003, RNF-01 e RNF-05.
  */
 export const CACHE_TTL_MS = 86400000;
-export const CACHE_VERSION = 2;
+export const CACHE_VERSION = 3;
 
 /**
  * Valida minuciosamente um registro recuperado do chrome.storage.local:

@@ -1,0 +1,24 @@
+{
+  "original_training_samples": 139,
+  "curated_examples": 104,
+  "original_classes": {
+    "true": 69,
+    "fake": 70
+  },
+  "local_configuration": {
+    "provider": "mock",
+    "configured_ollama_model": "qwen2.5:3b",
+    "available_ollama_models": [
+      "qwen3.5:9b"
+    ],
+    "configured_model_probe": {
+      "http_status": 404,
+      "error": "model 'qwen2.5:3b' not found"
+    },
+    "external_factcheck_key_configured": false,
+    "evidence_index_exists": false
+  },
+  "human_annotated_pairs": 0,
+  "application_revision": "0ffe395",
+  "scope": "Diagnóstico local. Não confirma a configuração do serviço online."
+}

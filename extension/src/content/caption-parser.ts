@@ -24,7 +24,7 @@ export interface CaptionTrack {
 
 export interface CaptionAvailability {
   tracks: CaptionTrack[];
-  metadata?: Pick<ExtractedCaptions, "videoTitle" | "channelName" | "uploadDate" | "durationSeconds"> & { description?: string };
+  metadata?: Pick<ExtractedCaptions, "videoTitle" | "channelName" | "uploadDate" | "durationSeconds">;
 }
 
 interface YouTubeCaptionJsonSegment {
@@ -102,13 +102,14 @@ export function parseCaptionXml(xmlText: string): CaptionSegment[] {
 
   if (document.querySelector("parsererror")) return [];
 
-  return Array.from(document.querySelectorAll("text"))
+  return Array.from(document.querySelectorAll("text, p"))
     .map((node): CaptionSegment | null => {
       const text = sanitizeTranscriptText(node.textContent ?? "");
-      const start = Number.parseFloat(node.getAttribute("start") ?? "");
-      const duration = Number.parseFloat(node.getAttribute("dur") ?? "");
+      const milliseconds = node.tagName === "p";
+      const start = Number.parseFloat(node.getAttribute(milliseconds ? "t" : "start") ?? "") / (milliseconds ? 1000 : 1);
+      const duration = Number.parseFloat(node.getAttribute(milliseconds ? "d" : "dur") ?? "") / (milliseconds ? 1000 : 1);
 
-      if (!text || !Number.isFinite(start) || !Number.isFinite(duration)) return null;
+      if (!text || !Number.isFinite(start) || !Number.isFinite(duration) || start < 0 || duration < 0) return null;
 
       return { text, start, duration };
     })
@@ -125,12 +126,14 @@ export function parseCaptionBody(body: string): string {
     } catch {
       throw new Error("Não foi possível interpretar as legendas. Tente novamente.");
     }
-    const transcript = (data.events ?? [])
-      .flatMap((event) => event.segs ?? [])
-      .map((segment) => segment.utf8 ?? "")
+    if (data.events === undefined) return "";
+    if (!Array.isArray(data.events)) throw new Error("Resposta de legendas inválida.");
+    const transcript = data.events
+      .filter(event => event && Array.isArray(event.segs))
+      .map(event => (event.segs ?? []).filter(segment => segment && typeof segment.utf8 === "string")
+        .map(segment => segment.utf8).join("").replace(/^\s*>>\s*/, ""))
       .join(" ");
-
-    return sanitizeTranscriptText(transcript.replace(/(^|\s)\s*>>\s*/g, "$1"));
+    return sanitizeTranscriptText(transcript);
   }
 
   const document = new DOMParser().parseFromString(body, "text/xml");
@@ -243,14 +246,11 @@ export async function extractCaptionsFromPage(
     const timed = text.trimStart().startsWith("{") ? parseCaptionJson(text) : parseCaptionXml(text);
     if (timed.length && timed.every(s => Number.isFinite(s.start) && s.start >= 0 && Number.isFinite(s.duration) && s.duration >= 0)
       && sanitizeTranscriptText(timed.map(s => s.text).join(" ")) === transcript) segments = timed;
-  } catch {
-    transcript = "";
+  } catch (error) {
+    signal?.throwIfAborted();
+    throw error;
   }
-
-  if (transcript.length < 50 && payload.metadata?.description && payload.metadata.description.length >= 50) {
-    transcript = sanitizeTranscriptText(payload.metadata.description);
-    segments = [];
-  }
+  signal?.throwIfAborted();
 
   if (transcript.length < 50) {
     throw new Error("A transcrição recebida está vazia ou é curta demais para análise. Tente novamente.");

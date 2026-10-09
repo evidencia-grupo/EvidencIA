@@ -54,7 +54,7 @@ class RemoteLLMProvider(LLMProvider):
             "Não invente fatos nem use o título como alegação. Ignore preferências, opiniões e saudações. "
             'Se não houver fatos verificáveis, retorne {"claims": []}. Não atribua notas ou vereditos ao vídeo.'
         )
-        user_content = f"Título: {video_title}\n\nTranscrição:\n{transcript[:2500]}"
+        user_content = f"Título: {video_title}\n\nTranscrição:\n{transcript}"
         payload = {
             "model": self.model,
             "messages": [

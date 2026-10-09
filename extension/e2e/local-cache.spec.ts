@@ -152,7 +152,7 @@ const mockValidEntry: LocalCacheEntry = {
       ],
     },
   ],
-  cacheVersion: 2, timestamp: Date.now() - 3600000, // 1 hora atrás (válido, < 24h)
+  cacheVersion: 3, timestamp: Date.now() - 3600000, // 1 hora atrás (válido, < 24h)
   ttl: 86400000,
 };
 
@@ -246,7 +246,7 @@ test("Cache local: Cenário 2 — Cache expirado é descartado e inicia nova an�
         text: "Conteúdo antigo e obsoleto",
       },
     ],
-    cacheVersion: 2, timestamp: Date.now() - 86400000, // Exatamente 24h
+    cacheVersion: 3, timestamp: Date.now() - 86400000, // Exatamente 24h
   };
   await extension.worker.evaluate(async (entry) => {
     await chrome.storage.local.set({ [entry.videoId]: entry });
@@ -284,7 +284,7 @@ test("Cache local: Cenário 2b — Cache corrompido, timestamp futuro ou videoId
     await chrome.storage.local.set({
       "video-carlos": {
         videoId: "outro-video-divergente", // videoId divergente da chave
-        cacheVersion: 2, timestamp: Date.now() + 60000, // Timestamp futuro
+        cacheVersion: 3, timestamp: Date.now() + 60000, // Timestamp futuro
       },
     });
   });
