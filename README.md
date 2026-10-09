@@ -102,6 +102,15 @@ Para arquitetura completa, atas de decisão e requisitos, consulte o repositóri
 
 ---
 
-## 6. Licença
+## 6. Governança e Contribuição
+
+O projeto adota práticas formais de governança técnica e colaboração aberta:
+- [Guia de Contribuição](CONTRIBUTING.md): padrões de branch, Conventional Commits e ambiente local.
+- [Política de Segurança](SECURITY.md): relato responsável de vulnerabilidades e baseline defensivo.
+- [Código de Conduta](CODE_OF_CONDUCT.md): compromissos de convivência e inclusão comunitária.
+
+---
+
+## 7. Licença
 
 Distribuído sob os termos da licença **MIT**. Consulte [LICENSE](LICENSE) para mais informações.
