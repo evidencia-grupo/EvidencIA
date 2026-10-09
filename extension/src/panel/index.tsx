@@ -98,7 +98,7 @@ export function App({ onSubmitFeedback }: AppProps = {}) {
               <path d="M26 36 L34 44 L48 28" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
               <circle cx="56" cy="20" r="4.5" fill="#FFE082" />
             </svg>
-            <span style="font-weight: 800; font-size: 0.95rem; letter-spacing: -0.02em; color: var(--color-primary, #d32f2f);">EvidencIA</span>
+            <span style="font-weight: 800; font-size: 0.95rem; letter-spacing: -0.02em; color: var(--color-text-primary, #f8fafc);">EvidencIA</span>
           </div>
           <h1 class="panel-title">Checagem Factual</h1>
           <p class="panel-subtitle">Investigação orientada por evidências e fontes curadas</p>

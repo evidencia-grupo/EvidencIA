@@ -64,10 +64,10 @@ def main():
     args = parser.parse_args()
     for path, content in build().items():
         if args.check:
-            if path.read_text() != content:
+            if path.read_text(encoding="utf-8") != content:
                 raise SystemExit(f"Contrato desatualizado: {path.relative_to(ROOT)}")
         else:
-            path.write_text(content)
+            path.write_text(content, encoding="utf-8")
 
 
 if __name__ == "__main__":
