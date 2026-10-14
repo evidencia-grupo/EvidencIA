@@ -2,7 +2,8 @@
 
 Regras de governança (ADR-001 / IS-11):
 1. `get_provider()` avalia `LLM_PROVIDER` e os aliases de ambiente.
-2. Se `LLM_PROVIDER=mock` e qualquer alias for 'production' ou 'prod' (case-insensitive),
+2. Se `LLM_PROVIDER=mock` e qualquer alias estiver em `PRODUCTION_ENVIRONMENTS`
+   ('production', 'prod' ou 'staging'; case-insensitive),
    lança `MockInProductionError` imediatamente (fail-fast).
 3. Nunca realiza fallback silencioso para mock em caso de erro.
 4. Valor desconhecido de `LLM_PROVIDER` levanta `ValueError` listando os valores válidos.
@@ -17,7 +18,7 @@ import os
 
 from typing import Optional
 
-from app.config import settings
+from app.config import PRODUCTION_ENVIRONMENTS, settings
 
 from app.providers.base import LLMProvider
 from app.providers.mock import MockProvider
@@ -74,7 +75,7 @@ def get_provider(
         raw_env, settings.ENVIRONMENT, settings.ENV, settings.APP_ENV, settings.NODE_ENV,
         *(os.getenv(key, "") for key in ("ENV", "ENVIRONMENT", "APP_ENV", "NODE_ENV")),
     ]
-    is_production = any((env or "").strip().lower() in ("production", "prod") for env in environments)
+    is_production = any((env or "").strip().lower() in PRODUCTION_ENVIRONMENTS for env in environments)
 
     if normalized_provider == "mock":
         if is_production:

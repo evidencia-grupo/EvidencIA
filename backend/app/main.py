@@ -43,8 +43,7 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configuração de CORS restrito
-is_production = any((value or "").strip().lower() in ("production", "prod", "staging")
-                    for value in (settings.ENV, settings.ENVIRONMENT, settings.APP_ENV, settings.NODE_ENV))
+is_production = settings.is_production()
 
 raw_origins = [o.strip() for o in settings.CORS_ALLOWED_ORIGINS.split(",") if o.strip()]
 

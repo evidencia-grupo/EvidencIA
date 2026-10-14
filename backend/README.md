@@ -16,8 +16,13 @@ backend/
 │   ├── providers/       # Camada agnóstica de LLM (Ollama, Remote, Mock)
 │   └── services/        # Orquestrador fact_checker, brazilian_fact_matcher, auth
 ├── ml/                  # Datasets curados (sample_facts.json) e classificador Naive Bayes
-└── tests/               # 151 testes automatizados (Pytest com cobertura > 90%)
+└── tests/               # Suíte Pytest (cobertura mínima obrigatória: 80%)
 ```
+
+### Artefatos do classificador
+
+- `ml/classifier/model.json`: único formato carregado em runtime (`ClassifierService`), desserializado como JSON puro.
+- `ml/classifier/model.plk`: exportação pickle do mesmo modelo, mantida porque a extensão `.plk` foi solicitada como entregável acadêmico. Não é lida pela API; `tests/test_no_pickle_in_runtime.py` impede que `app/` ou `ml/` importem desserializadores pickle ou referenciem `.plk`/`.pkl`. Carregue-a só em ambiente confiável, pois `pickle.load` executa código.
 
 ---
 
@@ -52,7 +57,7 @@ Swagger UI disponível em: `http://127.0.0.1:8000/docs`
 ## 4. Testes Automatizados
 
 ```bash
-# Execução da suíte completa de 151 testes
+# Execução da suíte completa
 uv run pytest -v
 
 # Cobertura de código (mínimo obrigatório: 80%)
