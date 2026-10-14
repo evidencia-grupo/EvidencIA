@@ -24,14 +24,11 @@ async def test_claim_video_strictly_separated_from_fact_check_claim(monkeypatch)
     assert res.claims[0].text in (req.videoTitle, "Neste vídeo nós discutimos sobre diabetes e remédios caseiros amplamente divulgados.")
 
 
-def test_lexical_overlap_moderate_defaults_to_contextualizes():
-    """Caso 2: Match lexical moderado sem alinhamento semântico estrito não pode assumir 'contradicts'."""
+def test_generic_topic_overlap_does_not_produce_evidence():
+    """Tema compartilhado sem proposição suficiente não deve gerar nem contextualização."""
     text = "Conversa sobre vacinas de rna e saude com duvidas sobre prazos"
     match = brazilian_fact_matcher.find_match(text, threshold=0.15)
-    assert match is not None
-    assert match["relation"] == "contextualizes"
-    assert match["evidence"].relation == "contextualizes"
-    assert "relacionada" in match["evidence"].matchReason.lower() or "contextualizada" in match["evidence"].matchReason.lower()
+    assert match is None
 
 
 def test_strong_contradiction_yields_contradicts():

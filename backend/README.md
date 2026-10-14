@@ -76,3 +76,22 @@ uv run pytest -v --cov=app --cov-report=term-missing
 ```
 
 Documentação arquitetural completa: [docs/arquitetura/arquitetura.md](https://github.com/evidencia-grupo/documentation/blob/main/docs/arquitetura/arquitetura.md).
+
+## Filtragem de ruído e extração atômica
+
+Rastreabilidade: Épicos 4 e 7; RF-06, RF-07, RF-12, RNF-04, RNF-06; ADR-006.
+
+O `BrazilianFactMatcher` rejeita ruído identificado por `is_conversational_filler`, incluindo aberturas como “Tá começando o seu programa de saúde…”. Antes de calcular o score ou conceder bônus de domínio, exige pelo menos três termos distintos em comum, depois de remover palavras funcionais e termos genéricos de apresentação. Pelo menos um termo compartilhado deve estar fora do vocabulário de domínio: uma lista como “vacina dengue Anvisa SUS” não basta. O limiar padrão continua em 0,30; reduzi-lo não desativa essas condições. Essa regra é uma aproximação lexical conservadora, não uma análise gramatical de sujeito, verbo e predicado, e pode deixar de recuperar paráfrases curtas.
+
+Correspondências lexicais continuam apenas contextuais. Apoio ou contradição exigem a mesma proposição textual, sem inversão de negação; URL, data, trecho e hash de proveniência vêm do registro recuperado. A base demonstrativa permanece bloqueada em produção.
+
+Ollama e Remote compartilham o prompt de extração: de zero a quatro trechos contínuos da transcrição, cada um com no máximo **25 palavras e 180 caracteres**, preservando negações e qualificadores. O título é contexto, não fonte. O prompt proíbe parágrafos extensos de ASR, fontes inventadas e vereditos globais. O backend também valida os limites de tamanho e quantidade: respostas inválidas acionam Evidence-Only explicitamente, sem truncar a frase. Os limites se aplicam à saída do LLM, não à transcrição de entrada nem ao extrator determinístico de contingência. Antes de buscar evidências, o orquestrador descarta trechos ausentes da transcrição e ruído conversacional; o fallback não reutiliza uma saudação inteira como alegação.
+
+Regressões específicas, executadas de `backend/`:
+
+```bash
+uv run pytest tests/test_conversational_matching.py tests/test_extraction_constraints.py tests/test_semantic_relation.py
+uv run pytest --cov=app --cov-report=term-missing
+```
+
+Os testes cobrem falsos positivos, todas as correspondências exatas da amostra local com sua proveniência, negações, limites de extração, instruções recebidas pelos dois provedores e fallback. As respostas dos LLMs são simuladas nesses testes; isso não mede a qualidade de um modelo remoto ao vivo.

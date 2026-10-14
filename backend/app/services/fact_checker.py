@@ -22,7 +22,7 @@ from app.schemas import (
 from app.services.brazilian_fact_matcher import brazilian_fact_matcher
 from app.services.classifier_service import classifier_service
 from app.services.fact_check_client import fact_check_client
-from ml.classifier.claim_extractor import extract_candidate_claims
+from ml.classifier.claim_extractor import extract_candidate_claims, is_conversational_filler
 
 logger = logging.getLogger(__name__)
 
@@ -141,7 +141,9 @@ class FactCheckerService:
                             if claim.text.strip(" .!?").strip() and " ".join(claim.text.casefold().strip(" .!?").split()) in transcript_words]
                 if len(grounded) != len(provider_claims):
                     limitations.append("Alegações sem trecho correspondente na transcrição foram descartadas.")
-                provider_claims = grounded
+                provider_claims = [claim for claim in grounded if not is_conversational_filler(claim.text)]
+                if len(provider_claims) != len(grounded):
+                    limitations.append("Saudações e ruído conversacional foram descartados antes da busca de evidências.")
         except Exception as exc:
             logger.warning("llm_evidence_only: extração indisponível (%s)", type(exc).__name__)
             analysis_mode = "evidence_only"

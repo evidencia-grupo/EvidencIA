@@ -10,6 +10,7 @@ from ml.classifier.features import normalize_text, SENSATIONAL_MARKERS, CREDIBIL
 
 # Padrões conversacionais típicos de vídeos do YouTube a serem filtrados
 CONVERSATIONAL_PATTERNS = [
+    r"\b(?:ta|esta) comecando (?:o |mais um )?(?:(?:seu|nosso) )?programa\b",
     r"sejam bem[\s-]?vindos",
     r"bem[\s-]?vindo a mais um video",
     r"no video de hoje",

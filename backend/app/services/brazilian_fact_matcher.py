@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import unicodedata
 from typing import Dict, List, Optional
 from ml.datasets.dataset_downloader import load_local_sample_dataset
+from ml.classifier.claim_extractor import is_conversational_filler
 from app.config import settings
 from app.schemas import Evidence, EvidenceProvenance, EvidenceRelation
 
@@ -36,6 +37,8 @@ class BrazilianFactMatcher:
         # The bundled demo corpus is never served as factual evidence in production.
         if settings.is_production():
             return None
+        if is_conversational_filler(text):
+            return None
         if not self._dataset:
             self._load()
 
@@ -61,11 +64,14 @@ class BrazilianFactMatcher:
 
             intersection = tokens_text.intersection(tokens_claim)
             union = tokens_text.union(tokens_claim)
-            if not intersection:
+            # Require several distinct content words before scoring. A high
+            # overlap ratio for a one-word query is not propositional relevance.
+            if len(intersection) < 3:
                 continue
 
             jaccard = len(intersection) / len(union) if union else 0.0
-            if len(intersection) < 2 and jaccard < 0.5:
+            # Topic names alone (e.g. vacina, dengue, Anvisa) are not a claim.
+            if not intersection.difference(domain_keywords):
                 continue
 
             overlap = len(intersection) / min(len(tokens_text), len(tokens_claim)) if tokens_text and tokens_claim else 0.0
@@ -73,7 +79,7 @@ class BrazilianFactMatcher:
             # Score balanceado: prioriza overlap semântico ponderado
             score = (0.45 * jaccard) + (0.55 * overlap)
 
-            # Bônus para termos de domínio altamente específicos
+            # Domain terms only reinforce an already eligible lexical match.
             matched_keywords = intersection.intersection(domain_keywords)
             if matched_keywords:
                 score += min(0.18, len(matched_keywords) * 0.06)
@@ -163,7 +169,10 @@ class BrazilianFactMatcher:
             "se", "nao", "não", "como", "mais", "mas", "foi", "tem", "são",
             "este", "esta", "esse", "essa", "aquele", "aquela", "seu", "sua",
             "pelo", "pela", "pelos", "pelas", "ser", "sendo", "sobre", "qual",
-            "ter", "tem", "têm", "isso", "isto", "aquilo", "está", "estao"
+            "ter", "tem", "têm", "isso", "isto", "aquilo", "está", "estao",
+            "sao", "tao", "tambem", "muito", "seus", "suas",
+            # Generic framing is not a substantive shared concept.
+            "programa", "tema", "assunto"
         }
         normalized = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii").lower()
         words = re.findall(r"\b[a-z]{3,}\b", normalized)
