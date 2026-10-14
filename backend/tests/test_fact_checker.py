@@ -83,3 +83,16 @@ async def test_cancellation_is_propagated(monkeypatch):
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await task
+
+
+def test_fact_check_parser_drops_reviews_without_https_url():
+    """A extensão rejeita a análise inteira se uma evidência não for HTTPS; o backend filtra antes."""
+    from app.services.fact_check_client import FactCheckClient
+
+    def review(url):
+        return {"text": "Alegação", "claimReview": [{"publisher": {"name": "Agência"}, "url": url, "title": "Checagem", "textualRating": "Falso"}]}
+
+    parsed = FactCheckClient(api_key="k").parse_claims_response(
+        {"claims": [review("http://antigo.example/checagem"), review(""), review("https://agencia.example/checagem")]}
+    )
+    assert [item["source"].url for item in parsed] == ["https://agencia.example/checagem"]

@@ -31,8 +31,23 @@ def reflection_messages(claims: list[Claim], evidence: list[Evidence]) -> list[d
     ]
 
 
+def load_json_object(content: str) -> dict:
+    """Lê o objeto JSON de uma resposta de LLM, tolerando cercas ```json e texto ao redor."""
+    text = content.strip()
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError:
+        start, end = text.find("{"), text.rfind("}")
+        if start < 0 or end <= start:
+            raise ValueError("Resposta sem objeto JSON")
+        value = json.loads(text[start:end + 1])
+    if not isinstance(value, dict):
+        raise ValueError("Resposta JSON não é um objeto")
+    return value
+
+
 def parse_reflections(content: str) -> list[str]:
-    questions = json.loads(content)["questions"]
+    questions = load_json_object(content)["questions"]
     if (
         not isinstance(questions, list)
         or len(questions) != 3

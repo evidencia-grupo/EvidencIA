@@ -129,6 +129,9 @@ class FactCheckClient:
             pub_name = publisher.get("name", "Agência de Checagem")
             pub_site = publisher.get("site", "")
             review_url = first_review.get("url", "")
+            if not review_url.startswith("https://"):
+                # A extensão só exibe fontes HTTPS e recusa a análise inteira se receber outra.
+                continue
             review_title = first_review.get("title", f"Checagem por {pub_name}")
             textual_rating = first_review.get("textualRating", "Inconclusivo")
             review_date = first_review.get("reviewDate")
