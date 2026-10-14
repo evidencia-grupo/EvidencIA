@@ -1,0 +1,52 @@
+name: Release — Chrome Web Store Package
+
+# Gera o zip de envio à Chrome Web Store apontando para o backend de produção.
+# Requer a variável de repositório EVIDENCIA_API_BASE_URL (ex.: https://evidencia-backend.onrender.com).
+on:
+  workflow_dispatch:
+  push:
+    tags: ["extension-v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build, Verify and Package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Setup Node.js 24 LTS
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: "npm"
+          cache-dependency-path: extension/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Typecheck and Unit Tests
+        run: |
+          npm run lint
+          npm test
+
+      - name: Build, Verify and Zip
+        env:
+          VITE_API_BASE_URL: ${{ vars.EVIDENCIA_API_BASE_URL }}
+        run: |
+          test -n "$VITE_API_BASE_URL" || { echo "Defina a variável de repositório EVIDENCIA_API_BASE_URL."; exit 1; }
+          npm run package
+
+      - name: Upload Store Package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: evidencia-chrome-web-store
+          path: extension/evidencia-chrome-web-store.zip
+          retention-days: 90

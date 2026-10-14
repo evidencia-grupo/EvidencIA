@@ -7,13 +7,16 @@
     "dev": "vite build --watch --mode development",
     "build": "tsc && vite build --mode development",
     "build:prod": "tsc && vite build --mode production",
-    "package": "npm run build && node -e \"const { execSync } = require('child_process'); execSync('cd dist && zip -r ../extension.zip .'); console.log('extension.zip gerado com sucesso!');\"",
+    "package": "npm run build:prod && npm run verify:store && cd dist && zip -qr ../evidencia-chrome-web-store.zip . && cd .. && echo evidencia-chrome-web-store.zip gerado",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "icons": "node scripts/generate-icons.mjs",
+    "verify:store": "node scripts/verify-store-package.mjs",
+    "store:screenshots": "npm run build && node scripts/store-screenshots.mjs"
   },
   "dependencies": {
     "preact": "^10.22.0"

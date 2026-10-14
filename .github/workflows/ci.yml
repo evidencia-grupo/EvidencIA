@@ -71,6 +71,13 @@ jobs:
           path: extension/dist/
           retention-days: 7
 
+      - name: Verify Chrome Web Store Production Package
+        env:
+          VITE_API_BASE_URL: https://api.example.com
+        run: |
+          npm run build:prod
+          npm run verify:store
+
   test-front:
     name: Test Frontend
     needs: [build-front]
@@ -283,7 +290,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: evidencia-grupo/documentation
-          ref: 583c1a0133c83a922f4198f490e670b99f3f4741
+          ref: 7b4ce4474992ef37052feab036ca84edde20346d
           path: documentation
 
       - name: Setup Python 3.12

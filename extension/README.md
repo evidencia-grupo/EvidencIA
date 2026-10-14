@@ -8,7 +8,7 @@
 
 ```text
 extension/
-├── manifest.json              # Manifesto V3 com permissões mínimas (activeTab, storage)
+├── manifest.json              # Manifesto V3 com permissões mínimas (storage, scripting)
 ├── vite.config.ts             # Build multi-entry (service-worker, content-script, panel)
 └── src/
     ├── background/            # Service worker, cache manager (TTL 24h) e autenticação
@@ -40,6 +40,19 @@ npm run dev
 3. Clique em **Carregar sem compactação** (*Load unpacked*).
 4. Selecione o diretório compilado `extension/dist/`.
 5. Abra qualquer vídeo do YouTube (`youtube.com/watch?v=...`) e acione **Checar Alegações**.
+
+### Pacote para a Chrome Web Store
+
+```bash
+# Build de produção + verificação (ícones, permissões, hosts HTTPS, sem código remoto) + zip
+VITE_API_BASE_URL=https://<backend-de-producao> npm run package
+
+# Regerar ícones (de assets/logo-icon.svg) e imagens da listagem (pasta store/)
+npm run icons
+npm run store:screenshots
+```
+
+Roteiro completo, textos da listagem e respostas da aba de privacidade: [Publicação na Chrome Web Store](https://evidencia-grupo.github.io/documentation/operacao/publicacao-chrome-web-store/).
 
 ---
 
