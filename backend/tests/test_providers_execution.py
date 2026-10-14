@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from app.providers.ollama import OllamaProvider
+from app.providers.mock import MockProvider
 from app.providers.remote import RemoteLLMProvider
 from app.providers.types import Claim, ProviderUnavailableError
 
@@ -46,6 +47,41 @@ async def test_ollama_extract_claims_success():
         assert len(claims) == 1
         assert claims[0].text == "Vacina reduz mortes"
         assert claims[0].search_query == "vacina mortes"
+
+
+@pytest.mark.asyncio
+async def test_mock_skips_tv_opening_and_prioritizes_central_claims():
+    transcript = (
+        "Tá começando o seu programa de saúde aqui na TV Novo Tempo. "
+        "Olha só quem vem aqui com a gente. Doutor, tudo bem? "
+        "Inscreva-se no canal e deixe seu like. "
+        "Um estudo clínico comprovou que a vacina reduziu a mortalidade em 30 por cento."
+    )
+
+    claims = await MockProvider().extract_claims(transcript, "Programa de saúde")
+
+    assert len(claims) == 1
+    assert "estudo clínico comprovou" in claims[0].text
+
+
+@pytest.mark.asyncio
+async def test_ollama_scans_transcript_past_previous_character_limit():
+    provider = OllamaProvider(base_url="http://test-ollama:11434")
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "message": {"content": '{"claims": [{"text": "Vacina reduz mortalidade", "search_query": "vacina mortalidade"}]}'}
+    }
+    late_claim = "A pesquisa demonstrou que a vacina reduz a mortalidade."
+    transcript = "Introdução sem relevância. " * 150 + late_claim
+
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+        mock_post.return_value = mock_resp
+        claims = await provider.extract_claims(transcript, "Entrevista médica")
+
+    sent_payload = mock_post.await_args.kwargs["json"]
+    assert late_claim in sent_payload["messages"][1]["content"]
+    assert len(claims) == 1
 
 
 @pytest.mark.asyncio
@@ -110,17 +146,25 @@ async def test_remote_extract_claims_success():
         "choices": [
             {
                 "message": {
-                    "content": '{"claims": [{"text": "PIX cobra taxa", "search_query": "pix taxa"}]}'
+                    "content": (
+                        '{"claims": ['
+                        '{"text": "Olha só quem vem aqui com a gente", "search_query": "programa"},'
+                        '{"text": "PIX cobra taxa", "search_query": "pix taxa"}'
+                        ']}'
+                    )
                 }
             }
         ]
     }
 
+    late_claim = "No fim, os dados demonstraram que PIX cobra taxa."
+    transcript = "Introdução sem relevância. " * 150 + late_claim
     with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
         mock_post.return_value = mock_resp
-        claims = await provider.extract_claims("Transcrição", "Título")
+        claims = await provider.extract_claims(transcript, "Título")
         assert len(claims) == 1
         assert claims[0].text == "PIX cobra taxa"
+        assert late_claim in mock_post.await_args.kwargs["json"]["messages"][1]["content"]
 
 
 @pytest.mark.asyncio
