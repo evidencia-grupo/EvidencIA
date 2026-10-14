@@ -73,9 +73,6 @@ def test_no_direct_imports_of_mock_in_app():
         os.path.normpath(os.path.join(app_root, "providers", "mock.py")),
         os.path.normpath(os.path.join(app_root, "providers", "factory.py")),
         os.path.normpath(os.path.join(app_root, "providers", "__init__.py")),
-        os.path.normpath(os.path.join(app_root, "services", "providers", "mock.py")),
-        os.path.normpath(os.path.join(app_root, "services", "providers", "factory.py")),
-        os.path.normpath(os.path.join(app_root, "services", "providers", "__init__.py")),
     }
 
     violations = []
