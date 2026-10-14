@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import re
 from typing import List
+from app.providers.claim_saliency import score_claim_saliency
 from app.providers.base import LLMProvider
 from app.providers.reflection_catalog import REFLECTION_QUESTIONS
 from app.providers.types import Claim, Evidence
@@ -30,10 +31,15 @@ class MockLLMProvider(LLMProvider):
         """Retorna alegações sintéticas determinísticas baseadas no conteúdo da transcrição."""
         sentences = re.split(r"(?<=[.!?])\s+", transcript.strip())
         subjective = re.compile(r"^(eu\s+)?(acho|prefiro|adoro|gosto|detesto)|^na minha opinião", re.IGNORECASE)
-        factual = [sentence for sentence in sentences if not subjective.search(sentence)]
+        factual = [
+            (sentence, score_claim_saliency(sentence))
+            for sentence in sentences
+            if sentence.strip() and not subjective.search(sentence) and score_claim_saliency(sentence) > 0
+        ]
+        factual.sort(key=lambda item: item[1], reverse=True)
         return [
             Claim(id=f"mock-clm-{index + 1:02d}", text=sentence, search_query=sentence[:40])
-            for index, sentence in enumerate(factual[:4])
+            for index, (sentence, _) in enumerate(factual[:4])
         ]
 
     async def generate_reflection(
