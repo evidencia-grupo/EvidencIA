@@ -11,6 +11,9 @@ import { UncertaintyAlert } from "./components/UncertaintyAlert";
 import { FeedbackSection } from "./components/FeedbackSection";
 import type { Claim, Evidence, UncertaintyState, EvidenceRelation, FeedbackRequest } from "../../../shared/types/api";
 
+// O jsdom não implementa canvas; o axe-core só o usa para detectar ícones de fonte e aceita a ausência dele.
+vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
+
 describe("ReflectionQuestions Component", () => {
   it("exibe três perguntas neutras de fallback quando questions está ausente ou vazio", () => {
     for (const questions of [undefined, []]) {
