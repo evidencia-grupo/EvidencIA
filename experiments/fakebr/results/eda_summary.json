@@ -1,0 +1,392 @@
+{
+  "source": {
+    "origin": "https://codeload.github.com/roneysco/Fake.br-Corpus/zip/780f5516c4ae070761632d98ac3368f3ded09d35",
+    "revision": "780f5516c4ae070761632d98ac3368f3ded09d35",
+    "archive_sha256": "be91c188f621424017bd79a0f33528dcc27f8a6151adb2bcb899c17719eb4090"
+  },
+  "audit": {
+    "raw_count": 7200,
+    "clean_count": 7199,
+    "excluded_count": 1,
+    "conflicting_texts": 0,
+    "missing_metadata": 4,
+    "groups": 3599
+  },
+  "labels": {
+    "fake": 3600,
+    "true": 3599
+  },
+  "category_by_label": {
+    "politica": {
+      "fake": 2089,
+      "true": 2088
+    },
+    "tv_celebridades": {
+      "fake": 771,
+      "true": 771
+    },
+    "sociedade_cotidiano": {
+      "fake": 638,
+      "true": 638
+    },
+    "ciencia_tecnologia": {
+      "fake": 56,
+      "true": 56
+    },
+    "economia": {
+      "fake": 22,
+      "true": 22
+    },
+    "religiao": {
+      "fake": 22,
+      "true": 22
+    },
+    "não informado": {
+      "fake": 2,
+      "true": 2
+    }
+  },
+  "split_by_label": {
+    "train": {
+      "fake": 2156,
+      "true": 2156
+    },
+    "validation": {
+      "fake": 541,
+      "true": 541
+    },
+    "calibration": {
+      "fake": 359,
+      "true": 358
+    },
+    "test": {
+      "fake": 544,
+      "true": 544
+    }
+  },
+  "length_words": {
+    "normalized": {
+      "fake": {
+        "mean": 182.7,
+        "median": 157.0,
+        "p10": 84,
+        "p90": 309,
+        "min": 9,
+        "max": 2092
+      },
+      "true": {
+        "mean": 186.0,
+        "median": 160,
+        "p10": 87,
+        "p90": 312,
+        "min": 10,
+        "max": 2085
+      }
+    },
+    "full_text": {
+      "fake": {
+        "mean": 185.9,
+        "median": 157.0,
+        "p10": 84,
+        "p90": 312,
+        "min": 9,
+        "max": 2294
+      },
+      "true": {
+        "mean": 1107.2,
+        "median": 923,
+        "p10": 448,
+        "p90": 1993,
+        "min": 20,
+        "max": 7588
+      }
+    }
+  },
+  "vocabulary": {
+    "fake": 32870,
+    "true": 33069
+  },
+  "top_domains": {
+    "fake": [
+      {
+        "domain": "diariodobrasil.org",
+        "count": 3335
+      },
+      {
+        "domain": "afolhabrasil.com.br",
+        "count": 174
+      },
+      {
+        "domain": "thejornalbrasil.com.br",
+        "count": 66
+      },
+      {
+        "domain": "ceticismopolitico.com",
+        "count": 16
+      },
+      {
+        "domain": "topfivetv.com",
+        "count": 7
+      },
+      {
+        "domain": "não informado",
+        "count": 2
+      }
+    ],
+    "true": [
+      {
+        "domain": "g1.globo.com",
+        "count": 2297
+      },
+      {
+        "domain": "politica.estadao.com.br",
+        "count": 753
+      },
+      {
+        "domain": "internacional.estadao.com.br",
+        "count": 114
+      },
+      {
+        "domain": "cultura.estadao.com.br",
+        "count": 95
+      },
+      {
+        "domain": "www1.folha.uol.com.br",
+        "count": 91
+      },
+      {
+        "domain": "economia.estadao.com.br",
+        "count": 51
+      },
+      {
+        "domain": "brasil.estadao.com.br",
+        "count": 46
+      },
+      {
+        "domain": "esportes.estadao.com.br",
+        "count": 30
+      },
+      {
+        "domain": "alias.estadao.com.br",
+        "count": 29
+      },
+      {
+        "domain": "sao-paulo.estadao.com.br",
+        "count": 16
+      }
+    ]
+  },
+  "distinct_domains": {
+    "fake": 6,
+    "true": 25
+  },
+  "domains_shared_between_labels": [],
+  "years": {
+    "fake": {
+      "2012": 1,
+      "2015": 235,
+      "2016": 1586,
+      "2017": 1606,
+      "2018": 169,
+      "não informado": 3
+    },
+    "true": {
+      "2009": 3,
+      "2010": 6,
+      "2011": 5,
+      "2012": 9,
+      "2013": 5,
+      "2014": 10,
+      "2015": 40,
+      "2016": 278,
+      "2017": 2101,
+      "2018": 1137,
+      "não informado": 5
+    }
+  },
+  "stylistic_markers_per_1000_words": {
+    "fake": {
+      "exclamations": 3.39,
+      "questions": 2.75,
+      "uppercase_words": 11.78,
+      "digits": 16.59,
+      "quotes": 31.17
+    },
+    "true": {
+      "exclamations": 0.41,
+      "questions": 1.05,
+      "uppercase_words": 10.34,
+      "digits": 21.24,
+      "quotes": 12.8
+    }
+  },
+  "distinctive_terms": {
+    "fake": [
+      {
+        "term": "dilma",
+        "z": 14.53
+      },
+      {
+        "term": "nao",
+        "z": 11.33
+      },
+      {
+        "term": "disse",
+        "z": 10.77
+      },
+      {
+        "term": "video",
+        "z": 9.53
+      },
+      {
+        "term": "lula",
+        "z": 9.16
+      },
+      {
+        "term": "atraves",
+        "z": 8.93
+      },
+      {
+        "term": "globo",
+        "z": 8.65
+      },
+      {
+        "term": "pra",
+        "z": 8.33
+      },
+      {
+        "term": "jornalista",
+        "z": 8.26
+      },
+      {
+        "term": "povo",
+        "z": 8.11
+      },
+      {
+        "term": "materia",
+        "z": 7.55
+      },
+      {
+        "term": "podera",
+        "z": 7.16
+      },
+      {
+        "term": "site",
+        "z": 6.74
+      },
+      {
+        "term": "hoje",
+        "z": 6.73
+      },
+      {
+        "term": "tudo",
+        "z": 6.7
+      }
+    ],
+    "true": [
+      {
+        "term": "feira",
+        "z": -22.34
+      },
+      {
+        "term": "nesta",
+        "z": -19.41
+      },
+      {
+        "term": "quarta",
+        "z": -12.59
+      },
+      {
+        "term": "tribunal",
+        "z": -12.47
+      },
+      {
+        "term": "terca",
+        "z": -12.07
+      },
+      {
+        "term": "quinta",
+        "z": -10.85
+      },
+      {
+        "term": "eldorado",
+        "z": -10.63
+      },
+      {
+        "term": "segunda",
+        "z": -10.36
+      },
+      {
+        "term": "federal",
+        "z": -9.62
+      },
+      {
+        "term": "segundo",
+        "z": -9.49
+      },
+      {
+        "term": "sexta",
+        "z": -9.24
+      },
+      {
+        "term": "ano",
+        "z": -9.22
+      },
+      {
+        "term": "desta",
+        "z": -9.16
+      },
+      {
+        "term": "ouvir",
+        "z": -8.13
+      },
+      {
+        "term": "regiao",
+        "z": -8.13
+      }
+    ]
+  },
+  "local_corpus": {
+    "rows": 139,
+    "labels": {
+      "true": 69,
+      "fake": 70
+    },
+    "splits": {
+      "test": 27,
+      "train": 112
+    },
+    "categories": {
+      "saúde": 61,
+      "ciência": 24,
+      "economia": 23,
+      "política": 18,
+      "sociedade": 11,
+      "educação": 1,
+      "tecnologia": 1
+    },
+    "source_declared": {
+      "FactChecks.br": 89,
+      "Fake.br": 15,
+      "Fake.br (NILC/USP)": 10,
+      "FactChecks.br (Agência Lupa)": 6,
+      "FactChecks.br (Aos Fatos)": 6,
+      "FactChecks.br (G1 Fato ou Fake)": 6,
+      "FactChecks.br (Boatos.org)": 3,
+      "FactChecks.br (UOL Confere)": 2,
+      "FactChecks.br (Ministério da Saúde / Fiocruz)": 2
+    },
+    "provenance_status": {
+      "local_label_external_origin_not_verified": 139
+    },
+    "words": {
+      "mean": 15.3,
+      "median": 15,
+      "p10": 12,
+      "p90": 19,
+      "min": 9,
+      "max": 23
+    },
+    "duplicated_texts": 0
+  }
+}

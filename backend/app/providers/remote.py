@@ -7,14 +7,13 @@ Refs: ADR-001, ADR-006, IS-11, Issue #32.
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 from typing import List, Optional
 import httpx
 
 from app.config import settings
-from app.providers.prompts import reflection_messages, parse_reflections
+from app.providers.prompts import load_json_object, reflection_messages, parse_reflections
 from app.providers.base import LLMProvider
 from app.providers.types import Claim, Evidence, ProviderUnavailableError
 
@@ -62,11 +61,12 @@ class RemoteLLMProvider(LLMProvider):
                 {"role": "user", "content": user_content},
             ],
             "temperature": 0.1,
+            "response_format": {"type": "json_object"},
         }
 
         try:
             content = await self._chat(payload)
-            parsed = json.loads(content)
+            parsed = load_json_object(content)
             raw_claims = parsed["claims"]
             if not isinstance(raw_claims, list):
                 raise ValueError("Lista de alegações inválida")
@@ -104,6 +104,7 @@ class RemoteLLMProvider(LLMProvider):
             "model": self.model,
             "messages": reflection_messages(claims, evidence),
             "temperature": 0.1,
+            "response_format": {"type": "json_object"},
         }
         try:
             return parse_reflections(await self._chat(payload))
