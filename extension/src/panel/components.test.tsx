@@ -75,6 +75,11 @@ describe("EvidenceCard Component", () => {
     return container;
   }
 
+  it("identifica evidência do corpus de demonstração como não verificada", () => {
+    const container = renderCard({ ...baseEvidence, provenance: { dataset: "demonstracao_local", indexedAt: "2026-01-01T00:00:00Z" } });
+    expect(container.querySelector(".evidence-provenance")?.textContent).toBe("Demonstração local (não verificada)");
+  });
+
   it("exibe título, endereço, data, publisher e relação de forma explícita", () => {
     const container = renderCard(baseEvidence);
 

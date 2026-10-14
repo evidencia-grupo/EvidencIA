@@ -1,7 +1,7 @@
 // Até 15s de IA, além de captura de legendas e busca de evidências.
 const ANALYSIS_TIMEOUT_MS = 30_000;
 import { isAnalysis, isHttps } from "./response-validation";
-import { getCaptionTracks } from "./player-captions";
+import { getCaptionTracks, getPlayerCaption } from "./player-captions";
 import { getCachedResult, saveCachedResult, CACHE_TTL_MS } from "./cache-manager";
 import type { AnalyzeRequest, AnalyzeResponse, FeedbackRequest, FeedbackResponse } from "../../../shared/types/api";
 
@@ -78,6 +78,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (sender.id !== chrome.runtime.id || !sender.url?.startsWith("https://www.youtube.com/")) return;
   let operation: Promise<unknown>;
   if (message.type === "GET_CAPTION_TRACKS" && sender.tab?.id !== undefined) operation = getCaptionTracks(sender.tab.id, message.videoId);
+  else if (message.type === "GET_PLAYER_CAPTION" && sender.tab?.id !== undefined && typeof message.videoId === "string" && typeof message.languageCode === "string")
+    operation = getPlayerCaption(sender.tab.id, message.videoId, message.languageCode, typeof message.kind === "string" ? message.kind : undefined);
   else if (message.type === "GET_CACHE") operation = getCachedResult(message.videoId);
   else if (message.type === "ANALYZE_VIDEO") operation = handleAnalyzeRequest(message.payload, message.deadline);
   else if (message.type === "SUBMIT_FEEDBACK") operation = handleFeedbackRequest(message.payload);

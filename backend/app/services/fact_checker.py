@@ -158,6 +158,12 @@ class FactCheckerService:
 
         # 3. Processamento no modo Evidence-First
         if analysis_mode == "evidence_first":
+            # Busca externa em paralelo: consultas sequenciais somavam até 3 s por alegação.
+            matches = [brazilian_fact_matcher.find_match(p.text) for p in provider_claims]
+            lookups = await asyncio.gather(*(
+                fact_check_client.search_claims(p.text) if not (m and m.get("evidence")) else asyncio.sleep(0, result=[])
+                for p, m in zip(provider_claims, matches)
+            ))
             for idx, p_claim in enumerate(provider_claims):
                 claim_id = f"clm-{idx + 1:02d}"
                 claim_text = p_claim.text
@@ -166,7 +172,7 @@ class FactCheckerService:
                 claim_temporal_ctx = temporal_ctx.model_copy(deep=True)
 
                 # Prioridade 1: Casamento direto com dataset curado FactChecks.br
-                matched = brazilian_fact_matcher.find_match(claim_text)
+                matched = matches[idx]
                 if matched and matched.get("evidence"):
                     evidence_list.append(matched["evidence"])
                     rel = matched.get("relation", "contextualizes")
@@ -178,7 +184,7 @@ class FactCheckerService:
                         uncertainty = "contextualized"
                 else:
                     # Prioridade 2: Consulta à API externa de Fact Check
-                    fc_results = await fact_check_client.search_claims(claim_text)
+                    fc_results = lookups[idx]
                     if fc_results and fc_results[0].get("source"):
                         item = fc_results[0]
                         src = item["source"]

@@ -61,7 +61,7 @@ def test_exact_corpus_claims_keep_relation_and_provenance(matcher, entry):
     assert evidence.publisher == entry["publisher"]
     assert evidence.snippet == entry["evidence_summary"]
     assert evidence.publishedAt == (entry.get("published_at") or "")
-    assert evidence.provenance.dataset == "factchecksbr"
+    assert evidence.provenance.dataset == "demonstracao_local"
     canonical = json.dumps(entry, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
     assert evidence.provenance.contentHash == "sha256:" + hashlib.sha256(canonical.encode()).hexdigest()
     assert evidence.relation == {

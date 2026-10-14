@@ -133,6 +133,19 @@ it("aguarda metadados, recria iframe removido e suporta chegada pela home", asyn
   navigate("/watch?v=next"); expect(button()).toBeTruthy();
 });
 
+it("ignora cópias ocultas do YouTube e reinjeta se o contêiner escolhido for escondido", async () => {
+  history.replaceState({}, "", "/watch?v=video");
+  document.body.innerHTML = '<div hidden><div id="top-row"></div></div><div id="visible"><div id="top-row"></div></div>';
+  await import("./content-script");
+  const host = () => document.querySelector("#evidencia-badge-host")!;
+  expect(host().parentElement!.parentElement!.id).toBe("visible");
+  document.querySelector("#visible")!.setAttribute("hidden", "");
+  document.body.insertAdjacentHTML("beforeend", '<div id="above-the-fold"></div>');
+  await vi.advanceTimersByTimeAsync(1500);
+  expect(host().parentElement!.id).toBe("above-the-fold");
+  expect(document.querySelectorAll("#evidencia-badge-host")).toHaveLength(1);
+});
+
 it("ausência de legendas em até 1s ignora cache lento e encerra carregamento", async () => {
   await import("./content-script"); panelMessage("PANEL_READY");
   const post = vi.spyOn(frame().contentWindow!, "postMessage");

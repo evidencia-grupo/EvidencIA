@@ -189,6 +189,16 @@ it("processa mensagens GET_CAPTION_TRACKS e OPEN_TAB no listener", async () => {
   expect(response).toHaveBeenCalledWith({ success: true, data: { id: 123 } });
 });
 
+it("encaminha GET_PLAYER_CAPTION da aba do YouTube e ignora pedido incompleto", async () => {
+  const sender = { id: "extension", url: "https://www.youtube.com/watch?v=video", tab: { id: 1 } } as unknown as chrome.runtime.MessageSender;
+  const response = vi.fn();
+  vi.mocked(chrome.scripting.executeScript).mockResolvedValueOnce([{ result: "<transcript><text>ok</text></transcript>" }] as never);
+  expect(listener({ type: "GET_PLAYER_CAPTION", videoId: "video", languageCode: "pt" }, sender, response)).toBe(true);
+  await vi.advanceTimersByTimeAsync(0);
+  expect(response).toHaveBeenCalledWith({ success: true, data: "<transcript><text>ok</text></transcript>" });
+  expect(listener({ type: "GET_PLAYER_CAPTION", videoId: "video" }, sender, vi.fn())).toBeUndefined();
+});
+
 it.each(["javascript:alert(1)", "chrome://settings", "http://example.com", "https://user:pass@example.com", "nao-e-url"])(
   "recusa OPEN_TAB com URL não HTTPS ou com credenciais: %s",
   url => {

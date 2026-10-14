@@ -104,16 +104,16 @@ function injectTriggerBadge() {
   if (location.pathname !== "/watch") return;
   const videoId = getVideoIdFromUrl();
   if (!videoId) return;
-  if (videoId === currentVideoId && badgeContainer?.isConnected) return;
+  if (videoId === currentVideoId && badgeContainer?.isConnected && !badgeContainer.closest("[hidden]")) return;
 
   currentVideoId = videoId;
   initSidePanel();
 
-  // Encontra o container abaixo do título do vídeo do YouTube
-  const targetArea =
-    document.querySelector("#above-the-fold") ||
-    document.querySelector("#top-row") ||
-    document.querySelector("ytd-watch-metadata");
+  // Encontra o container abaixo do título. O YouTube mantém cópias ocultas ([hidden]) desses
+  // elementos; injetar numa delas deixa o botão invisível.
+  const targetArea = ["#above-the-fold", "#top-row", "ytd-watch-metadata"]
+    .flatMap((selector) => Array.from(document.querySelectorAll(selector)))
+    .find((element) => !element.closest("[hidden]"));
 
   if (!targetArea) {
     clearTimeout(injectionTimer);
@@ -269,6 +269,8 @@ function injectTriggerBadge() {
   shadowRoot.appendChild(style);
   shadowRoot.appendChild(button);
   targetArea.prepend(badgeContainer);
+  // O YouTube rearranja a página durante o carregamento; confere se o botão continua visível.
+  for (const delay of [1500, 4000]) setTimeout(injectTriggerBadge, delay);
 }
 
 // O YouTube é uma SPA — escuta evento nativo de navegação

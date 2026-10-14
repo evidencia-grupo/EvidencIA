@@ -74,8 +74,12 @@ class AnalyzeRequest(StrictModel):
         for segment in self.segments:
             if segment.start < previous:
                 raise ValueError("Segmentos devem estar em ordem temporal")
-            if self.durationSeconds is not None and segment.start + segment.duration > self.durationSeconds + 1:
-                raise ValueError("Segmento excede a duração do vídeo")
+            if self.durationSeconds is not None:
+                if segment.start > self.durationSeconds + 1:
+                    raise ValueError("Segmento começa depois do fim do vídeo")
+                # A duração do YouTube é arredondada para baixo e a última fala pode ultrapassá-la: recorta, não rejeita.
+                if segment.start + segment.duration > self.durationSeconds:
+                    segment.duration = max(0.0, self.durationSeconds - segment.start)
             previous = segment.start
         if self.segments:
             def normalize(text):

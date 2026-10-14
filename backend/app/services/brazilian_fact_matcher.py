@@ -143,7 +143,8 @@ class BrazilianFactMatcher:
                 snippet=best_match.get("evidence_summary", ""),
                 matchReason=match_reason,
                 provenance=EvidenceProvenance(
-                    dataset="factchecksbr",
+                    # Corpus de demonstração: registros não verificados, bloqueados em produção.
+                    dataset="demonstracao_local",
                     indexedAt=self._loaded_at,
                     contentHash="sha256:" + hashlib.sha256(
                         json.dumps(best_match, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")

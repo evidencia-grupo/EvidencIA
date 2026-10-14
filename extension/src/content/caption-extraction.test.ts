@@ -143,3 +143,18 @@ it("cancela detecção pendente e ignora resposta tardia sem baixar legendas", a
   await Promise.resolve();
   expect(fetch).not.toHaveBeenCalled();
 });
+
+it("cai para a legenda do player quando a URL pública responde vazio", async () => {
+  vi.mocked(fetch).mockResolvedValueOnce({ ok: true, text: async () => "" } as Response);
+  sendMessage
+    .mockResolvedValueOnce({ success: true, data: { tracks: [{ baseUrl: "https://www.youtube.com/api/timedtext", languageCode: "pt", kind: "asr" }], metadata } })
+    .mockResolvedValueOnce({ success: true, data: JSON.stringify({ events: [{ tStartMs: 0, dDurationMs: 1000, segs: [{ utf8: text }] }] }) });
+  const result = await extractCaptionsFromPage("video");
+  expect(result?.transcript).toBe(text);
+  expect(sendMessage).toHaveBeenLastCalledWith({ type: "GET_PLAYER_CAPTION", videoId: "video", languageCode: "pt", kind: "asr" });
+  vi.mocked(fetch).mockResolvedValueOnce({ ok: true, text: async () => "" } as Response);
+  sendMessage
+    .mockResolvedValueOnce({ success: true, data: { tracks: [{ baseUrl: "https://www.youtube.com/api/timedtext", languageCode: "pt" }], metadata } })
+    .mockResolvedValueOnce({ success: false, error: "O YouTube não entregou a legenda deste vídeo." });
+  await expect(extractCaptionsFromPage("video")).rejects.toThrow("não entregou");
+});
