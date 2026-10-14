@@ -8,8 +8,8 @@
       "bytes": 27
     },
     "README.md": {
-      "sha256": "18322eef0a81cd6df34d4886ada461357fd74a12f3c4aaac9b3b213dda0cb033",
-      "bytes": 4260
+      "sha256": "c1d78db6012baae1ed3a48e13af8588cf4d2f5c7ab0562f5b03c094bd3854ac4",
+      "bytes": 4722
     },
     "avaliacao_modelo.ipynb": {
       "sha256": "81f00ee562f100288b3c1cee8c6490a02aac1a8643632d2dcb8d3f950a9ace4a",
@@ -96,8 +96,8 @@
       "bytes": 8945
     },
     "source/test_experiment.py": {
-      "sha256": "0255284e7ff3c041781b6ae38603ae572a0c4b872ab8b46d92a563f9882283cc",
-      "bytes": 2567
+      "sha256": "7f2d4d5cb124a5caa06d5de62f38f783c1f725d004a4a470a7edff9972d2efdb",
+      "bytes": 4212
     }
   }
 }
