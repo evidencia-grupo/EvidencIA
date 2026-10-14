@@ -10,6 +10,33 @@ from app.config import settings
 from app.schemas import Evidence, EvidenceProvenance, EvidenceRelation
 
 
+# Números por extenso mais comuns em falas; "um/uma" ficam de fora por serem artigos.
+NUMBER_WORDS = {
+    "dois": "2", "duas": "2", "tres": "3", "quatro": "4", "cinco": "5", "seis": "6",
+    "sete": "7", "oito": "8", "nove": "9", "dez": "10", "vinte": "20", "trinta": "30", "cem": "100",
+}
+# Penalidade para candidatos que tratam do mesmo tema com números diferentes.
+NUMBER_MISMATCH_PENALTY = 0.15
+
+
+def _ascii_lower(text: str) -> str:
+    return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii").lower()
+
+
+def extract_numbers(text: str) -> set:
+    """Números citados no texto, em algarismos ou por extenso, na forma canônica de algarismos."""
+    normalized = _ascii_lower(text)
+    digits = {value.replace(",", ".") for value in re.findall(r"\d+(?:[.,]\d+)?", normalized)}
+    words = {NUMBER_WORDS[word] for word in re.findall(r"[a-z]+", normalized) if word in NUMBER_WORDS}
+    return digits | words
+
+
+def normalize_proposition(value: str) -> str:
+    """Forma comparável de uma proposição: caixa, espaços e números por extenso unificados."""
+    words = value.casefold().strip(" .!?").split()
+    return " ".join(NUMBER_WORDS.get(_ascii_lower(word), word) for word in words)
+
+
 class BrazilianFactMatcher:
     """
     Serviço local de correspondência factual baseado no dataset curado
@@ -45,6 +72,7 @@ class BrazilianFactMatcher:
         tokens_text = self._tokenize(text)
         if not tokens_text:
             return None
+        numbers_text = extract_numbers(text)
 
         best_match: Optional[Dict] = None
         best_score = 0.0
@@ -84,6 +112,11 @@ class BrazilianFactMatcher:
             if matched_keywords:
                 score += min(0.18, len(matched_keywords) * 0.06)
 
+            # Mesmo tema com números diferentes (prazo, dose, valor) é outra proposição.
+            numbers_claim = extract_numbers(entry.get("claim", ""))
+            if numbers_text and numbers_claim and not numbers_text & numbers_claim:
+                score -= NUMBER_MISMATCH_PENALTY
+
             if score > best_score and score >= threshold:
                 best_score = score
                 best_match = entry
@@ -109,8 +142,6 @@ class BrazilianFactMatcher:
             # Similaridade lexical indica apenas relevância de recuperação (candidato de fact-check).
             # Emit factual stance only for the same textual proposition.
             # Paraphrases, changed numbers/predicates and negation stay contextual.
-            def normalize_proposition(value):
-                return " ".join(value.casefold().strip(" .!?").split())
             is_high_propositional_match = (
                 normalize_proposition(text) == normalize_proposition(best_match.get("claim", ""))
                 and not polarity_mismatch
@@ -175,7 +206,7 @@ class BrazilianFactMatcher:
             # Generic framing is not a substantive shared concept.
             "programa", "tema", "assunto"
         }
-        normalized = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii").lower()
+        normalized = _ascii_lower(text)
         words = re.findall(r"\b[a-z]{3,}\b", normalized)
         return {w for w in words if w not in stopwords}
 
