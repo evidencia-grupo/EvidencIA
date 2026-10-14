@@ -12,6 +12,7 @@ import os
 from typing import List, Optional
 import httpx
 
+from app.providers.claim_saliency import score_claim_saliency
 from app.config import settings
 from app.providers.prompts import reflection_messages, parse_reflections
 from app.providers.base import LLMProvider
@@ -58,11 +59,12 @@ class OllamaProvider(LLMProvider):
         )
 
         system_prompt += (
+            " Analise a transcrição inteira, inclusive os trechos após a abertura, e priorize as teses factuais centrais. "
             " Cada text deve ser um trecho exato da transcrição, não uma paráfrase. Cada alegação deve conter uma única proposição verificável, preservando sujeitos, datas e qualificadores. "
-            "Não invente fatos nem use o título como alegação. Ignore preferências, opiniões e saudações. "
+            "Não invente fatos nem use o título como alegação. Ignore saudações de estúdio, apresentações, conversa fiada, pedidos de inscrição, preferências e opiniões. "
             'Se não houver fatos verificáveis, retorne {"claims": []}. Não atribua notas ou vereditos ao vídeo.'
         )
-        user_content = f"Título: {video_title}\n\nTranscrição:\n{transcript}"
+        user_content = f"Título: {video_title}\n\nTranscrição completa:\n{transcript}"
         payload = {
             "model": self.model,
             "messages": [
@@ -84,9 +86,13 @@ class OllamaProvider(LLMProvider):
                 return []
 
             claims: List[Claim] = []
+            has_nonempty_text = False
             for idx, c in enumerate(raw_claims):
                 text = c.get("text", "").strip()
-                if text:
+                if not text:
+                    continue
+                has_nonempty_text = True
+                if score_claim_saliency(text) > 0:
                     claims.append(
                         Claim(
                             id=f"clm-{idx + 1:02d}",
@@ -95,9 +101,9 @@ class OllamaProvider(LLMProvider):
                             confidence=0.90,
                         )
                     )
-            if claims:
-                return claims
-            raise ProviderUnavailableError("Nenhuma alegação extraída pelo modelo.")
+            if not has_nonempty_text:
+                raise ProviderUnavailableError("Nenhuma alegação extraída pelo modelo.")
+            return claims
         except Exception as exc:
             if isinstance(exc, ProviderUnavailableError):
                 raise

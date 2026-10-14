@@ -5,6 +5,7 @@ import tempfile
 
 from ml.classifier.dataset import TrainingSample, load_training_dataset
 from ml.classifier.evaluator import evaluate_model, generate_markdown_report, train_test_split
+from ml.classifier.claim_extractor import extract_candidate_claims, score_claim_saliency
 from ml.classifier.features import (
     TFIDFVectorizer,
     extract_ngrams,
@@ -152,3 +153,24 @@ def test_evaluator_metrics_and_markdown_report():
     assert "# Relatório de Treinamento" in report
     assert "Matriz de Confusão" in report
     assert "Curva de Decisão" in report
+
+
+def test_claim_extractor_skips_tv_opening_and_finds_later_factual_claim():
+    opening_lines = [
+        "Tá começando o seu programa de saúde aqui na TV Novo Tempo",
+        "Olha só quem vem aqui com a gente",
+        "Doutor, tudo bem",
+        "Vamos chamar o doutor agora",
+        "Se inscreva no canal e deixe seu like",
+    ]
+    for line in opening_lines:
+        assert score_claim_saliency(line) == 0.0
+
+    transcript = ". ".join(opening_lines) + (
+        ". Um estudo clínico publicado demonstrou que a vacina reduz a mortalidade em 30 por cento, "
+        "conforme dados da Anvisa."
+    )
+    claims = extract_candidate_claims(transcript)
+
+    assert any("estudo clínico" in claim for claim in claims)
+    assert all(score_claim_saliency(claim) > 0 for claim in claims)
