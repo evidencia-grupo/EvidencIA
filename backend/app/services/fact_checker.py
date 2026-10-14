@@ -141,12 +141,12 @@ class FactCheckerService:
                             if claim.text.strip(" .!?").strip() and " ".join(claim.text.casefold().strip(" .!?").split()) in transcript_words]
                 if len(grounded) != len(provider_claims):
                     limitations.append("Alegações sem trecho correspondente na transcrição foram descartadas.")
+                # Um card nunca recebe um bloco corrido de texto (legendas ASR sem pontuação).
+                for claim in grounded:
+                    claim.text = shorten_claim(claim.text)
                 provider_claims = [claim for claim in grounded if not is_conversational_filler(claim.text)]
                 if len(provider_claims) != len(grounded):
                     limitations.append("Saudações e ruído conversacional foram descartados antes da busca de evidências.")
-                # Um card nunca recebe um bloco corrido de texto (legendas ASR sem pontuação).
-                for claim in provider_claims:
-                    claim.text = shorten_claim(claim.text)
         except Exception as exc:
             logger.warning("llm_evidence_only: extração indisponível (%s)", type(exc).__name__)
             analysis_mode = "evidence_only"

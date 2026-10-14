@@ -2,6 +2,7 @@
 
 import json
 
+from app.providers.claim_saliency import score_claim_saliency
 from app.providers.types import Claim, Evidence
 from app.providers.reflection_catalog import REFLECTION_QUESTIONS
 
@@ -56,8 +57,15 @@ def parse_extracted_claims(parsed: dict) -> list[Claim]:
         if not text or len(text) > MAX_CLAIM_CHARACTERS or len(text.split()) > MAX_CLAIM_WORDS:
             raise ValueError("Alegação vazia ou acima dos limites de extração")
         # Deliberately select fields: model-supplied verdicts/sources never enter Claim.
-        claims.append(Claim(id=f"clm-{len(claims) + 1:02d}", text=text,
-                            search_query=raw.get("search_query", text[:40]), confidence=0.90))
+        if score_claim_saliency(text) > 0:
+            claims.append(
+                Claim(
+                    id=f"clm-{len(claims) + 1:02d}",
+                    text=text,
+                    search_query=raw.get("search_query", text[:40]),
+                    confidence=0.90,
+                )
+            )
     return claims
 
 

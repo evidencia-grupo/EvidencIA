@@ -142,7 +142,7 @@ def segment_transcript(transcript: str) -> List[str]:
 def split_transcript_sentences(transcript: str) -> List[str]:
     """Segmenta a transcrição contínua em sentenças candidatas utilizando pontuação e quebras."""
     # Filtra fragmentos muito curtos (menos de 5 palavras)
-    return [sentence for sentence in segment_transcript(transcript) if len(sentence.split()) >= 5]
+    return [sentence.rstrip(".!?") for sentence in segment_transcript(transcript) if len(sentence.split()) >= 5]
 
 
 def shorten_claim(text: str) -> str:
