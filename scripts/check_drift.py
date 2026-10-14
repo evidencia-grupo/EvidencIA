@@ -21,6 +21,9 @@ from typing import Any, Dict, List
 
 import yaml
 
+# Âncora no próprio script: o resultado não depende do diretório de trabalho (ex.: uv run --directory backend).
+ROOT = Path(__file__).resolve().parents[1]
+
 
 class DriftChecker:
     def __init__(self, root_dir: Path, docs_dir: Path):
@@ -220,8 +223,8 @@ class DriftChecker:
 
 def main():
     parser = argparse.ArgumentParser(description="Verificador de Drift Documental e de Código")
-    parser.add_argument("--docs", default="../documentation", help="Caminho para o diretório de documentação")
-    parser.add_argument("--root", default=".", help="Caminho raiz do projeto evidencia")
+    parser.add_argument("--docs", default=str(ROOT.parent / "documentation"), help="Caminho para o diretório de documentação (padrão: repositório irmão)")
+    parser.add_argument("--root", default=str(ROOT), help="Caminho raiz do projeto evidencia (padrão: pai de scripts/)")
     parser.add_argument("--output", default="", help="Caminho para salvar o relatório JSON")
     args = parser.parse_args()
 

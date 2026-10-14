@@ -1,143 +1,86 @@
+"""Testes do adaptador Ollama canônico (app.providers.ollama.OllamaProvider).
+
+Migrados do antigo app.services.ollama_service (ARCH-001): o provedor canônico
+nunca degrada silenciosamente para None; toda falha vira ProviderUnavailableError,
+que o orquestrador converte em contingência explícita.
+"""
+
 import json
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from app.services.ollama_service import OllamaService
+
+from app.providers.ollama import OllamaProvider
+from app.providers.types import Claim, ProviderUnavailableError
+
+
+def _chat_response(content: str, status_code: int = 200) -> MagicMock:
+    response = MagicMock()
+    response.status_code = status_code
+    response.json.return_value = {"message": {"role": "assistant", "content": content}}
+    return response
 
 
 @pytest.mark.asyncio
-async def test_ollama_service_resilience_when_offline():
-    """Garante que o serviço Ollama degrada graciosamente se o daemon local não estiver ativo."""
-    offline_ollama = OllamaService(base_url="http://127.0.0.1:54321", timeout_seconds=0.5)
+async def test_ollama_provider_fails_explicitly_when_offline():
+    """Daemon inacessível: indisponível no health check e erro explícito na extração."""
+    offline = OllamaProvider(base_url="http://127.0.0.1:54321", timeout_seconds=0.5)
 
-    is_up = await offline_ollama.is_available()
-    assert is_up is False
-
-    claims = await offline_ollama.extract_claims_with_qwen("Texto de teste", "Título")
-    assert claims is None
-
-    summary = await offline_ollama.generate_accessible_summary_with_qwen([], "Título")
-    assert summary is None
+    assert await offline.is_available() is False
+    with pytest.raises(ProviderUnavailableError):
+        await offline.extract_claims("Texto de teste", "Título")
 
 
-def test_ollama_service_configuration():
+def test_ollama_provider_default_configuration():
     """Valida as configurações padrão do Ollama e Qwen 2.5-3B."""
-    service = OllamaService()
-    assert "11434" in service.base_url
-    assert "qwen" in service.model.lower()
+    provider = OllamaProvider()
+    assert "11434" in provider.base_url
+    assert "qwen" in provider.model.lower()
+    assert provider.is_mock is False
 
 
 @pytest.mark.asyncio
-async def test_ollama_service_is_available_online():
-    """Valida checagem de integridade quando o Ollama está online."""
-    from unittest.mock import MagicMock
-
-    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
-        mock_resp = MagicMock()
-        mock_resp.status_code = 200
-        mock_get.return_value = mock_resp
-
-        service = OllamaService()
-        assert await service.is_available() is True
+async def test_ollama_provider_rejects_invalid_json():
+    """Conteúdo que não é JSON vira ProviderUnavailableError, nunca alegação inventada."""
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+        mock_post.return_value = _chat_response("not-valid-json")
+        with pytest.raises(ProviderUnavailableError):
+            await OllamaProvider().extract_claims("Transcrição", "Título")
 
 
 @pytest.mark.asyncio
-async def test_ollama_service_extract_claims_success():
-    """Valida extração estruturada de alegações via Qwen quando o modelo responde com JSON válido."""
-    from unittest.mock import MagicMock
-
-    mock_claims_payload = {
-        "claims": [
-            {
-                "text": "O estudo comprovou a eficácia da vacina",
-                "search_query": "eficacia vacina estudo",
-                "status": "apoiada",
-                "evidence_summary": "Ensaios clínicos publicados corroboram.",
-                "confidence": 0.95,
-            }
-        ]
-    }
-    mock_ollama_response = {
-        "message": {
-            "role": "assistant",
-            "content": json.dumps(mock_claims_payload),
-        }
-    }
-
+async def test_ollama_provider_extraction_prompt_is_evidence_first():
+    """O prompt de extração não pede veredito, nota ou classificação global ao modelo."""
+    payload = {"claims": [{"text": "O estudo comprovou a eficácia da vacina", "search_query": "eficacia vacina"}]}
     with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
-        mock_resp = MagicMock()
-        mock_resp.status_code = 200
-        mock_resp.json.return_value = mock_ollama_response
-        mock_post.return_value = mock_resp
+        mock_post.return_value = _chat_response(json.dumps(payload))
+        claims = await OllamaProvider().extract_claims("Transcrição do vídeo", "Título")
 
-        service = OllamaService()
-        claims = await service.extract_claims_with_qwen("Transcrição do vídeo", "Título")
-        assert claims is not None
-        assert len(claims) == 1
-        assert claims[0]["text"] == "O estudo comprovou a eficácia da vacina"
-        assert claims[0]["status"] == "apoiada"
+    assert [claim.text for claim in claims] == ["O estudo comprovou a eficácia da vacina"]
+    prompt = str(mock_post.call_args.kwargs["json"])
+    assert "Não atribua notas ou vereditos" in prompt
+    for forbidden in ("Nota:", "Classificação Geral", "veredito preliminar", "apoiada|contraditada"):
+        assert forbidden not in prompt
 
 
 @pytest.mark.asyncio
-async def test_ollama_service_extract_claims_errors():
-    """Valida tratamento seguro contra respostas HTTP de erro ou JSON inválido."""
-    from unittest.mock import MagicMock
-
+async def test_ollama_provider_reflection_lifecycle():
+    """Reflexão: sem alegações não chama a rede; resposta inválida falha explicitamente."""
+    provider = OllamaProvider()
     with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
-        mock_resp = MagicMock()
-        mock_resp.status_code = 500
-        mock_resp.text = "Internal Model Error"
-        mock_post.return_value = mock_resp
+        assert await provider.generate_reflection([], []) == []
+        mock_post.assert_not_called()
 
-        service = OllamaService()
-        claims = await service.extract_claims_with_qwen("Transcrição", "Título")
-        assert claims is None
-
+    claim = Claim(id="clm-01", text="Fato", search_query="fato", confidence=0.9)
     with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
-        mock_resp = MagicMock()
-        mock_resp.status_code = 200
-        mock_resp.json.return_value = {"message": {"content": "not-valid-json"}}
-        mock_post.return_value = mock_resp
-
-        service = OllamaService()
-        claims = await service.extract_claims_with_qwen("Transcrição", "Título")
-        assert claims is None
-
-
-@pytest.mark.asyncio
-async def test_ollama_service_generate_summary_lifecycle():
-    """Valida síntese analítica gerada pelo Qwen em cenários de sucesso e falha."""
-    from unittest.mock import MagicMock
-
-    mock_ollama_response = {
-        "message": {
-            "role": "assistant",
-            "content": "Olá Dona Lurdes! O vídeo traz informações verdadeiras confirmadas por fontes oficiais.",
-        }
-    }
-
-    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
-        mock_resp = MagicMock()
-        mock_resp.status_code = 200
-        mock_resp.json.return_value = mock_ollama_response
-        mock_post.return_value = mock_resp
-
-        service = OllamaService()
-        summary = await service.generate_accessible_summary_with_qwen(
-            claims=[{"status": "apoiada", "text": "Fato", "evidence_summary": "Evidência"}],
-            video_title="Título",
-        )
-        assert summary is not None
-        assert "Dona Lurdes" in summary
+        mock_post.return_value = _chat_response(json.dumps({"questions": ["Apenas uma?"]}))
+        with pytest.raises(ProviderUnavailableError):
+            await provider.generate_reflection([claim], [])
         prompt = str(mock_post.call_args.kwargs["json"])
         assert "Nota:" not in prompt
         assert "Classificação Geral" not in prompt
 
     with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
-        mock_resp = MagicMock()
-        mock_resp.status_code = 500
-        mock_resp.text = "Error"
-        mock_post.return_value = mock_resp
-
-        service = OllamaService()
-        summary = await service.generate_accessible_summary_with_qwen([], "Título")
-        assert summary is None
+        mock_post.return_value = _chat_response("", status_code=500)
+        with pytest.raises(ProviderUnavailableError, match="HTTP 500"):
+            await provider.generate_reflection([claim], [])

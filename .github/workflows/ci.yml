@@ -190,6 +190,13 @@ jobs:
       - name: Install Linting Tools
         run: uv sync --frozen --extra dev
 
+      - name: Verify Lockfile and Exported Requirements
+        working-directory: .
+        run: |
+          uv lock --check --project backend
+          uv export --frozen --no-dev --no-emit-project --project backend --format requirements-txt | diff - backend/requirements.txt
+          uv export --frozen --extra dev --no-emit-project --project backend --format requirements-txt | diff - backend/requirements-dev.txt
+
       - name: Run Ruff Linter & Syntax Compile
         run: |
           uv run ruff check . ../scripts --config pyproject.toml
@@ -276,7 +283,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: evidencia-grupo/documentation
-          ref: 27561529e989aa14621b0be5c4e3bc5a519cc9f9
+          ref: 583c1a0133c83a922f4198f490e670b99f3f4741
           path: documentation
 
       - name: Setup Python 3.12

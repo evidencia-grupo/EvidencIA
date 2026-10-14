@@ -3,6 +3,9 @@ from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+# Fonte única: ambientes que exigem auth, Redis, CORS estrito e bloqueiam o provedor mock.
+PRODUCTION_ENVIRONMENTS = ("production", "prod", "staging")
+
 
 class Settings(BaseSettings):
     PORT: int = 8000
@@ -41,7 +44,7 @@ class Settings(BaseSettings):
     REQUIRE_AUTH: bool = False
 
     def is_production(self) -> bool:
-        return any((value or "").strip().lower() in ("production", "prod", "staging")
+        return any((value or "").strip().lower() in PRODUCTION_ENVIRONMENTS
                    for value in (self.ENV, self.ENVIRONMENT, self.APP_ENV, self.NODE_ENV))
 
     model_config = {

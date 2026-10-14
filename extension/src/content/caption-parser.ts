@@ -169,6 +169,17 @@ export function getCaptionTracksFromPlayer(): CaptionTrack[] {
   }
 }
 
+/** Resposta do service worker: dado externo à página, validado antes do uso. */
+interface RuntimeMessageResponse {
+  success?: boolean;
+  data?: unknown;
+  error?: string;
+}
+
+function hasTrackList(value: unknown): value is CaptionAvailability {
+  return typeof value === "object" && value !== null && Array.isArray((value as { tracks?: unknown }).tracks);
+}
+
 export async function detectCaptionTracks(videoId: string, signal?: AbortSignal): Promise<CaptionAvailability> {
   signal?.throwIfAborted();
 
@@ -184,7 +195,7 @@ export async function detectCaptionTracks(videoId: string, signal?: AbortSignal)
     signal?.addEventListener("abort", onAbort, { once: true });
   });
 
-  let result: any;
+  let result: RuntimeMessageResponse | undefined;
   try {
     result = await Promise.race([detectionPromise, timeoutPromise]);
   } finally {
@@ -199,7 +210,7 @@ export async function detectCaptionTracks(videoId: string, signal?: AbortSignal)
   }
 
   const payload = result.data;
-  if (!payload || !Array.isArray(payload.tracks)) {
+  if (!hasTrackList(payload)) {
     throw new Error("Resposta de legendas inválida.");
   }
 

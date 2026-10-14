@@ -189,6 +189,18 @@ it("processa mensagens GET_CAPTION_TRACKS e OPEN_TAB no listener", async () => {
   expect(response).toHaveBeenCalledWith({ success: true, data: { id: 123 } });
 });
 
+it.each(["javascript:alert(1)", "chrome://settings", "http://example.com", "https://user:pass@example.com", "nao-e-url"])(
+  "recusa OPEN_TAB com URL não HTTPS ou com credenciais: %s",
+  url => {
+    const sender = { id: "extension", url: "https://www.youtube.com/watch?v=video", tab: { id: 1 } } as unknown as chrome.runtime.MessageSender;
+    const response = vi.fn();
+    vi.mocked(chrome.tabs.create).mockClear();
+    expect(listener({ type: "OPEN_TAB", url }, sender, response)).toBeUndefined();
+    expect(chrome.tabs.create).not.toHaveBeenCalled();
+    expect(response).not.toHaveBeenCalled();
+  },
+);
+
 
 it.each([401, 403])("emite/renova token após HTTP %s e repete uma vez", async status => {
   vi.mocked(fetch)

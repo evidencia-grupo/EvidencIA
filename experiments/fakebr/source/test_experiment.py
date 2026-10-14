@@ -45,6 +45,33 @@ class DeliveryTests(unittest.TestCase):
         self.assertEqual(result['label'], 'abstain')
         self.assertEqual(result['abstention_reason'], 'outside_vocabulary')
 
+    def test_reproduction_matches_received_delivery(self):
+        """Baseline de proveniência: a reprodução concorda com a entrega recebida (tolerância 1e-10)."""
+        def leaves(node, path=""):
+            if isinstance(node, dict):
+                for key, value in node.items():
+                    yield from leaves(value, f"{path}/{key}")
+            elif isinstance(node, list):
+                for index, value in enumerate(node):
+                    yield from leaves(value, f"{path}[{index}]")
+            else:
+                yield path, node
+
+        # Tempo de parede e plataforma descrevem a máquina, não o resultado científico.
+        volatile = ('/training_and_evaluation_seconds', '/environment/')
+        current = {k: v for k, v in leaves(json.loads((BASE/'results/metrics.json').read_text())) if not k.startswith(volatile)}
+        received = {k: v for k, v in leaves(json.loads((BASE/'results/metrics_recebidas.json').read_text())) if not k.startswith(volatile)}
+        self.assertEqual(current.keys(), received.keys())
+        for key, value in current.items():
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                self.assertAlmostEqual(value, received[key], delta=1e-10, msg=key)
+            else:
+                self.assertEqual(value, received[key], key)
+
+        received_manifest = json.loads((BASE/'results/manifest_recebido.json').read_text())
+        for name in ('results/splits.jsonl', 'results/test_predictions.jsonl'):
+            self.assertEqual(hashlib.sha256((BASE/name).read_bytes()).hexdigest(), received_manifest['files'][name]['sha256'], name)
+
     def test_reported_accuracy_agrees_with_individual_predictions(self):
         rows = [json.loads(line) for line in (BASE/'results/test_predictions.jsonl').read_text().splitlines()]
         metrics = json.loads((BASE/'results/metrics.json').read_text())['calibrated_test']

@@ -8,11 +8,16 @@ Garante que todos os providers implementam o contrato tipado esperado:
 Refs: ADR-001, IS-11.
 """
 
+import importlib.util
 import inspect
+import json
+import re
+from pathlib import Path
 
 from app.providers.base import LLMProvider
 from app.providers.mock import MockProvider
 from app.providers.ollama import OllamaProvider
+from app.providers.reflection_catalog import REFLECTION_QUESTIONS
 from app.providers.remote import RemoteLLMProvider
 from app.providers.types import Claim
 
@@ -70,3 +75,26 @@ def test_mock_provider_returns_valid_claims_and_reflections():
             assert q.endswith("?")
 
     asyncio.run(_run())
+
+
+def _load_contract_generator():
+    script = Path(__file__).resolve().parents[2] / "scripts" / "generate_contracts.py"
+    spec = importlib.util.spec_from_file_location("generate_contracts", script)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_generated_contracts_match_python_sources():
+    """ARCH-001: catálogo de reflexão, JSON Schema e tipos TS idênticos ao gerado a partir do Python."""
+    stale = [str(path) for path, content in _load_contract_generator().build().items()
+             if path.read_text(encoding="utf-8") != content]
+    assert stale == []
+
+
+def test_reflection_catalog_items_match_typescript():
+    """Mesmos itens, na mesma ordem, em reflection_catalog.py e shared/reflection-catalog.ts."""
+    ts = (Path(__file__).resolve().parents[2] / "shared" / "reflection-catalog.ts").read_text(encoding="utf-8")
+    array = re.search(r"REFLECTION_QUESTIONS = (\[.*\]) as const;", ts, re.S)
+    assert array is not None
+    assert json.loads(array.group(1)) == list(REFLECTION_QUESTIONS)

@@ -10,6 +10,11 @@ Pacote acadêmico preparado em **09/10/2026**, para a pasta do grupo no canal
 - `models/modelo_treinado.pkl`: TF-IDF, regressão logística, calibrador sigmoid,
   limiar, proteção mínima de vocabulário e metadados do experimento.
 - `relatorio_tecnico.md`: relatório para leitura e entrega.
+- `results/metrics_recebidas.json` e `results/manifest_recebido.json`: registro da entrega
+  recebida (revisão 0ffe395, semente 42), mantido como baseline de proveniência. O teste
+  `test_reproduction_matches_received_delivery` exige que `results/metrics.json` concorde
+  com ele em tolerância 1e-10 (exceto tempo de execução e plataforma) e que partições e
+  predições tenham os mesmos SHA-256. `results/manifest.json` é o manifesto da versão atual.
 - `relatorio_tecnico.md`: versão editável do relatório.
 - `results/`: métricas completas, predições do teste, diagnóstico local,
   identificadores das partições e integridade do pacote.

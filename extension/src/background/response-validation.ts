@@ -1,6 +1,7 @@
 import type { AnalyzeResponse } from "../../../shared/types/api";
 
-function isHttps(value: string): boolean {
+/** URL HTTPS sem credenciais embutidas; única forma aceita para links e abertura de abas. */
+export function isHttps(value: string): boolean {
   try {
     const url = new URL(value);
     return url.protocol === "https:" && !url.username && !url.password;
