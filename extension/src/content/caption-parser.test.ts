@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   extractCaptionsFromPage,
@@ -8,6 +8,7 @@ import {
   parseCaptionBody,
   parseCaptionJson,
   parseCaptionXml,
+  prepareTimedSegments,
   sanitizeTranscriptText,
   selectCaptionTrack,
 } from "./caption-parser";
@@ -472,5 +473,64 @@ describe("extractCaptionsFromPage", () => {
     await expect(
       extractCaptionsFromPage("video-1", undefined, invalidAvailability)
     ).rejects.toThrow("Endereço de legendas inválido.");
+  });
+
+  describe("segmentos temporizados (issue #67)", () => {
+    const track = { baseUrl: "https://www.youtube.com/api/timedtext?v=video-1", languageCode: "pt" };
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    function stubCaptionResponse(events: unknown[]) {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ events }))));
+    }
+
+    it("mantem os segmentos mesmo quando a higienizacao do texto completo divergiria", async () => {
+      stubCaptionResponse([
+        { tStartMs: 0, dDurationMs: 3000, segs: [{ utf8: "o índice subiu de 5 &lt; para 10" }] },
+        { tStartMs: 3000, dDurationMs: 3000, segs: [{ utf8: "e caiu para 20 &gt; 15 segundo estudos recentes" }] },
+        { tStartMs: 6000, dDurationMs: 3000, segs: [{ utf8: "então o ministério anunciou uma campanha nacional" }] },
+      ]);
+
+      const result = await extractCaptionsFromPage("video-1", undefined, { tracks: [track] });
+
+      expect(result?.segments).toHaveLength(3);
+      expect(result?.segments?.[2].start).toBe(6);
+      expect(result?.transcript).toBe(result?.segments?.map((segment) => segment.text).join(" "));
+    });
+
+    it("ignora apenas o trecho fora de ordem e limita a duracao ao fim do video", async () => {
+      stubCaptionResponse([
+        { tStartMs: 0, dDurationMs: 4000, segs: [{ utf8: "segundo estudos o consumo de açúcar aumentou" }] },
+        { tStartMs: 8000, dDurationMs: 4000, segs: [{ utf8: "então o governo lançou uma campanha nacional" }] },
+        { tStartMs: 2000, dDurationMs: 1000, segs: [{ utf8: "trecho repetido" }] },
+        { tStartMs: 10000, dDurationMs: 9000, segs: [{ utf8: "mas muita gente ainda duvida disso" }] },
+      ]);
+
+      const result = await extractCaptionsFromPage("video-1", undefined, {
+        tracks: [track],
+        metadata: { videoTitle: "Vídeo", channelName: "Canal", durationSeconds: 12 },
+      });
+
+      expect(result?.segments?.map((segment) => segment.start)).toEqual([0, 8, 10]);
+      expect(result?.segments?.[2].duration).toBe(3);
+      expect(result?.transcript).not.toContain("trecho repetido");
+      expect(result?.transcript).toBe(result?.segments?.map((segment) => segment.text).join(" "));
+    });
+  });
+});
+
+describe("prepareTimedSegments", () => {
+  it("descarta trechos que comecam depois do fim do video", () => {
+    expect(prepareTimedSegments([
+      { text: "a", start: 0, duration: 1 },
+      { text: "b", start: 30, duration: 1 },
+    ], 10)).toEqual([{ text: "a", start: 0, duration: 1 }]);
+  });
+
+  it("nao envia segmentos acima do limite do backend", () => {
+    const many = Array.from({ length: 5001 }, (_, index) => ({ text: "x", start: index, duration: 1 }));
+    expect(prepareTimedSegments(many)).toEqual([]);
   });
 });

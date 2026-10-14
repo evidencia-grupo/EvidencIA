@@ -22,7 +22,7 @@ from app.schemas import (
 from app.services.brazilian_fact_matcher import brazilian_fact_matcher
 from app.services.classifier_service import classifier_service
 from app.services.fact_check_client import fact_check_client
-from ml.classifier.claim_extractor import extract_candidate_claims
+from ml.classifier.claim_extractor import extract_candidate_claims, shorten_claim
 
 logger = logging.getLogger(__name__)
 
@@ -141,6 +141,9 @@ class FactCheckerService:
                             if claim.text.strip(" .!?").strip() and " ".join(claim.text.casefold().strip(" .!?").split()) in transcript_words]
                 if len(grounded) != len(provider_claims):
                     limitations.append("Alegações sem trecho correspondente na transcrição foram descartadas.")
+                # Um card nunca recebe um bloco corrido de texto (legendas ASR sem pontuação).
+                for claim in grounded:
+                    claim.text = shorten_claim(claim.text)
                 provider_claims = grounded
         except Exception as exc:
             logger.warning("llm_evidence_only: extração indisponível (%s)", type(exc).__name__)

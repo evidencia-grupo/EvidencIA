@@ -61,23 +61,95 @@ TOPIC_PATTERNS = [
 ]
 
 
-def split_transcript_sentences(transcript: str) -> List[str]:
-    """Segmenta a transcrição contínua em sentenças candidatas utilizando pontuação e quebras."""
+# Limites de legibilidade para frases exibidas no painel lateral.
+MIN_SEGMENT_WORDS = 8
+MAX_SEGMENT_WORDS = 25
+MAX_CLAIM_WORDS = 35
+
+# Conectivos e marcadores discursivos (forma normalizada, sem acento) que abrem
+# uma nova oração; servem de ponto natural de quebra em fala sem pontuação.
+DISCOURSE_MARKERS = frozenset({
+    "entao", "portanto", "segundo", "estudos", "existem", "porque", "mas", "alem",
+    "porem", "contudo", "entretanto", "todavia", "pois",
+})
+
+
+def _finish_sentence(words: List[str]) -> str:
+    """Capitaliza a primeira letra e garante ponto final, sem alterar as palavras originais."""
+    sentence = " ".join(words).rstrip(",;:")
+    sentence = sentence[:1].upper() + sentence[1:]
+    if sentence[-1:] not in ".!?":
+        sentence += "."
+    return sentence
+
+
+def _segment_unpunctuated_stream(
+    text: str,
+    min_words: int = MIN_SEGMENT_WORDS,
+    max_words: int = MAX_SEGMENT_WORDS,
+) -> List[str]:
+    """Divide um fluxo contínuo de fala sem pontuação (legenda ASR) em orações legíveis.
+
+    Quebra antes de conectivos discursivos ou depois de vírgulas quando a oração já
+    tem ao menos `min_words` palavras, e força a quebra ao atingir `max_words`.
+    As palavras originais são preservadas para que cada frase continue sendo um
+    trecho literal da transcrição (necessário para localizar o tempo no vídeo).
+    """
+    words = text.split()
+    if not words:
+        return []
+
+    chunks: List[List[str]] = []
+    current: List[str] = []
+    for word in words:
+        marker = normalize_text(word).strip(",;:.!?\"'") in DISCOURSE_MARKERS
+        if current and (len(current) >= max_words or (marker and len(current) >= min_words)):
+            chunks.append(current)
+            current = []
+        current.append(word)
+        if len(current) >= min_words and word[-1] in ",;:":
+            chunks.append(current)
+            current = []
+    if current:
+        # Evita uma sobra curta e solta no fim, sem ultrapassar o limite de alegação.
+        if chunks and len(current) < min_words and len(chunks[-1]) + len(current) <= MAX_CLAIM_WORDS:
+            chunks[-1].extend(current)
+        else:
+            chunks.append(current)
+
+    return [_finish_sentence(chunk) for chunk in chunks]
+
+
+def segment_transcript(transcript: str) -> List[str]:
+    """Segmenta a transcrição em frases curtas, mesmo quando a legenda não tem pontuação."""
     if not transcript:
         return []
 
-    # Divide por quebras de linha e pontuação forte (. ! ? ; e pausas longas)
-    raw_splits = re.split(r"[\n\r.!?]+", transcript)
-    sentences = []
-
-    for chunk in raw_splits:
+    sentences: List[str] = []
+    # Divide por quebras de linha e pontuação forte, mantendo a pontuação na frase.
+    for chunk in re.split(r"(?<=[.!?])\s+|[\n\r]+", transcript):
         cleaned = re.sub(r"\s+", " ", chunk).strip()
-        words = cleaned.split()
-        # Filtra fragmentos muito curtos (menos de 5 palavras)
-        if len(words) >= 5:
+        if not cleaned:
+            continue
+        if len(cleaned.split()) > MAX_CLAIM_WORDS:
+            sentences.extend(_segment_unpunctuated_stream(cleaned))
+        else:
             sentences.append(cleaned)
-
     return sentences
+
+
+def split_transcript_sentences(transcript: str) -> List[str]:
+    """Segmenta a transcrição contínua em sentenças candidatas utilizando pontuação e quebras."""
+    # Filtra fragmentos muito curtos (menos de 5 palavras)
+    return [sentence for sentence in segment_transcript(transcript) if len(sentence.split()) >= 5]
+
+
+def shorten_claim(text: str) -> str:
+    """Reduz uma alegação longa demais à oração mais saliente, preservando o texto literal."""
+    if len(text.split()) <= MAX_CLAIM_WORDS:
+        return text
+    pieces = _segment_unpunctuated_stream(text)
+    return max(pieces, key=score_claim_saliency)
 
 
 def is_conversational_filler(sentence: str) -> bool:
