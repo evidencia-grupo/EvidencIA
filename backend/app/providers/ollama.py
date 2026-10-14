@@ -6,15 +6,13 @@ Migrado e alinhado conforme ADR-001, ADR-005, ADR-006 e Issue #32.
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 from typing import List, Optional
 import httpx
 
-from app.providers.claim_saliency import score_claim_saliency
 from app.config import settings
-from app.providers.prompts import reflection_messages, parse_reflections
+from app.providers.prompts import extraction_messages, load_json_object, parse_extracted_claims, reflection_messages, parse_reflections
 from app.providers.base import LLMProvider
 from app.providers.types import Claim, Evidence, ProviderUnavailableError
 
@@ -51,26 +49,9 @@ class OllamaProvider(LLMProvider):
 
     async def extract_claims(self, transcript: str, video_title: str) -> List[Claim]:
         """Extrai proposições atômicas checáveis usando Qwen 2.5-3B local."""
-        system_prompt = (
-            "Você é um especialista em checagem de fatos em português do Brasil. "
-            "Sua tarefa é extrair de 0 a 4 alegações factuais atômicas da transcrição. "
-            "Isole somente afirmações factuais verificáveis. "
-            "Responda estritamente em formato JSON: {\"claims\": [{\"text\": \"...\", \"search_query\": \"...\"}]}"
-        )
-
-        system_prompt += (
-            " Analise a transcrição inteira, inclusive os trechos após a abertura, e priorize as teses factuais centrais. "
-            " Cada text deve ser um trecho exato da transcrição, não uma paráfrase. Cada alegação deve conter uma única proposição verificável, preservando sujeitos, datas e qualificadores. "
-            "Não invente fatos nem use o título como alegação. Ignore saudações de estúdio, apresentações, conversa fiada, pedidos de inscrição, preferências e opiniões. "
-            'Se não houver fatos verificáveis, retorne {"claims": []}. Não atribua notas ou vereditos ao vídeo.'
-        )
-        user_content = f"Título: {video_title}\n\nTranscrição completa:\n{transcript}"
         payload = {
             "model": self.model,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content},
-            ],
+            "messages": extraction_messages(transcript, video_title),
             "format": "json",
             "stream": False,
             "options": {"temperature": 0.1},
@@ -78,32 +59,8 @@ class OllamaProvider(LLMProvider):
 
         try:
             content = await self._chat(payload)
-            parsed = json.loads(content)
-            raw_claims = parsed["claims"]
-            if not isinstance(raw_claims, list):
-                raise ValueError("Lista de alegações inválida")
-            if not raw_claims:
-                return []
-
-            claims: List[Claim] = []
-            has_nonempty_text = False
-            for idx, c in enumerate(raw_claims):
-                text = c.get("text", "").strip()
-                if not text:
-                    continue
-                has_nonempty_text = True
-                if score_claim_saliency(text) > 0:
-                    claims.append(
-                        Claim(
-                            id=f"clm-{idx + 1:02d}",
-                            text=text,
-                            search_query=c.get("search_query", text[:40]),
-                            confidence=0.90,
-                        )
-                    )
-            if not has_nonempty_text:
-                raise ProviderUnavailableError("Nenhuma alegação extraída pelo modelo.")
-            return claims
+            parsed = load_json_object(content)
+            return parse_extracted_claims(parsed)
         except Exception as exc:
             if isinstance(exc, ProviderUnavailableError):
                 raise

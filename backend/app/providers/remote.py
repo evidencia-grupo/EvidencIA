@@ -12,9 +12,8 @@ import os
 from typing import List, Optional
 import httpx
 
-from app.providers.claim_saliency import score_claim_saliency
 from app.config import settings
-from app.providers.prompts import load_json_object, reflection_messages, parse_reflections
+from app.providers.prompts import extraction_messages, parse_extracted_claims, load_json_object, reflection_messages, parse_reflections
 from app.providers.base import LLMProvider
 from app.providers.types import Claim, Evidence, ProviderUnavailableError
 
@@ -44,24 +43,9 @@ class RemoteLLMProvider(LLMProvider):
         if not self.base_url:
             raise ProviderUnavailableError("REMOTE_LLM_BASE_URL não configurada para o provedor remoto.")
 
-        system_prompt = (
-            "Você é um especialista em fact-checking. "
-            "Extraia de 0 a 4 alegações factuais atômicas da transcrição. "
-            "Responda estritamente em JSON: {\"claims\": [{\"text\": \"...\", \"search_query\": \"...\"}]}"
-        )
-        system_prompt += (
-            " Analise a transcrição inteira, inclusive os trechos após a abertura, e priorize as teses factuais centrais. "
-            " Cada text deve ser um trecho exato da transcrição, não uma paráfrase. Cada alegação deve conter uma única proposição verificável, preservando sujeitos, datas e qualificadores. "
-            "Não invente fatos nem use o título como alegação. Ignore saudações de estúdio, apresentações, conversa fiada, pedidos de inscrição, preferências e opiniões. "
-            'Se não houver fatos verificáveis, retorne {"claims": []}. Não atribua notas ou vereditos ao vídeo.'
-        )
-        user_content = f"Título: {video_title}\n\nTranscrição completa:\n{transcript}"
         payload = {
             "model": self.model,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content},
-            ],
+            "messages": extraction_messages(transcript, video_title),
             "temperature": 0.1,
             "response_format": {"type": "json_object"},
         }
@@ -69,30 +53,7 @@ class RemoteLLMProvider(LLMProvider):
         try:
             content = await self._chat(payload)
             parsed = load_json_object(content)
-            raw_claims = parsed["claims"]
-            if not isinstance(raw_claims, list):
-                raise ValueError("Lista de alegações inválida")
-            if not raw_claims:
-                return []
-            claims: List[Claim] = []
-            has_nonempty_text = False
-            for idx, c in enumerate(raw_claims):
-                text = c.get("text", "").strip()
-                if not text:
-                    continue
-                has_nonempty_text = True
-                if score_claim_saliency(text) > 0:
-                    claims.append(
-                        Claim(
-                            id=f"clm-{idx + 1:02d}",
-                            text=text,
-                            search_query=c.get("search_query", text[:40]),
-                            confidence=0.90,
-                        )
-                    )
-            if not has_nonempty_text:
-                raise ProviderUnavailableError("Nenhuma alegação válida retornada pelo provedor remoto.")
-            return claims
+            return parse_extracted_claims(parsed)
         except Exception as exc:
             if isinstance(exc, ProviderUnavailableError):
                 raise

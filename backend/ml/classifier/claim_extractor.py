@@ -10,6 +10,7 @@ from ml.classifier.features import normalize_text, SENSATIONAL_MARKERS, CREDIBIL
 
 # Padrões conversacionais típicos de vídeos do YouTube a serem filtrados
 CONVERSATIONAL_PATTERNS = [
+    r"\b(?:ta|esta) comecando (?:o |mais um )?(?:(?:seu|nosso) )?programa\b",
     r"sejam bem[\s-]?vindos",
     r"bem[\s-]?vindo a mais um video",
     r"no video de hoje",
@@ -141,7 +142,7 @@ def segment_transcript(transcript: str) -> List[str]:
 def split_transcript_sentences(transcript: str) -> List[str]:
     """Segmenta a transcrição contínua em sentenças candidatas utilizando pontuação e quebras."""
     # Filtra fragmentos muito curtos (menos de 5 palavras)
-    return [sentence for sentence in segment_transcript(transcript) if len(sentence.split()) >= 5]
+    return [sentence.rstrip(".!?") for sentence in segment_transcript(transcript) if len(sentence.split()) >= 5]
 
 
 def shorten_claim(text: str) -> str:
