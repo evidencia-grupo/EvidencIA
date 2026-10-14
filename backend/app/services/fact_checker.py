@@ -325,7 +325,11 @@ class FactCheckerService:
         # 5. Processamento no modo Evidence-Only (Fallback sem LLM)
         else:
             analysis_mode = "evidence_only"
-            candidate_claims = extract_candidate_claims(request.transcript, max_claims=3)
+            candidate_claims = extract_candidate_claims(
+                request.transcript,
+                max_claims=3,
+                segments=[(segment.text, segment.start, segment.duration) for segment in request.segments],
+            )
             for index, text in enumerate(candidate_claims):
                 # Retrieve for this proposition; never share whole-video hits across claims.
                 retrieved = await asyncio.to_thread(retrieve_evidence, text)

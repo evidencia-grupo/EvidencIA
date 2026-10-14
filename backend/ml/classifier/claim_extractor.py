@@ -5,7 +5,7 @@ o Plano de Contingência do EvidencIA e ADR-006.
 """
 
 import re
-from typing import List, Tuple
+from typing import List, Optional, Sequence, Tuple
 from ml.classifier.features import normalize_text, SENSATIONAL_MARKERS, CREDIBILITY_MARKERS
 
 # Padrões conversacionais típicos de vídeos do YouTube a serem filtrados
@@ -39,6 +39,12 @@ CONVERSATIONAL_PATTERNS = [
     r"fala pessoal",
     r"muito obrigado por assistir",
     r"link na descricao",
+    r"\bcomec\w* agora\b",
+    r"\besta no ar\b",
+    r"\bfi(?:que|quem|ca) conosco\b",
+    r"\bdeix\w* (?:o )?(?:seu )?like\b",
+    r"^(?:oi|e ai|fala) (?:pessoal|gente|galera)\b",
+    r"^hoje vamos falar\b",
     r"clique no link",
 ]
 
@@ -66,6 +72,8 @@ TOPIC_PATTERNS = [
 MIN_SEGMENT_WORDS = 8
 MAX_SEGMENT_WORDS = 25
 MAX_CLAIM_WORDS = 35
+# Silêncio entre dois eventos de legenda que marca o fim de uma oração falada.
+PAUSE_BREAK_SECONDS = 0.8
 
 # Conectivos e marcadores discursivos (forma normalizada, sem acento) que abrem
 # uma nova oração; servem de ponto natural de quebra em fala sem pontuação.
@@ -139,6 +147,38 @@ def segment_transcript(transcript: str) -> List[str]:
     return sentences
 
 
+def segment_timed_captions(
+    segments: Sequence[Tuple[str, float, float]],
+    pause_seconds: float = PAUSE_BREAK_SECONDS,
+) -> List[str]:
+    """Agrupa eventos de legenda (texto, início, duração) em orações usando as pausas da fala.
+
+    Uma pausa de ao menos `pause_seconds` fecha a oração corrente quando ela já tem
+    `MIN_SEGMENT_WORDS` palavras; cada grupo passa depois pela segmentação por
+    pontuação, conectivos e limite de palavras. O texto dos eventos é preservado,
+    então cada frase continua sendo um trecho literal da transcrição.
+    """
+    groups: List[List[str]] = []
+    current: List[str] = []
+    previous_end: Optional[float] = None
+    for text, start, duration in segments:
+        words = text.split()
+        if not words:
+            continue
+        if current and previous_end is not None and start - previous_end >= pause_seconds and len(current) >= MIN_SEGMENT_WORDS:
+            groups.append(current)
+            current = []
+        current.extend(words)
+        previous_end = start + duration
+    if current:
+        groups.append(current)
+
+    sentences: List[str] = []
+    for group in groups:
+        sentences.extend(_finish_sentence(sentence.split()) for sentence in segment_transcript(" ".join(group)))
+    return sentences
+
+
 def split_transcript_sentences(transcript: str) -> List[str]:
     """Segmenta a transcrição contínua em sentenças candidatas utilizando pontuação e quebras."""
     # Filtra fragmentos muito curtos (menos de 5 palavras)
@@ -204,9 +244,16 @@ def extract_candidate_claims(
     transcript: str,
     max_claims: int = 3,
     min_saliency: float = 0.50,
+    segments: Optional[Sequence[Tuple[str, float, float]]] = None,
 ) -> List[str]:
-    """Extrai as principais sentenças com potencial de alegação factual verificável da transcrição."""
-    sentences = split_transcript_sentences(transcript)
+    """Extrai as principais sentenças com potencial de alegação factual verificável da transcrição.
+
+    Com legendas temporizadas, as pausas da fala também delimitam as orações.
+    """
+    if segments:
+        sentences = [s.rstrip(".!?") for s in segment_timed_captions(segments) if len(s.split()) >= 5]
+    else:
+        sentences = split_transcript_sentences(transcript)
     if not sentences:
         return []
 

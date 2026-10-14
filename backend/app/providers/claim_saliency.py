@@ -19,6 +19,9 @@ CONVERSATIONAL_PATTERNS = tuple(
         r"\btudo bem[, ]+doutor\b",
         r"\bvamos chamar o\b",
         r"\b(?:inscreva-se|inscreva no canal|deixe seu like|curta o video|compartilhe o video)\b",
+        r"\b(?:se inscrev\w*|deix\w+ (?:o )?(?:seu )?like|ative o sininho|compartilhe com)\b",
+        r"^(?:oi|e ai|fala) (?:pessoal|gente|galera)\b",
+        r"\b(?:comec\w* agora|esta no ar|fi(?:que|quem|ca) conosco|hoje vamos falar)\b",
     )
 )
 
