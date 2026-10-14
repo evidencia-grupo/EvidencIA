@@ -1,6 +1,6 @@
 // Até 15s de IA, além de captura de legendas e busca de evidências.
 const ANALYSIS_TIMEOUT_MS = 30_000;
-import { isAnalysis } from "./response-validation";
+import { isAnalysis, isHttps } from "./response-validation";
 import { getCaptionTracks } from "./player-captions";
 import { getCachedResult, saveCachedResult, CACHE_TTL_MS } from "./cache-manager";
 import type { AnalyzeRequest, AnalyzeResponse, FeedbackRequest, FeedbackResponse } from "../../../shared/types/api";
@@ -81,7 +81,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   else if (message.type === "GET_CACHE") operation = getCachedResult(message.videoId);
   else if (message.type === "ANALYZE_VIDEO") operation = handleAnalyzeRequest(message.payload, message.deadline);
   else if (message.type === "SUBMIT_FEEDBACK") operation = handleFeedbackRequest(message.payload);
-  else if (message.type === "OPEN_TAB" && typeof message.url === "string") operation = chrome.tabs.create({ url: message.url });
+  else if (message.type === "OPEN_TAB" && typeof message.url === "string" && isHttps(message.url)) operation = chrome.tabs.create({ url: message.url });
   else return;
   operation.then(data => sendResponse({ success: true, data })).catch(error =>
     sendResponse({ success: false, error: error instanceof Error ? error.message : "Falha na checagem." }));

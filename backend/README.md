@@ -52,6 +52,17 @@ uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 Swagger UI disponível em: `http://127.0.0.1:8000/docs`
 
+### Dependências
+
+`pyproject.toml` + `uv.lock` são a fonte canônica. `requirements.txt` (runtime, usado pelo Dockerfile e pelo Render) e `requirements-dev.txt` (usado pelo E2E e pelo drift check no CI) são exportações com hashes e não devem ser editados à mão; o job `lint-back` falha se divergirem. Para regenerar, na raiz do repositório:
+
+```bash
+uv export --frozen --no-dev --no-emit-project --project backend --format requirements-txt > backend/requirements.txt
+uv export --frozen --extra dev --no-emit-project --project backend --format requirements-txt > backend/requirements-dev.txt
+```
+
+`requirements-ml.txt` (índice vetorial e embeddings opcionais) e `requirements-notebook.txt` (reprodução do notebook entregue) são ambientes opcionais e isolados: não entram no runtime, na imagem Docker nem no Render.
+
 ---
 
 ## 4. Testes Automatizados

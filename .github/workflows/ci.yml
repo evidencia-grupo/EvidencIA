@@ -190,6 +190,13 @@ jobs:
       - name: Install Linting Tools
         run: uv sync --frozen --extra dev
 
+      - name: Verify Lockfile and Exported Requirements
+        working-directory: .
+        run: |
+          uv lock --check --project backend
+          uv export --frozen --no-dev --no-emit-project --project backend --format requirements-txt | diff - backend/requirements.txt
+          uv export --frozen --extra dev --no-emit-project --project backend --format requirements-txt | diff - backend/requirements-dev.txt
+
       - name: Run Ruff Linter & Syntax Compile
         run: |
           uv run ruff check . ../scripts --config pyproject.toml
