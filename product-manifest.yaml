@@ -106,7 +106,6 @@ extension:
   manifest_version: 3
   manifest_path: "extension/manifest.json"
   permissions:
-    - "activeTab"
     - "storage"
     - "scripting"
   host_permissions:

@@ -37,6 +37,8 @@ class Settings(BaseSettings):
 
     RATE_LIMIT_MAX_PER_MINUTE: int = Field(60, ge=1)
     RATE_LIMIT_STORAGE_URI: str = "memory://"
+    # Proxies reversos confiáveis à frente da API (Render: 1). 0 = X-Forwarded-For ignorado.
+    TRUSTED_PROXY_HOPS: int = Field(0, ge=0, le=5)
     MAX_REQUEST_BODY_BYTES: int = Field(524288, ge=1024, le=10485760)
     CORS_ALLOWED_ORIGINS: str = "https://www.youtube.com,chrome-extension://*"
 
