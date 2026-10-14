@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "EvidencIA — Fact-Checking para YouTube",
   "version": "1.0.0",
-  "description": "Extensão de checagem de fatos e veracidade de afirmações em vídeos do YouTube com IA e painel lateral.",
+  "description": "Investiga alegações de vídeos do YouTube com evidências de checagens publicadas e perguntas para reflexão.",
   "minimum_chrome_version": "102",
   "homepage_url": "https://evidencia-grupo.github.io/documentation/",
   "icons": {

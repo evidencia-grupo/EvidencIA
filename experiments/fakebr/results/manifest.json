@@ -4,8 +4,8 @@
   "received_zip_sha256": "f6c95916d6804f3b9761e752a508d6221d0cc483dacd98eece7f6962a8a67921",
   "files": {
     ".gitignore": {
-      "sha256": "b9c3ab7e004ffb722fa2c8c02f48c753cf4af73382c95c1ad54d9a4d0e59a0c6",
-      "bytes": 27
+      "sha256": "c8f284696f2c4edb9571786a0c90535740904adec573c870fb9bdc71caa85c6d",
+      "bytes": 33
     },
     "README.md": {
       "sha256": "c1d78db6012baae1ed3a48e13af8588cf4d2f5c7ab0562f5b03c094bd3854ac4",
@@ -22,6 +22,22 @@
     "figures/confusao.png": {
       "sha256": "34e6cdbbbbdb6a7885c5c5166b9d291707356df6e940cf7fd4eb7d8318a71450",
       "bytes": 29855
+    },
+    "figures/eda_categorias.png": {
+      "sha256": "abb1ae3a923485e23e18aa85aff4df7cdf8f6a205f916c14510face14e254fd1",
+      "bytes": 47948
+    },
+    "figures/eda_dominios.png": {
+      "sha256": "6736c65f3a77390ba92fa11f391a71b09994e2ecc8544debe40279400de01929",
+      "bytes": 60673
+    },
+    "figures/eda_estilo.png": {
+      "sha256": "c3969ab07226021ac5dcf892c6a484ffea96dfaa21ec9c41e3ac476c04148d1c",
+      "bytes": 29488
+    },
+    "figures/eda_tamanho.png": {
+      "sha256": "cf129f6369baa6350aa9be1777770fd129e90022c2e49b54714638771c171162",
+      "bytes": 31513
     },
     "models/baseline_legado_retreinado.json": {
       "sha256": "cf3cc248ddf583ee01b97d1b2c0f98e209278ecd8010f0c96f76ccf0d3b155fe",
@@ -51,6 +67,10 @@
       "sha256": "33e07d362a89f3d51bd6c183ae4912ac327225d273c33554fa1fadef661680a7",
       "bytes": 631
     },
+    "results/eda_summary.json": {
+      "sha256": "04638c1c4822ae5b50ea9a93c9c7485324069e774f3ab35c36a7e71655f6c283",
+      "bytes": 7034
+    },
     "results/legacy_comparison.json": {
       "sha256": "61e4b005063e10bdd30a8d034eac9bbe442c45bc312c14d24b0d6163fddf9ef4",
       "bytes": 3147
@@ -74,6 +94,10 @@
     "source/__init__.py": {
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "bytes": 0
+    },
+    "source/eda.py": {
+      "sha256": "9ced13bbc18bda0a7db854d3105a2f7f63be3403b744067a577ac461845d7c72",
+      "bytes": 10261
     },
     "source/experiment.py": {
       "sha256": "0d2854b98dd086851aab849024f0376a91bc2b5e3f4afdf059b9ad6226661288",
