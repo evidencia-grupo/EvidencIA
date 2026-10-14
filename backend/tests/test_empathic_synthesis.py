@@ -54,7 +54,7 @@ def test_claims_contain_explicit_status_for_ui_grouping():
         "videoId": "video-dona-lurdes",
         "videoTitle": "Dicas de Saúde da Semana",
         "channelName": "Saúde e Bem Estar",
-        "transcript": "Olá amigas, hoje vamos falar sobre estudos recentes e dados comprovados sobre alimentação saudável.",
+        "transcript": "Olá amigas, hoje vamos falar sobre alimentação saudável. Um estudo de 2023 mostrou que o consumo diário de fibras reduz o colesterol.",
     }
     response = client.post("/api/v1/analyze", json=payload)
     assert response.status_code == 200

@@ -148,3 +148,32 @@ async def test_one_reflection_failure_does_not_abort_other_claims():
     assert result.claims[0].reflectionQuestions == VALID_QUESTIONS
     assert result.claims[1].reflectionQuestions == VALID_QUESTIONS
     assert result.claims[3].reflectionQuestions == VALID_QUESTIONS
+
+
+@pytest.mark.asyncio
+async def test_concurrent_reflections_keep_claim_order_and_cut_latency():
+    provider = make_provider()
+    delay = 0.2
+    # A alegação mais antiga demora mais: a ordem do resultado não pode seguir a ordem de término.
+    delays = {"A população aumentou em 2021.": delay * 1.5}
+
+    async def reflect(claims, evidence):
+        await asyncio.sleep(delays.get(claims[0].text, delay))
+        return VALID_QUESTIONS.copy()
+
+    provider.generate_reflection = AsyncMock(side_effect=reflect)
+
+    with (
+        patch("app.services.fact_checker.get_provider", return_value=provider),
+        patch("app.services.fact_checker.brazilian_fact_matcher.find_match", return_value=None),
+        patch("app.services.fact_checker.fact_check_client.search_claims", new_callable=AsyncMock, return_value=[]),
+    ):
+        loop = asyncio.get_running_loop()
+        started = loop.time()
+        result = await FactCheckerService().analyze(make_request())
+        elapsed = loop.time() - started
+
+    assert [claim.text for claim in result.claims] == [claim.text for claim in provider.extract_claims.return_value]
+    # Sequencial levaria 4,5 × delay; com limite 3, bastam duas rodadas (2 × delay).
+    assert elapsed < delay * 3
+    assert result.analysisMode == "evidence_first"

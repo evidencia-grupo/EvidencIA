@@ -45,5 +45,5 @@ def test_brazilian_fact_matcher_traceable_evidence():
     assert evidence.publisher == "Agência Lupa"
     assert evidence.url.startswith("https://")
     assert evidence.snippet
-    assert evidence.provenance.dataset == "factchecksbr"
+    assert evidence.provenance.dataset == "demonstracao_local"
     assert evidence.publishedAt == ""

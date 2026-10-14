@@ -20,6 +20,7 @@ export interface CaptionSegment {
 export interface CaptionTrack {
   baseUrl: string;
   languageCode: string;
+  kind?: string;
 }
 
 export interface CaptionAvailability {
@@ -182,8 +183,10 @@ export function parseCaptionBody(body: string): string {
 export function selectCaptionTrack(tracks: CaptionTrack[] | null | undefined): CaptionTrack | null {
   if (!tracks || tracks.length === 0) return null;
 
-  const preferred = tracks.find((track) => track.languageCode.toLowerCase().startsWith("pt"));
-  return preferred ?? tracks[0];
+  // Português primeiro; dentro do idioma, legenda manual (mais fiel) antes da automática (kind "asr").
+  const portuguese = tracks.filter((track) => track.languageCode.toLowerCase().startsWith("pt"));
+  const pool = portuguese.length ? portuguese : tracks;
+  return pool.find((track) => track.kind !== "asr") ?? pool[0];
 }
 
 export function getCaptionTracksFromPlayer(): CaptionTrack[] {
@@ -250,6 +253,18 @@ export async function detectCaptionTracks(videoId: string, signal?: AbortSignal)
   };
 }
 
+/** Pede ao service worker a legenda lida do próprio player (a URL pública pode responder vazio). */
+async function requestPlayerCaption(videoId: string, track: CaptionTrack, signal?: AbortSignal): Promise<string> {
+  const reply = (await chrome.runtime.sendMessage({
+    type: "GET_PLAYER_CAPTION", videoId, languageCode: track.languageCode, ...(track.kind ? { kind: track.kind } : {}),
+  })) as RuntimeMessageResponse | undefined;
+  signal?.throwIfAborted();
+  if (!reply?.success || typeof reply.data !== "string") {
+    throw new Error(reply?.error || "Não foi possível obter a legenda deste vídeo. Tente novamente.");
+  }
+  return reply.data;
+}
+
 export async function extractCaptionsFromPage(
   videoId: string,
   signal?: AbortSignal,
@@ -282,7 +297,9 @@ export async function extractCaptionsFromPage(
   let transcript = "";
   let segments: CaptionSegment[] = [];
   try {
-    const text = await response.text();
+    let text = await response.text();
+    // O YouTube pode responder vazio sem o token do player; usa a legenda que o próprio player recebe.
+    if (!text.trim()) text = await requestPlayerCaption(videoId, track, signal);
     const body = parseCaptionBody(text);
     segments = prepareTimedSegments(
       text.trimStart().startsWith("{") ? parseCaptionJson(text) : parseCaptionXml(text),

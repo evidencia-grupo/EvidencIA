@@ -129,3 +129,29 @@ def test_adversarial_absence_of_evidence():
     text = "O telescópio James Webb fotografou uma nova galáxia espiral distante a bilhões de anos-luz"
     match = brazilian_fact_matcher.find_match(text)
     assert match is None
+
+
+def test_numbers_written_out_match_the_same_proposition():
+    """Issue #69: "três dias" e "3 dias" são a mesma proposição checada."""
+    text = "Chá de casca de banana cura diabetes e zera a glicose no sangue em três dias"
+    match = brazilian_fact_matcher.find_match(text)
+    assert match is not None
+    assert match["relation"] == "contradicts"
+
+
+def test_changed_number_never_inherits_the_fact_check_stance():
+    """Issue #69: mesmo tema com outro número é outra proposição; no máximo contextualiza."""
+    text = "Chá de casca de banana cura diabetes e zera a glicose no sangue em 30 dias"
+    match = brazilian_fact_matcher.find_match(text)
+    assert match is not None
+    assert match["relation"] == "contextualizes"
+
+
+def test_number_mismatch_lowers_candidate_score():
+    from app.services.brazilian_fact_matcher import NUMBER_MISMATCH_PENALTY, extract_numbers
+
+    assert extract_numbers("cinco por cento em 2023 e 3,5 doses") == {"5", "2023", "3.5"}
+    same = "O Pix cobra taxa oculta de cinco por cento sobre transferências entre pessoas físicas"
+    changed = "O Pix cobra taxa oculta de vinte por cento sobre transferências entre pessoas físicas"
+    assert brazilian_fact_matcher.find_match(same)["relation"] != "contextualizes"
+    assert brazilian_fact_matcher.find_match(changed, threshold=1.0 - NUMBER_MISMATCH_PENALTY) is None

@@ -45,3 +45,23 @@ async def test_linguistic_note_does_not_leak_between_claims():
         result=await FactCheckerService().analyze(req)
     assert "Nota exclusiva" in result.claims[0].temporalContext.note
     assert result.claims[1].temporalContext.note is None
+
+
+def test_last_segment_overrunning_video_end_is_clamped_not_rejected():
+    """O YouTube arredonda a duração para baixo e a última fala pode ultrapassá-la; isso não invalida a análise."""
+    import pytest
+    from pydantic import ValidationError
+    from app.schemas import AnalyzeRequest
+
+    text = "Primeira frase do vídeo com conteúdo suficiente. Última frase dita perto do fim do vídeo."
+    base = {"videoId": "v", "videoTitle": "t", "channelName": "c", "transcript": text, "durationSeconds": 231}
+    request = AnalyzeRequest(**base, segments=[
+        {"text": "Primeira frase do vídeo com conteúdo suficiente.", "start": 0, "duration": 5},
+        {"text": "Última frase dita perto do fim do vídeo.", "start": 229.5, "duration": 9.0},
+    ])
+    assert request.segments[-1].start + request.segments[-1].duration == 231
+    with pytest.raises(ValidationError, match="começa depois do fim"):
+        AnalyzeRequest(**base, segments=[
+            {"text": "Primeira frase do vídeo com conteúdo suficiente.", "start": 0, "duration": 5},
+            {"text": "Última frase dita perto do fim do vídeo.", "start": 240, "duration": 2},
+        ])

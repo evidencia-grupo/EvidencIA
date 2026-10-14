@@ -387,6 +387,16 @@ describe("selectCaptionTrack", () => {
     );
   });
 
+  it("deve preferir legenda manual a automatica no mesmo idioma", () => {
+    const tracks = [
+      { baseUrl: "https://example.com/en-asr", languageCode: "en", kind: "asr" },
+      { baseUrl: "https://example.com/pt-asr", languageCode: "pt", kind: "asr" },
+      { baseUrl: "https://example.com/pt-br", languageCode: "pt-BR" },
+    ];
+    expect(selectCaptionTrack(tracks)).toEqual(tracks[2]);
+    expect(selectCaptionTrack([tracks[0], tracks[1]])).toEqual(tracks[1]);
+  });
+
   it("deve retornar null quando nao houver faixas", () => {
     expect(
       selectCaptionTrack([])

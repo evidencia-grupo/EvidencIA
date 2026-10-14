@@ -12,6 +12,7 @@ from ml.classifier.claim_extractor import (
     MAX_CLAIM_WORDS,
     _segment_unpunctuated_stream,
     extract_candidate_claims,
+    segment_timed_captions,
     segment_transcript,
     shorten_claim,
 )
@@ -116,3 +117,53 @@ async def test_long_provider_claim_is_shortened_and_keeps_timestamp():
     assert len(claim.text.split()) <= MAX_CLAIM_WORDS
     assert claim.timestampStart is not None
     assert _words(claim.text) in _words(claim.transcriptSnippet)
+
+
+def test_speech_pause_closes_the_sentence():
+    events = [
+        ("segundo o ministério da saúde a vacina", 0.0, 2.0),
+        ("contra a dengue chegou a dois milhões de doses", 2.0, 2.5),
+        ("o chá de canela não cura diabetes segundo", 6.0, 2.0),
+        ("pesquisadores da universidade federal de minas", 8.0, 2.0),
+    ]
+    sentences = segment_timed_captions(events)
+    assert sentences == [
+        "Segundo o ministério da saúde a vacina contra a dengue chegou a dois milhões de doses.",
+        "O chá de canela não cura diabetes segundo pesquisadores da universidade federal de minas.",
+    ]
+
+
+def test_overlapping_asr_events_do_not_break_and_keep_literal_words():
+    # Legendas ASR "rolantes" se sobrepõem: sem pausa, não há quebra; o limite de palavras ainda vale.
+    events = [(" ".join(["palavra"] * 6), index * 1.5, 2.0) for index in range(12)]
+    sentences = segment_timed_captions(events)
+    assert all(len(sentence.split()) <= MAX_CLAIM_WORDS for sentence in sentences)
+    assert _words(" ".join(sentences)).replace(".", "") == _words(" ".join(text for text, _, _ in events))
+
+
+def test_short_utterance_before_pause_is_not_left_alone():
+    events = [("bom dia", 0.0, 1.0), ("a anvisa aprovou a vacina contra a dengue em dezembro", 3.0, 3.0)]
+    assert segment_timed_captions(events) == [
+        "Bom dia a anvisa aprovou a vacina contra a dengue em dezembro.",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_offline_pipeline_uses_pauses_and_exact_segment_times():
+    events = [
+        ("olá pessoal sejam bem-vindos ao programa de hoje", 0.0, 3.0),
+        ("o ministério da saúde anunciou que a vacina", 5.0, 2.0),
+        ("contra a dengue chegou a dois milhões de doses", 7.0, 2.0),
+    ]
+    transcript = " ".join(text for text, _, _ in events)
+    request = AnalyzeRequest(
+        videoId="abc123def45", videoTitle="Vacina", channelName="Canal", transcript=transcript,
+        durationSeconds=10, analysisMode="evidence_only",
+        segments=[{"text": text, "start": start, "duration": duration} for text, start, duration in events],
+    )
+    with patch("app.services.fact_checker.fact_check_client.search_claims", new=AsyncMock(return_value=[])):
+        result = await FactCheckerService().analyze(request)
+    claim = next(c for c in result.claims if "dengue" in c.text)
+    assert "bem-vindos" not in claim.text
+    assert claim.timestampStart == 5.0
+    assert claim.timestampEnd == 9.0

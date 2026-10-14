@@ -22,7 +22,7 @@ backend/
 ### Artefatos do classificador
 
 - `ml/classifier/model.json`: único formato carregado em runtime (`ClassifierService`), desserializado como JSON puro.
-- `ml/classifier/model.plk`: exportação pickle do mesmo modelo, mantida porque a extensão `.plk` foi solicitada como entregável acadêmico. Não é lida pela API; `tests/test_no_pickle_in_runtime.py` impede que `app/` ou `ml/` importem desserializadores pickle ou referenciem `.plk`/`.pkl`. Carregue-a só em ambiente confiável, pois `pickle.load` executa código.
+- Nenhum artefato pickle acompanha o backend; `tests/test_no_pickle_in_runtime.py` impede que `app/` ou `ml/` importem desserializadores pickle ou referenciem `.plk`/`.pkl`. O modelo `.plk` entregue no trabalho acadêmico fica em [`experiments/fakebr/models/`](../experiments/fakebr/models/).
 
 ---
 

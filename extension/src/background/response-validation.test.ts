@@ -81,3 +81,39 @@ it.each(["invalid-url", "http://example.org", "ftp://example.org"])(
     expect(isAnalysis(invalidEvidence, "video")).toBe(false);
   }
 );
+
+it("aceita todos os campos opcionais que o backend envia", () => {
+  const full = {
+    ...valid,
+    analysisMode: "evidence_only",
+    limitations: ["Modo demonstração: amostras locais."],
+    claims: [
+      {
+        ...valid.claims[0],
+        transcriptSnippet: "trecho da fala",
+        timestampStart: 12.5,
+        timestampEnd: 18,
+        uncertainty: "insufficient_evidence",
+        evidence: [
+          {
+            ...valid.claims[0].evidence[0],
+            relation: "contextualizes",
+            snippet: "Resumo da checagem",
+            matchReason: "Correspondência temática",
+            provenance: { dataset: "demonstracao_local", indexedAt: "2026-01-01T00:00:00Z", contentHash: "sha256:abc" },
+          },
+        ],
+      },
+    ],
+  };
+  expect(isAnalysis(full, "video")).toBe(true);
+});
+
+it.each([
+  { ...valid, limitations: [42] },
+  { ...valid, claims: [{ ...valid.claims[0], transcriptSnippet: { html: "<b>" } }] },
+  { ...valid, claims: [{ ...valid.claims[0], evidence: [{ ...valid.claims[0].evidence[0], snippet: 7 }] }] },
+  { ...valid, claims: [{ ...valid.claims[0], evidence: [{ ...valid.claims[0].evidence[0], matchReason: [] }] }] },
+])("rejeita campos de texto corrompidos (%#)", (payload) => {
+  expect(isAnalysis(payload, "video")).toBe(false);
+});

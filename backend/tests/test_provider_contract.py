@@ -98,3 +98,13 @@ def test_reflection_catalog_items_match_typescript():
     array = re.search(r"REFLECTION_QUESTIONS = (\[.*\]) as const;", ts, re.S)
     assert array is not None
     assert json.loads(array.group(1)) == list(REFLECTION_QUESTIONS)
+
+
+def test_mock_provider_skips_greetings_and_channel_calls():
+    """No modo de demonstração, saudações e pedidos de inscrição não viram alegações."""
+    import asyncio
+
+    transcript = ("Olá pessoal, bem-vindos ao canal. Hoje vamos falar de saúde. "
+                  "A vacina contra a dengue foi incorporada ao SUS em dezembro de 2023. Deixe seu like e se inscreva.")
+    claims = asyncio.run(MockProvider().extract_claims(transcript, "Título"))
+    assert [c.text for c in claims] == ["A vacina contra a dengue foi incorporada ao SUS em dezembro de 2023."]

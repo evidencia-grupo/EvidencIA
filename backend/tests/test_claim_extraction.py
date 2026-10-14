@@ -11,6 +11,7 @@ from app.services.fact_check_client import (
     normalize_rating_to_status,
 )
 from app.services.fact_checker import FactCheckerService
+from ml.classifier.claim_extractor import extract_candidate_claims, score_claim_saliency
 
 client = TestClient(app)
 
@@ -246,3 +247,36 @@ async def test_claim_extraction_execute_analysis_development_pipeline(monkeypatc
     assert resp.videoId == "vid-dev-01"
     assert len(resp.claims) >= 1
     assert resp.analysisMode == "evidence_first"
+
+
+TV_OPENINGS_AND_CTAS = [
+    "Boa noite, está começando agora o seu telejornal.",
+    "Bom dia, o programa está no ar e você fica conosco até o fim.",
+    "Fique conosco porque depois do intervalo tem muito mais.",
+    "Hoje vamos falar de saúde com o nosso convidado especial.",
+    "Se inscreva no canal e ative o sininho para não perder nada.",
+    "Deixe o seu like e compartilhe com os amigos da família.",
+    "Fala pessoal, tudo certo com vocês nesta semana?",
+]
+
+
+@pytest.mark.parametrize("sentence", TV_OPENINGS_AND_CTAS)
+def test_tv_openings_and_calls_to_action_have_zero_saliency(sentence):
+    from app.providers.claim_saliency import score_claim_saliency as provider_saliency
+
+    assert provider_saliency(sentence) == 0.0
+    assert score_claim_saliency(sentence) == 0.0
+
+
+def test_no_greeting_or_call_to_action_becomes_a_claim():
+    transcript = " ".join(TV_OPENINGS_AND_CTAS) + (
+        " O Ministério da Saúde anunciou que a vacina contra a dengue chegou a 2 milhões de doses aplicadas."
+    )
+    claims = extract_candidate_claims(transcript, max_claims=5)
+    assert claims == ["O Ministério da Saúde anunciou que a vacina contra a dengue chegou a 2 milhões de doses aplicadas"]
+
+
+def test_short_factual_claim_after_greeting_is_kept():
+    from app.providers.claim_saliency import score_claim_saliency as provider_saliency
+
+    assert provider_saliency("Boa noite, a Anvisa aprovou a vacina em 2023.") > 1.0

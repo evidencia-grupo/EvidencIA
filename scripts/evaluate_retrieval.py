@@ -16,11 +16,14 @@ import math
 import sys
 from pathlib import Path
 
+# Caminhos padrão ancorados no repositório, não no diretório de execução.
+ROOT = Path(__file__).resolve().parents[1]
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Avaliação de Retrieval e Stance")
-    parser.add_argument("--claims", type=str, default="evaluation/claims.jsonl", help="Caminho para claims.jsonl")
-    parser.add_argument("--candidates", type=str, default="evaluation/candidates.jsonl", help="Caminho para candidates.jsonl")
+    parser.add_argument("--claims", type=str, default=str(ROOT / "evaluation" / "claims.jsonl"), help="Caminho para claims.jsonl")
+    parser.add_argument("--candidates", type=str, default=str(ROOT / "evaluation" / "candidates.jsonl"), help="Caminho para candidates.jsonl")
     return parser.parse_args()
 
 

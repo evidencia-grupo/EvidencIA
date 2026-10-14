@@ -10,6 +10,8 @@ export function isHttps(value: string): boolean {
   }
 }
 
+const isOptionalText = (value: unknown): boolean => value == null || typeof value === "string";
+
 /** Valida dados externos sob o contrato Evidence-First (ADR-006). */
 export function isAnalysis(value: unknown, videoId: string): value is AnalyzeResponse {
   if (!value || typeof value !== "object") return false;
@@ -27,6 +29,7 @@ export function isAnalysis(value: unknown, videoId: string): value is AnalyzeRes
     Number.isFinite(data.processingTimeMs) &&
     data.processingTimeMs >= 0 &&
     Array.isArray(data.limitations) &&
+    data.limitations.every((item) => typeof item === "string") &&
     Array.isArray(data.claims) &&
     data.claims.every(
       (claim) =>
@@ -35,6 +38,7 @@ export function isAnalysis(value: unknown, videoId: string): value is AnalyzeRes
         claim.id.trim().length > 0 &&
         typeof claim.text === "string" &&
         claim.text.trim().length > 0 &&
+        isOptionalText(claim.transcriptSnippet) &&
         [claim.timestampStart, claim.timestampEnd].every(t => t == null || (typeof t === "number" && Number.isFinite(t) && t >= 0)) &&
         (claim.timestampStart == null || claim.timestampEnd == null || claim.timestampEnd >= claim.timestampStart) &&
         (claim.reflectionQuestions == null ||
@@ -61,6 +65,8 @@ export function isAnalysis(value: unknown, videoId: string): value is AnalyzeRes
             isHttps(ev.url) &&
             typeof ev.publisher === "string" &&
             typeof ev.publishedAt === "string" &&
+            isOptionalText(ev.snippet) &&
+            isOptionalText(ev.matchReason) &&
             Boolean(ev.provenance) &&
             typeof ev.provenance.dataset === "string"
         )
