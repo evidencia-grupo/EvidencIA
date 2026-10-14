@@ -22,7 +22,7 @@ from app.schemas import (
 from app.services.brazilian_fact_matcher import brazilian_fact_matcher
 from app.services.classifier_service import classifier_service
 from app.services.fact_check_client import fact_check_client
-from ml.classifier.claim_extractor import extract_candidate_claims, is_conversational_filler
+from ml.classifier.claim_extractor import extract_candidate_claims, is_conversational_filler, shorten_claim
 
 logger = logging.getLogger(__name__)
 
@@ -144,6 +144,9 @@ class FactCheckerService:
                 provider_claims = [claim for claim in grounded if not is_conversational_filler(claim.text)]
                 if len(provider_claims) != len(grounded):
                     limitations.append("Saudações e ruído conversacional foram descartados antes da busca de evidências.")
+                # Um card nunca recebe um bloco corrido de texto (legendas ASR sem pontuação).
+                for claim in provider_claims:
+                    claim.text = shorten_claim(claim.text)
         except Exception as exc:
             logger.warning("llm_evidence_only: extração indisponível (%s)", type(exc).__name__)
             analysis_mode = "evidence_only"
