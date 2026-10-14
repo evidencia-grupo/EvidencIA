@@ -1,3 +1,5 @@
+// Até 15s de IA, além de captura de legendas e busca de evidências.
+const ANALYSIS_TIMEOUT_MS = 30_000;
 import { detectCaptionTracks, extractCaptionsFromPage } from "./caption-parser";
 import { toFriendlyMessage } from "./friendly-messages";
 import type { AnalyzeRequest } from "../../../shared/types/api";
@@ -37,6 +39,18 @@ window.addEventListener("message", (event) => {
     }
   } else if (event.data?.type === "SUBMIT_FEEDBACK") {
     chrome.runtime.sendMessage({ type: "SUBMIT_FEEDBACK", payload: event.data.payload }).catch(() => {});
+  } else if (event.data?.type === "JUMP_TO_TIMESTAMP") {
+    const video = document.querySelector("video");
+    if (video && typeof event.data.seconds === "number") {
+      video.currentTime = event.data.seconds;
+      video.play().catch(() => {});
+    }
+  } else if (event.data?.type === "OPEN_EXTERNAL_URL" && typeof event.data.url === "string") {
+    try {
+      window.open(event.data.url, "_blank", "noopener,noreferrer");
+    } catch {
+      chrome.runtime.sendMessage({ type: "OPEN_TAB", url: event.data.url }).catch(() => {});
+    }
   }
 });
 window.addEventListener("keydown", (event) => {
@@ -56,7 +70,7 @@ function initSidePanel() {
   panelIframe.title = "Checagem factual do vídeo";
   panelIframe.id = "evidencia-side-panel";
   panelIframe.src = chrome.runtime.getURL("src/panel/index.html");
-  panelIframe.setAttribute("sandbox", "allow-scripts allow-same-origin");
+  panelIframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox");
   panelIframe.style.cssText = `
     position: fixed;
     top: 56px;
@@ -174,7 +188,7 @@ function injectTriggerBadge() {
     const run = ++generation;
     const controller = new AbortController();
     activeController = controller;
-    const deadline = Date.now() + 9500;
+    const deadline = Date.now() + ANALYSIS_TIMEOUT_MS;
     const active = () => run === generation && getVideoIdFromUrl() === videoId;
     button.setAttribute("aria-disabled", "true");
     button.classList.add("evidencia-loading");
@@ -185,15 +199,21 @@ function injectTriggerBadge() {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const checkActive = () => {
       if (!active()) throw new Error("Checagem encerrada. Tente novamente.");
-      if (Date.now() >= deadline) throw new Error("Tempo limite de 10 segundos excedido. Tente novamente.");
+      if (Date.now() >= deadline) throw new Error("Tempo limite de resposta excedido. Tente novamente.");
     };
     try {
       const work = async () => {
+        const cachedPromise = chrome.runtime.sendMessage({ type: "GET_CACHE", videoId }).then(
+          data => ({ data, error: undefined }),
+          error => ({ data: undefined, error }),
+        );
         const tracks = await detectCaptionTracks(videoId, controller.signal);
         checkActive();
-        if (!tracks.tracks.length) return null;
-        const cached = await chrome.runtime.sendMessage({ type: "GET_CACHE", videoId });
+        if (!tracks.tracks.length) return null; // Never wait for slow cache when captions are absent.
+        const cacheResult = await cachedPromise;
         checkActive();
+        if (cacheResult.error) throw cacheResult.error;
+        const cached = cacheResult.data;
         if (cached?.success && cached.data) return cached.data;
         const captions = await extractCaptionsFromPage(videoId, controller.signal, tracks);
         checkActive();
@@ -205,6 +225,7 @@ function injectTriggerBadge() {
           uploadDate: captions.uploadDate,
           durationSeconds: captions.durationSeconds,
           transcript: captions.transcript,
+          ...(captions.segments ? { segments: captions.segments } : {}),
           language: captions.language,
         };
         const response = await chrome.runtime.sendMessage({ type: "ANALYZE_VIDEO", payload, deadline });
@@ -215,7 +236,7 @@ function injectTriggerBadge() {
       const data = await Promise.race([
         work(),
         new Promise<never>((_, reject) => {
-          timer = setTimeout(() => reject(new Error("Tempo limite de 10 segundos excedido. Tente novamente.")), Math.max(0, deadline - Date.now()));
+          timer = setTimeout(() => reject(new Error("Tempo limite de resposta excedido. Tente novamente.")), Math.max(0, deadline - Date.now()));
         }),
       ]);
       if (!active()) return;
@@ -224,9 +245,16 @@ function injectTriggerBadge() {
       status.textContent = data ? "Checagem concluída" : "Legendas indisponíveis";
     } catch (error) {
       if (!active()) return;
-      publish({ type: "ANALYSIS_ERROR", error: toFriendlyMessage(error) });
-      button.querySelector("span")!.textContent = "Tentar novamente";
-      status.textContent = "Falha na checagem";
+      const isNoCaptions = error instanceof Error && /curta demais|vazia|sem legendas/i.test(error.message);
+      if (isNoCaptions) {
+        publish({ type: "NO_CAPTIONS" });
+        button.querySelector("span")!.textContent = "Sem legendas — tentar novamente";
+        status.textContent = "Legendas indisponíveis";
+      } else {
+        publish({ type: "ANALYSIS_ERROR", error: toFriendlyMessage(error) });
+        button.querySelector("span")!.textContent = "Tentar novamente";
+        status.textContent = "Falha na checagem";
+      }
     } finally {
       clearTimeout(timer);
       controller.abort();

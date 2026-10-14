@@ -27,6 +27,24 @@ def test_factory_raises_mock_in_production():
         assert "não é permitido em ambiente de produção" in str(exc_info.value)
 
 
+def test_factory_raises_mock_in_staging():
+    """Staging aplica as exigências de produção (auth, Redis, CORS); o mock também é bloqueado lá."""
+    for staging_env in ["staging", "Staging", " STAGING "]:
+        with pytest.raises(MockInProductionError):
+            get_provider(provider_name="mock", app_env=staging_env)
+
+
+def test_factory_production_definition_matches_settings(monkeypatch):
+    """Todo ambiente que Settings.is_production() reconhece também bloqueia o mock na factory."""
+    from app.config import PRODUCTION_ENVIRONMENTS, settings
+
+    for env_name in PRODUCTION_ENVIRONMENTS:
+        monkeypatch.setattr(settings, "ENVIRONMENT", env_name)
+        assert settings.is_production()
+        with pytest.raises(MockInProductionError):
+            get_provider(provider_name="mock", app_env=env_name)
+
+
 def test_factory_allows_mock_in_development():
     """Mock provider é permitido em ambiente de desenvolvimento ou testes locais."""
     for dev_env in ["development", "dev", "test", "local"]:
@@ -55,9 +73,6 @@ def test_no_direct_imports_of_mock_in_app():
         os.path.normpath(os.path.join(app_root, "providers", "mock.py")),
         os.path.normpath(os.path.join(app_root, "providers", "factory.py")),
         os.path.normpath(os.path.join(app_root, "providers", "__init__.py")),
-        os.path.normpath(os.path.join(app_root, "services", "providers", "mock.py")),
-        os.path.normpath(os.path.join(app_root, "services", "providers", "factory.py")),
-        os.path.normpath(os.path.join(app_root, "services", "providers", "__init__.py")),
     }
 
     violations = []

@@ -45,7 +45,7 @@ async function setup(context: BrowserContext, id = "video", captions = true) {
         contentType: "text/html",
         body: `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Vídeo de teste - Checagem sob demanda</title></head><body>
         <main><h1 class="ytd-watch-metadata">Ciência</h1><div id="channel-name">Canal de testes</div><div id="above-the-fold"></div><div id="movie_player"></div><video></video><a href="#footer">Próximo</a></main>
-        <script>window.ytInitialPlayerResponse = {videoDetails:{videoId:new URLSearchParams(location.search).get('v')},captions:{playerCaptionsTracklistRenderer:{captionTracks:${captions ? JSON.stringify([{ baseUrl: "https://www.youtube.com/api/timedtext?v=" + id, languageCode: "pt" }]) : "[]"}}}};
+        <script>window.ytInitialPlayerResponse = {videoDetails:{videoId:new URLSearchParams(location.search).get('v'),shortDescription:'DESCRICAO NAO DITA NO VIDEO com conteúdo longo sobre política e economia que não pertence à legenda.'},captions:{playerCaptionsTracklistRenderer:{captionTracks:${captions ? JSON.stringify([{ baseUrl: "https://www.youtube.com/api/timedtext?v=" + id, languageCode: "pt" }]) : "[]"}}}};
         window.__evidencia_perf__ = {click:0, feedback:null, blocking:0};
         new PerformanceObserver(list => { for (const entry of list.getEntries()) window.__evidencia_perf__.blocking += Math.max(0,entry.duration-50); }).observe({type:'longtask',buffered:true});
         document.addEventListener('click', () => {
@@ -166,7 +166,7 @@ test("Checagem sob demanda: cache expirado é substituído e iframe frio recebe 
             evidence: [],
           },
         ],
-        timestamp: Date.now() - 86400000,
+        cacheVersion: 3, timestamp: Date.now() - 86400000,
         ttl: 86400000,
       },
     })
@@ -193,20 +193,41 @@ test("Checagem sob demanda: sem legendas encerra carregamento sem interromper pl
 });
 
 test("Checagem sob demanda: erro HTTP permite nova tentativa; timeout nunca mostra sucesso tardio", async ({ extension }) => {
+  // O prazo da extensão é 30s para acomodar os 15s de IA e a busca de evidências.
+  // A fixture, a tentativa HTTP inicial e as verificações também consomem o timeout do teste.
+  test.setTimeout(45_000);
   await extension.worker.evaluate(() => {
-    (globalThis as any).originalFetch = fetch;
     globalThis.fetch = async () => new Response("", { status: 503 });
   });
   const { page, button, panel } = await setup(extension.context);
   await button.click();
   await expect(panel.getByRole("alert")).toContainText("Não conseguimos checar este vídeo agora");
   await extension.worker.evaluate(() => {
-    globalThis.fetch = async (_url, init) =>
-      new Promise((_resolve, reject) => init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError"))));
+    (globalThis as any).requestAborted = false;
+    globalThis.fetch = async (_url, init) => new Promise<Response>((resolve, reject) => {
+      (globalThis as any).releaseLateResponse = () => resolve(new Response(JSON.stringify({
+        analysisMode: "evidence_first", videoId: "video", videoTitle: "Resposta tardia",
+        channelName: "Canal", publishedAt: "2026-10-07T00:00:00Z",
+        processingTimeMs: 31_000, claims: [], limitations: [],
+      }), { headers: { "Content-Type": "application/json" } }));
+      init?.signal?.addEventListener("abort", () => {
+        (globalThis as any).requestAborted = true;
+        reject(new DOMException("Aborted", "AbortError"));
+      });
+    });
   });
   await page.getByRole("button", { name: "Tentar novamente" }).click();
-  await expect(panel.getByRole("alert")).toContainText(/demorou mais do que o esperado/, { timeout: 11000 });
+  await expect(panel.getByRole("alert")).toContainText(/demorou mais do que o esperado/, { timeout: 35_000 });
   await expect(page.getByRole("button", { name: "Tentar novamente" })).toBeEnabled();
+  await expect.poll(() => extension.worker.evaluate(() => (globalThis as any).requestAborted)).toBe(true);
+
+  // Uma resposta que chega depois do cancelamento não deve substituir o erro nem entrar no cache.
+  await extension.worker.evaluate(() => (globalThis as any).releaseLateResponse());
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  await expect(panel.getByRole("alert")).toContainText(/demorou mais do que o esperado/);
+  await expect(panel.getByText(/Alegações Analisadas/)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Checagem concluída/ })).toHaveCount(0);
+  expect(await extension.worker.evaluate(async () => (await chrome.storage.local.get("video")).video)).toBeUndefined();
 });
 
 test("Checagem sob demanda: teclado, foco e WCAG 2.1 AA no resultado", async ({ extension }, info) => {
@@ -320,4 +341,40 @@ test("Checagem sob demanda: WCAG nos estados de carregamento, falha e classifica
     await audit(uncertainty);
   }
   await info.attach("axe-estados.json", { body: JSON.stringify(states), contentType: "application/json" });
+});
+
+async function captureAnalysisPayloads(worker: Worker) {
+  await worker.evaluate(() => {
+    const original = globalThis.fetch;
+    (globalThis as any).__analysisBodies = [];
+    globalThis.fetch = async (input, init) => {
+      if (String(input).includes("/api/v1/analyze") && typeof init?.body === "string") {
+        (globalThis as any).__analysisBodies.push(JSON.parse(init.body));
+      }
+      return original(input, init);
+    };
+  });
+}
+
+test("somente a legenda SRV3 chega ao backend, com seus timestamps reais", async ({ extension }) => {
+  await captureAnalysisPayloads(extension.worker);
+  const { button, panel } = await setup(extension.context);
+  await extension.context.route("https://www.youtube.com/api/timedtext**", route => route.fulfill({ contentType: "text/xml", body: `<timedtext><body><p t="300000" d="7000"><s>${transcript}</s></p></body></timedtext>` }));
+  await button.click();
+  await expect(panel.getByText(/Alegações Analisadas/)).toBeVisible();
+  const requests = await extension.worker.evaluate(() => (globalThis as any).__analysisBodies);
+  expect(requests).toHaveLength(1);
+  expect(requests[0].transcript).toBe(transcript);
+  expect(requests[0].transcript).not.toContain("DESCRICAO");
+  expect(requests[0].segments).toEqual([{ text: transcript, start: 300, duration: 7 }]);
+});
+
+test("legenda vazia com descrição longa não dispara análise", async ({ extension }) => {
+  await captureAnalysisPayloads(extension.worker);
+  const { button, page } = await setup(extension.context);
+  await extension.context.route("https://www.youtube.com/api/timedtext**", route => route.fulfill({ contentType: "text/xml", body: "<transcript></transcript>" }));
+  await button.click();
+  await expect(page.getByRole("status")).toContainText("Legendas indisponíveis");
+  await expect(page.getByRole("button", { name: "Sem legendas — tentar novamente" })).toBeVisible();
+  expect(await extension.worker.evaluate(() => (globalThis as any).__analysisBodies)).toHaveLength(0);
 });

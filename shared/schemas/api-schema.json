@@ -1,43 +1,307 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "EvidencIA Evidence-First API Contract",
+  "title": "EvidencIA API Contract",
   "definitions": {
-    "EvidenceRelation": {
-      "type": "string",
-      "enum": ["supports", "contradicts", "contextualizes"]
-    },
-    "UncertaintyState": {
-      "type": "string",
-      "enum": [
-        "supported",
-        "contradicted",
-        "contextualized",
-        "conflicting",
-        "insufficient_evidence"
-      ]
-    },
-    "EvidenceProvenance": {
-      "type": "object",
-      "required": ["dataset", "indexedAt"],
+    "TranscriptSegment": {
+      "additionalProperties": false,
       "properties": {
-        "dataset": { "type": "string" },
-        "indexedAt": { "type": "string", "format": "date-time" },
-        "contentHash": { "type": "string" }
+        "text": {
+          "maxLength": 100000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "start": {
+          "minimum": 0,
+          "title": "Start",
+          "type": "number"
+        },
+        "duration": {
+          "minimum": 0,
+          "title": "Duration",
+          "type": "number"
+        }
       },
-      "additionalProperties": false
+      "required": [
+        "text",
+        "start",
+        "duration"
+      ],
+      "title": "TranscriptSegment",
+      "type": "object"
     },
-    "TemporalContext": {
-      "type": "object",
-      "required": ["videoPublishedAt"],
+    "AnalyzeRequest": {
+      "additionalProperties": false,
       "properties": {
-        "claimDate": { "type": "string" },
-        "videoPublishedAt": { "type": "string" },
-        "note": { "type": "string" }
+        "videoId": {
+          "description": "Identificador do vídeo no YouTube",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Videoid",
+          "type": "string"
+        },
+        "videoTitle": {
+          "description": "Título do vídeo",
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Videotitle",
+          "type": "string"
+        },
+        "channelName": {
+          "description": "Nome do canal do YouTube",
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Channelname",
+          "type": "string"
+        },
+        "uploadDate": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Data de publicação no formato ISO 8601",
+          "title": "Uploaddate"
+        },
+        "durationSeconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Duração do vídeo em segundos",
+          "title": "Durationseconds"
+        },
+        "transcript": {
+          "description": "Texto higienizado da transcrição",
+          "maxLength": 100000,
+          "minLength": 50,
+          "title": "Transcript",
+          "type": "string"
+        },
+        "language": {
+          "anyOf": [
+            {
+              "maxLength": 20,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "pt-BR",
+          "description": "Código do idioma",
+          "title": "Language"
+        },
+        "segments": {
+          "items": {
+            "$ref": "#/definitions/TranscriptSegment"
+          },
+          "maxItems": 5000,
+          "title": "Segments",
+          "type": "array"
+        },
+        "analysisMode": {
+          "default": "evidence_first",
+          "enum": [
+            "evidence_first",
+            "evidence_only"
+          ],
+          "title": "Analysismode",
+          "type": "string"
+        }
       },
-      "additionalProperties": false
+      "required": [
+        "videoId",
+        "videoTitle",
+        "channelName",
+        "transcript"
+      ],
+      "title": "AnalyzeRequest",
+      "type": "object"
+    },
+    "Claim": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "Identificador único da alegação",
+          "title": "Id",
+          "type": "string"
+        },
+        "text": {
+          "description": "Texto da alegação extraída",
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "transcriptSnippet": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Trecho textual da transcrição onde a alegação ocorre",
+          "title": "Transcriptsnippet"
+        },
+        "timestampStart": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Segundo de início no vídeo",
+          "title": "Timestampstart"
+        },
+        "timestampEnd": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Segundo de término no vídeo",
+          "title": "Timestampend"
+        },
+        "temporalContext": {
+          "$ref": "#/definitions/TemporalContext",
+          "description": "Contexto temporal da alegação"
+        },
+        "evidence": {
+          "description": "Evidências relacionadas",
+          "items": {
+            "$ref": "#/definitions/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "uncertainty": {
+          "description": "Estado de certeza analítica",
+          "enum": [
+            "supported",
+            "contradicted",
+            "contextualized",
+            "conflicting",
+            "insufficient_evidence"
+          ],
+          "title": "Uncertainty",
+          "type": "string"
+        },
+        "reflectionQuestions": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Perguntas orientadoras neutras",
+          "title": "Reflectionquestions"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "temporalContext",
+        "uncertainty"
+      ],
+      "title": "Claim",
+      "type": "object"
     },
     "Evidence": {
-      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceId": {
+          "description": "Identificador único da evidência",
+          "title": "Sourceid",
+          "type": "string"
+        },
+        "relation": {
+          "description": "Relação factual com a alegação",
+          "enum": [
+            "supports",
+            "contradicts",
+            "contextualizes"
+          ],
+          "title": "Relation",
+          "type": "string"
+        },
+        "title": {
+          "description": "Título da checagem ou estudo",
+          "title": "Title",
+          "type": "string"
+        },
+        "url": {
+          "description": "Hiperligação completa com protocolo seguro",
+          "title": "Url",
+          "type": "string"
+        },
+        "publishedAt": {
+          "description": "Data de publicação original",
+          "title": "Publishedat",
+          "type": "string"
+        },
+        "publisher": {
+          "description": "Instituição ou agência publicadora",
+          "title": "Publisher",
+          "type": "string"
+        },
+        "snippet": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Trecho textual relevante da checagem",
+          "title": "Snippet"
+        },
+        "matchReason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicação objetiva de por que a fonte foi recuperada",
+          "title": "Matchreason"
+        },
+        "provenance": {
+          "$ref": "#/definitions/EvidenceProvenance",
+          "description": "Metadados de auditoria e proveniência"
+        }
+      },
       "required": [
         "sourceId",
         "relation",
@@ -47,55 +311,131 @@
         "publisher",
         "provenance"
       ],
-      "properties": {
-        "sourceId": { "type": "string" },
-        "relation": { "$ref": "#/definitions/EvidenceRelation" },
-        "title": { "type": "string" },
-        "url": { "type": "string", "format": "uri" },
-        "publishedAt": { "type": "string" },
-        "publisher": { "type": "string" },
-        "snippet": { "type": "string" },
-        "provenance": { "$ref": "#/definitions/EvidenceProvenance" }
-      },
-      "additionalProperties": false
+      "title": "Evidence",
+      "type": "object"
     },
-    "Claim": {
-      "type": "object",
-      "required": ["id", "text", "temporalContext", "evidence", "uncertainty"],
+    "EvidenceProvenance": {
+      "additionalProperties": false,
       "properties": {
-        "id": { "type": "string" },
-        "text": { "type": "string" },
-        "temporalContext": { "$ref": "#/definitions/TemporalContext" },
-        "evidence": {
-          "type": "array",
-          "items": { "$ref": "#/definitions/Evidence" }
+        "dataset": {
+          "description": "Nome do dataset de proveniência (ex.: factchecks-br)",
+          "title": "Dataset",
+          "type": "string"
         },
-        "uncertainty": { "$ref": "#/definitions/UncertaintyState" },
-        "reflectionQuestions": {
-          "type": "array",
-          "minItems": 3,
-          "maxItems": 3,
-          "items": { "type": "string", "minLength": 1 }
+        "indexedAt": {
+          "description": "Data/hora de indexação da evidência",
+          "title": "Indexedat",
+          "type": "string"
+        },
+        "contentHash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Hash de integridade da evidência",
+          "title": "Contenthash"
         }
       },
-      "additionalProperties": false
+      "required": [
+        "dataset",
+        "indexedAt"
+      ],
+      "title": "EvidenceProvenance",
+      "type": "object"
     },
-    "AnalyzeRequest": {
-      "type": "object",
-      "required": ["videoId", "videoTitle", "channelName", "transcript"],
+    "TemporalContext": {
+      "additionalProperties": false,
       "properties": {
-        "videoId": { "type": "string", "minLength": 1 },
-        "videoTitle": { "type": "string", "minLength": 1 },
-        "channelName": { "type": "string", "minLength": 1 },
-        "uploadDate": { "type": "string" },
-        "durationSeconds": { "type": "integer", "minimum": 0 },
-        "transcript": { "type": "string", "minLength": 50 },
-        "language": { "type": "string", "default": "pt-BR" }
+        "claimDate": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Data estimada da alegação",
+          "title": "Claimdate"
+        },
+        "videoPublishedAt": {
+          "description": "Data de publicação original do vídeo",
+          "title": "Videopublishedat",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Orientação de contexto temporal",
+          "title": "Note"
+        }
       },
-      "additionalProperties": false
+      "required": [
+        "videoPublishedAt"
+      ],
+      "title": "TemporalContext",
+      "type": "object"
     },
     "AnalyzeResponse": {
-      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "videoId": {
+          "title": "Videoid",
+          "type": "string"
+        },
+        "analysisMode": {
+          "enum": [
+            "evidence_first",
+            "evidence_only"
+          ],
+          "title": "Analysismode",
+          "type": "string"
+        },
+        "videoTitle": {
+          "title": "Videotitle",
+          "type": "string"
+        },
+        "channelName": {
+          "title": "Channelname",
+          "type": "string"
+        },
+        "publishedAt": {
+          "title": "Publishedat",
+          "type": "string"
+        },
+        "processingTimeMs": {
+          "title": "Processingtimems",
+          "type": "integer"
+        },
+        "claims": {
+          "items": {
+            "$ref": "#/definitions/Claim"
+          },
+          "title": "Claims",
+          "type": "array"
+        },
+        "limitations": {
+          "description": "Ressalvas metodológicas e limitações",
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        }
+      },
       "required": [
         "videoId",
         "analysisMode",
@@ -103,74 +443,329 @@
         "channelName",
         "publishedAt",
         "processingTimeMs",
-        "claims",
-        "limitations"
+        "claims"
       ],
+      "title": "AnalyzeResponse",
+      "type": "object"
+    },
+    "AuthTokenRequest": {
+      "additionalProperties": false,
       "properties": {
-        "videoId": { "type": "string" },
-        "analysisMode": {
-          "type": "string",
-          "enum": ["evidence_first", "evidence_only"]
+        "installationId": {
+          "description": "Identificador único anônimo da instalação da extensão",
+          "maxLength": 128,
+          "minLength": 8,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Installationid",
+          "type": "string"
         },
-        "videoTitle": { "type": "string" },
-        "channelName": { "type": "string" },
-        "publishedAt": { "type": "string" },
-        "processingTimeMs": { "type": "integer", "minimum": 0 },
-        "claims": {
-          "type": "array",
-          "items": { "$ref": "#/definitions/Claim" }
-        },
-        "limitations": {
-          "type": "array",
-          "items": { "type": "string" }
+        "clientVersion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "1.0.0",
+          "description": "Versão do cliente da extensão",
+          "title": "Clientversion"
         }
       },
-      "additionalProperties": false
+      "required": [
+        "installationId"
+      ],
+      "title": "AuthTokenRequest",
+      "type": "object"
     },
-    "HealthResponse": {
-      "type": "object",
-      "required": ["status", "version", "services", "timestamp"],
+    "AuthTokenResponse": {
+      "additionalProperties": false,
       "properties": {
-        "status": {
-          "type": "string",
-          "enum": ["healthy", "degraded", "unhealthy"]
+        "token": {
+          "description": "Token de acesso efêmero (JWT/HMAC)",
+          "title": "Token",
+          "type": "string"
         },
-        "version": { "type": "string" },
-        "services": {
-          "type": "object",
-          "additionalProperties": { "type": "string" }
+        "tokenType": {
+          "default": "Bearer",
+          "description": "Tipo do token de autenticação",
+          "title": "Tokentype",
+          "type": "string"
         },
-        "timestamp": { "type": "string", "format": "date-time" }
+        "expiresIn": {
+          "default": 86400,
+          "description": "Tempo de vida útil em segundos (24 horas)",
+          "title": "Expiresin",
+          "type": "integer"
+        }
       },
-      "additionalProperties": false
+      "required": [
+        "token"
+      ],
+      "title": "AuthTokenResponse",
+      "type": "object"
+    },
+    "ClassifyRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "description": "Texto ou proposição a ser classificada",
+          "maxLength": 10000,
+          "minLength": 3,
+          "title": "Text",
+          "type": "string"
+        },
+        "threshold": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Limiar de aceitação (default: 0.65)",
+          "title": "Threshold"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "ClassifyRequest",
+      "type": "object"
+    },
+    "ClassifyResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "description": "fake, true ou unverified",
+          "title": "Label",
+          "type": "string"
+        },
+        "dominant_label": {
+          "description": "fake ou true",
+          "title": "Dominant Label",
+          "type": "string"
+        },
+        "verdict_pt": {
+          "description": "Descrição da classe linguística, não prova factual",
+          "title": "Verdict Pt",
+          "type": "string"
+        },
+        "confidence": {
+          "description": "Score normalizado não calibrado empiricamente [0.5, 1.0]",
+          "title": "Confidence",
+          "type": "number"
+        },
+        "accepted": {
+          "description": "Se a confiança superou o limiar de aceitação",
+          "title": "Accepted",
+          "type": "boolean"
+        },
+        "threshold": {
+          "description": "Limiar adotado",
+          "title": "Threshold",
+          "type": "number"
+        },
+        "probabilities": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "P(fake) e P(true)",
+          "title": "Probabilities",
+          "type": "object"
+        },
+        "top_features": {
+          "description": "Features mais discriminativas",
+          "items": {
+            "items": {},
+            "type": "array"
+          },
+          "title": "Top Features",
+          "type": "array"
+        },
+        "heuristic_reasons": {
+          "description": "Gatilhos linguísticos identificados",
+          "items": {
+            "type": "string"
+          },
+          "title": "Heuristic Reasons",
+          "type": "array"
+        },
+        "epistemic_tone": {
+          "default": "neutral",
+          "description": "Tom epistêmico da alegação",
+          "title": "Epistemic Tone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "dominant_label",
+        "verdict_pt",
+        "confidence",
+        "accepted",
+        "threshold",
+        "probabilities"
+      ],
+      "title": "ClassifyResponse",
+      "type": "object"
     },
     "FeedbackRequest": {
-      "type": "object",
-      "required": ["videoId", "rating"],
+      "additionalProperties": false,
       "properties": {
-        "videoId": { "type": "string", "minLength": 1 },
+        "videoId": {
+          "description": "Identificador do vídeo avaliado",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Videoid",
+          "type": "string"
+        },
         "rating": {
-          "type": "string",
-          "enum": ["positive", "negative"]
+          "description": "Classificação de relevância e utilidade da análise",
+          "enum": [
+            "positive",
+            "negative"
+          ],
+          "title": "Rating",
+          "type": "string"
         },
         "reason": {
-          "type": "string",
-          "enum": ["outdated_sources", "insufficient_evidence", "inaccurate", "other"]
+          "anyOf": [
+            {
+              "enum": [
+                "outdated_sources",
+                "insufficient_evidence",
+                "inaccurate",
+                "other"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Motivo opcional da classificação",
+          "title": "Reason"
         }
       },
-      "additionalProperties": false
+      "required": [
+        "videoId",
+        "rating"
+      ],
+      "title": "FeedbackRequest",
+      "type": "object"
     },
     "FeedbackResponse": {
-      "type": "object",
-      "required": ["status", "message"],
+      "additionalProperties": false,
       "properties": {
         "status": {
-          "type": "string",
-          "enum": ["received"]
+          "const": "received",
+          "default": "received",
+          "title": "Status",
+          "type": "string"
         },
-        "message": { "type": "string" }
+        "message": {
+          "default": "Feedback anônimo registrado com sucesso.",
+          "title": "Message",
+          "type": "string"
+        }
       },
-      "additionalProperties": false
+      "title": "FeedbackResponse",
+      "type": "object"
+    },
+    "HealthResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "healthy",
+            "degraded",
+            "unhealthy"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        },
+        "services": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Services",
+          "type": "object"
+        },
+        "timestamp": {
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "version",
+        "services",
+        "timestamp"
+      ],
+      "title": "HealthResponse",
+      "type": "object"
+    },
+    "LivenessResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "alive",
+          "default": "alive",
+          "title": "Status",
+          "type": "string"
+        },
+        "timestamp": {
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "timestamp"
+      ],
+      "title": "LivenessResponse",
+      "type": "object"
+    },
+    "ReadinessResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "ready",
+            "not_ready"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "components": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Components",
+          "type": "object"
+        },
+        "timestamp": {
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "components",
+        "timestamp"
+      ],
+      "title": "ReadinessResponse",
+      "type": "object"
     }
   }
 }

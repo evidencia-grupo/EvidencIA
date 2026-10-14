@@ -30,3 +30,9 @@ it("injeta no MAIN e filtra URLs externas e inválidas", async () => {
   executeScript.mockResolvedValue([]);
   await expect(getCaptionTracks(7, "video")).rejects.toThrow("Não foi possível");
 });
+
+it("não coleta descrição como dado de legenda", () => {
+  (window as any).ytInitialPlayerResponse.videoDetails.shortDescription = "Uma descrição não corresponde à fala do vídeo.";
+  document.body.insertAdjacentHTML("beforeend", '<div id="description">Texto descritivo independente</div>');
+  expect(readPlayerCaptions("video").metadata).not.toHaveProperty("description");
+});

@@ -13,6 +13,9 @@ from typing import List, Optional
 import httpx
 
 from app.providers.claim_saliency import score_claim_saliency
+from app.config import settings
+from app.providers.prompts import reflection_messages, parse_reflections
+from app.providers.base import LLMProvider
 from app.providers.types import Claim, Evidence, ProviderUnavailableError
 
 logger = logging.getLogger(__name__)
@@ -21,7 +24,7 @@ DEFAULT_OLLAMA_URL = "http://localhost:11434"
 DEFAULT_OLLAMA_MODEL = "qwen2.5:3b"
 
 
-class OllamaProvider:
+class OllamaProvider(LLMProvider):
     """Implementação do protocolo LLMProvider para daemon local Ollama (Qwen 2.5-3B)."""
 
     name: str = "ollama"
@@ -31,11 +34,11 @@ class OllamaProvider:
         self,
         base_url: Optional[str] = None,
         model: Optional[str] = None,
-        timeout_seconds: float = 6.0,
+        timeout_seconds: float = 15.0,
     ) -> None:
-        self.base_url = (base_url or os.getenv("OLLAMA_BASE_URL", DEFAULT_OLLAMA_URL)).rstrip("/")
-        self.model = model or os.getenv("OLLAMA_MODEL", DEFAULT_OLLAMA_MODEL)
-        self.timeout = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", str(timeout_seconds)))
+        self.base_url = (base_url or os.getenv("OLLAMA_BASE_URL", settings.OLLAMA_BASE_URL)).rstrip("/")
+        self.model = model or os.getenv("OLLAMA_MODEL", settings.OLLAMA_MODEL)
+        self.timeout = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", str(min(timeout_seconds, settings.OLLAMA_TIMEOUT_SECONDS))))
 
     async def is_available(self) -> bool:
         """Verifica se o daemon do Ollama está respondendo."""
@@ -57,7 +60,7 @@ class OllamaProvider:
 
         system_prompt += (
             " Analise a transcrição inteira, inclusive os trechos após a abertura, e priorize as teses factuais centrais. "
-            "Cada alegação deve conter uma única proposição verificável, preservando sujeitos, datas e qualificadores. "
+            " Cada text deve ser um trecho exato da transcrição, não uma paráfrase. Cada alegação deve conter uma única proposição verificável, preservando sujeitos, datas e qualificadores. "
             "Não invente fatos nem use o título como alegação. Ignore saudações de estúdio, apresentações, conversa fiada, pedidos de inscrição, preferências e opiniões. "
             'Se não houver fatos verificáveis, retorne {"claims": []}. Não atribua notas ou vereditos ao vídeo.'
         )
@@ -74,39 +77,37 @@ class OllamaProvider:
         }
 
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                res = await client.post(f"{self.base_url}/api/chat", json=payload)
-                if res.status_code != 200:
-                    raise ProviderUnavailableError(f"Ollama retornou HTTP {res.status_code}")
+            content = await self._chat(payload)
+            parsed = json.loads(content)
+            raw_claims = parsed["claims"]
+            if not isinstance(raw_claims, list):
+                raise ValueError("Lista de alegações inválida")
+            if not raw_claims:
+                return []
 
-                data = res.json()
-                content = data.get("message", {}).get("content", "")
-                parsed = json.loads(content)
-                raw_claims = parsed["claims"]
-                if not isinstance(raw_claims, list):
-                    raise ValueError("Lista de alegações inválida")
-                if not raw_claims:
-                    return []
-
-                claims: List[Claim] = []
-                for idx, c in enumerate(raw_claims):
-                    text = c.get("text", "").strip()
-                    if text and score_claim_saliency(text) > 0:
-                        claims.append(
-                            Claim(
-                                id=f"clm-{idx + 1:02d}",
-                                text=text,
-                                search_query=c.get("search_query", text[:40]),
-                                confidence=0.90,
-                            )
+            claims: List[Claim] = []
+            has_nonempty_text = False
+            for idx, c in enumerate(raw_claims):
+                text = c.get("text", "").strip()
+                if not text:
+                    continue
+                has_nonempty_text = True
+                if score_claim_saliency(text) > 0:
+                    claims.append(
+                        Claim(
+                            id=f"clm-{idx + 1:02d}",
+                            text=text,
+                            search_query=c.get("search_query", text[:40]),
+                            confidence=0.90,
                         )
-                if claims:
-                    return claims
+                    )
+            if not has_nonempty_text:
                 raise ProviderUnavailableError("Nenhuma alegação extraída pelo modelo.")
+            return claims
         except Exception as exc:
             if isinstance(exc, ProviderUnavailableError):
                 raise
-            raise ProviderUnavailableError(f"Falha de conexão com Ollama local: {exc}") from exc
+            raise ProviderUnavailableError("Falha de conexão com Ollama local: resposta de extração inválida.") from exc
 
     async def generate_reflection(
         self,
@@ -116,9 +117,26 @@ class OllamaProvider:
         """Formula perguntas reflexivas neutras estimulando o pensamento crítico."""
         if not claims:
             return []
-        claim_text = claims[0].text
-        return [
-            f'Quais fontes primárias ajudam a investigar a afirmação "{claim_text}"?',
-            "Que dados independentes permitem comparar as evidências desta alegação?",
-            "Como a data e o contexto desta afirmação influenciam sua interpretação?",
-        ]
+        payload = {
+            "model": self.model,
+            "messages": reflection_messages(claims, evidence),
+            "format": "json",
+            "stream": False,
+            "options": {"temperature": 0.1},
+        }
+        try:
+            return parse_reflections(await self._chat(payload))
+        except (ValueError, KeyError, TypeError) as exc:
+            raise ProviderUnavailableError("Resposta de reflexão inválida do provedor.") from exc
+
+    async def _chat(self, payload: dict) -> str:
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(f"{self.base_url}/api/chat", json=payload)
+            if response.status_code != 200:
+                raise ProviderUnavailableError(f"Ollama retornou HTTP {response.status_code}")
+            return response.json()["message"]["content"]
+        except ProviderUnavailableError:
+            raise
+        except Exception as exc:
+            raise ProviderUnavailableError("Falha de conexão com Ollama local.") from exc

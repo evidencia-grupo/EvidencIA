@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from "vitest";
+import { REFLECTION_QUESTIONS } from "../../../shared/reflection-catalog";
+import { describe, it, expect, vi } from "vitest";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import axe from "axe-core";
@@ -22,22 +23,18 @@ describe("ReflectionQuestions Component", () => {
 
   it("renderiza lista numerada de perguntas reflexivas para pensamentos críticos", () => {
     const container = document.createElement("div");
-    const questions = [
-      "Quais fontes comprovam essa afirmação?",
-      "Existe algum conflito de interesse no conteúdo?",
-      "Os dados apresentados são recentes?",
-    ];
+    const questions = [...REFLECTION_QUESTIONS.slice(0, 3)];
     render(<ReflectionQuestions questions={questions} />, container);
 
     expect(container.querySelector(".reflection-title")?.textContent).toContain("Perguntas para Reflexão Crítica");
     const items = container.querySelectorAll(".reflection-item");
     expect(items.length).toBe(3);
-    expect(items[0].textContent).toContain("1.Quais fontes comprovam essa afirmação?");
-    expect(items[1].textContent).toContain("2.Existe algum conflito de interesse no conteúdo?");
-    expect(items[2].textContent).toContain("3.Os dados apresentados são recentes?");
+    expect(items[0].textContent).toContain(REFLECTION_QUESTIONS[0]);
+    expect(items[1].textContent).toContain(REFLECTION_QUESTIONS[1]);
+    expect(items[2].textContent).toContain(REFLECTION_QUESTIONS[2]);
   });
 
-  it("mantém todas as perguntas quando recebe mais de três", () => {
+  it("usa catálogo seguro quando recebe perguntas extras não aprovadas", () => {
     const container = document.createElement("div");
 
     const questions = [
@@ -51,10 +48,9 @@ describe("ReflectionQuestions Component", () => {
 
     const items = container.querySelectorAll(".reflection-item");
 
-    expect(items).toHaveLength(4);
-    expect(items[3].textContent).toContain(
-      "Há informações adicionais que deveriam ser consideradas?"
-    );
+    expect(items).toHaveLength(3);
+    expect(items[0].textContent).toContain(REFLECTION_QUESTIONS[0]);
+    expect(container.textContent).not.toContain("Há informações adicionais que deveriam ser consideradas?");
   });
 });
 
@@ -187,6 +183,51 @@ describe("EvidenceCard Component", () => {
     render(null, host);
     host.remove();
   });
+
+  it("exibe explicação 'Por que esta fonte apareceu' quando matchReason fornecido", () => {
+    const container = document.createElement("div");
+    render(
+      <EvidenceCard
+        evidence={{
+          ...baseEvidence,
+          matchReason: "Correspondência temática direta identificada com checagem auditada.",
+        }}
+      />,
+      container
+    );
+    expect(container.querySelector(".evidence-match-reason")?.textContent).toContain("Por que esta fonte apareceu");
+    expect(container.querySelector(".evidence-match-reason")?.textContent).toContain("Correspondência temática direta");
+  });
+
+  it("emite mensagem OPEN_EXTERNAL_URL ao clicar no link e no botão CTA", () => {
+    const postMessageSpy = vi.spyOn(window.parent, "postMessage");
+    const container = renderCard(baseEvidence);
+
+    const link = container.querySelector<HTMLAnchorElement>(".evidence-link");
+    expect(link).not.toBeNull();
+    link?.click();
+
+    expect(postMessageSpy).toHaveBeenCalledWith(
+      { type: "OPEN_EXTERNAL_URL", url: baseEvidence.url },
+      "*"
+    );
+
+    const ctaButton = container.querySelector<HTMLAnchorElement>(".evidence-cta-button");
+    expect(ctaButton).not.toBeNull();
+    ctaButton?.click();
+
+    expect(postMessageSpy).toHaveBeenCalledWith(
+      { type: "OPEN_EXTERNAL_URL", url: baseEvidence.url },
+      "*"
+    );
+    postMessageSpy.mockRestore();
+  });
+
+  it("trata URLs totalmente inválidas capturando exceção em parseSafeUrl", () => {
+    const container = renderCard({ ...baseEvidence, url: "http://[invalid-ipv6" });
+    expect(container.querySelector("a")).toBeNull();
+    expect(container.querySelector(".evidence-url")?.textContent).toBe("Endereço não disponível");
+  });
 });
 
 describe("ClaimCard Component", () => {
@@ -194,6 +235,9 @@ describe("ClaimCard Component", () => {
     id: "clm-99",
     text: "O chá cura doenças graves.",
     uncertainty: "contradicted",
+    transcriptSnippet: "Ele disse explicitamente que o chá cura doenças graves no início.",
+    timestampStart: 75.0,
+    timestampEnd: 90.0,
     temporalContext: {
       videoPublishedAt: "2022-05-10T00:00:00Z",
       note: "Publicado em 2022 durante surto viral.",
@@ -211,6 +255,31 @@ describe("ClaimCard Component", () => {
     ],
     reflectionQuestions: ["Existe estudo científico com humanos para essa alegação?"],
   };
+
+  it("exibe trecho da transcrição e botão de salto temporal quando definidos", () => {
+    const container = document.createElement("div");
+    render(<ClaimCard claim={baseClaim} />, container);
+
+    expect(container.querySelector(".claim-transcript-snippet")?.textContent).toContain("Ele disse explicitamente que o chá cura");
+    expect(container.querySelector(".claim-jump-button")?.textContent).toContain("Ir para 01:15");
+    expect(container.querySelector(".claim-jump-button svg")).not.toBeNull();
+  });
+
+  it("emite mensagem JUMP_TO_TIMESTAMP ao clicar no botão de salto temporal", () => {
+    const postMessageSpy = vi.spyOn(window.parent, "postMessage");
+    const container = document.createElement("div");
+    render(<ClaimCard claim={baseClaim} />, container);
+
+    const jumpButton = container.querySelector<HTMLButtonElement>(".claim-jump-button");
+    expect(jumpButton).not.toBeNull();
+    jumpButton?.click();
+
+    expect(postMessageSpy).toHaveBeenCalledWith(
+      { type: "JUMP_TO_TIMESTAMP", seconds: 75.0 },
+      "*"
+    );
+    postMessageSpy.mockRestore();
+  });
 
   it("renderiza todos os estados de incerteza", () => {
     const states: UncertaintyState[] = [
@@ -436,3 +505,12 @@ describe("FeedbackSection Component", () => {
   });
 });
 
+
+
+it("não exibe referências livres de cache ou mensagem antiga", () => {
+  const container = document.createElement("div");
+  render(<ReflectionQuestions questions={["https://inventado.example/prova de 2099 comprova isso?", "A?", "B?"]} />, container);
+  expect(container.textContent).not.toContain("inventado.example");
+  expect(container.textContent).not.toContain("2099");
+  expect(container.querySelectorAll(".reflection-item")).toHaveLength(3);
+});

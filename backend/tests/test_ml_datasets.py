@@ -41,7 +41,7 @@ def test_brazilian_fact_matcher_traceable_evidence():
     match = brazilian_fact_matcher.find_match("O chá de casca de banana cura diabetes e zera glicose")
 
     evidence = match["evidence"]
-    assert evidence.relation == "contradicts"
+    assert evidence.relation == "contextualizes"  # Related words do not prove identical proposition.
     assert evidence.publisher == "Agência Lupa"
     assert evidence.url.startswith("https://")
     assert evidence.snippet

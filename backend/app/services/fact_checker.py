@@ -1,23 +1,28 @@
 import asyncio
 import logging
-import re
 import time
 from datetime import datetime, timezone
 from typing import List, Optional
 
 from app.config import settings
-from app.providers.factory import get_provider, ProviderUnavailableError
+from app.providers.reflection_catalog import REFLECTION_QUESTIONS
+from app.providers.base import LLMProvider
+from app.providers.factory import get_provider
+from app.services.evidence_retrieval import retrieve_evidence
 from app.providers.types import Claim as ProviderClaim, EvidenceRef as ProviderEvidenceRef
 from app.schemas import (
     AnalyzeRequest,
     AnalyzeResponse,
     Claim,
     Evidence,
+    EvidenceProvenance,
     TemporalContext,
     UncertaintyState,
 )
 from app.services.brazilian_fact_matcher import brazilian_fact_matcher
+from app.services.classifier_service import classifier_service
 from app.services.fact_check_client import fact_check_client
+from ml.classifier.claim_extractor import extract_candidate_claims
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +39,17 @@ class FactCheckerService:
     - Degradação graciosa para modo Evidence-Only sob timeout ou falha de IA (RF-14, RNF-06).
     """
 
-    FALLBACK_REFLECTION_QUESTIONS = [
-        "Que evidências independentes poderiam ajudar a avaliar esta alegação?",
-        "Quais aspectos das fontes, como autoria, data e método, vale a pena verificar?",
-        "Que contexto ou evidência adicional ajudaria você a formar sua própria interpretação?",
-    ]
+    FALLBACK_REFLECTION_QUESTIONS = REFLECTION_QUESTIONS[:3]
+
+    def __init__(self):
+        self.provider: Optional[LLMProvider] = None
+
+    def initialize_provider(self) -> None:
+        self.provider = get_provider(settings.LLM_PROVIDER, settings.ENV or settings.ENVIRONMENT)
 
     @staticmethod
     def _build_temporal_context(upload_date: Optional[str]) -> TemporalContext:
-        published_at = upload_date or datetime.now(timezone.utc).isoformat()
+        published_at = upload_date or ""
         note = None
         try:
             year = datetime.fromisoformat(published_at.replace("Z", "+00:00")).year
@@ -66,44 +73,81 @@ class FactCheckerService:
         if not questions or len(questions) != 3:
             return cls.FALLBACK_REFLECTION_QUESTIONS.copy()
 
-        forbidden_verdict = re.compile(r"\b(certo|errado|verdadeiro|falso|mentira|mentiroso|correto|incorreto)\b", re.IGNORECASE)
         normalized = [question.strip() for question in questions if isinstance(question, str)]
-        if (
-            len(normalized) == 3
-            and all(question.endswith("?") and not forbidden_verdict.search(question) for question in normalized)
-        ):
+        if len(set(normalized)) == 3 and all(q in REFLECTION_QUESTIONS for q in normalized):
             return normalized
         return cls.FALLBACK_REFLECTION_QUESTIONS.copy()
 
+    @staticmethod
+    def _extract_snippet_and_timestamps(transcript, claim_text, duration_seconds=None, segments=None):
+        # Character position is never converted into a video timestamp.
+        def normalize(text):
+            return " ".join(text.casefold().split()).strip(" .!?")
+        target = normalize(claim_text)
+        if not target or target not in normalize(transcript):
+            return None, None, None
+        if segments:
+            # Use only an exact contiguous span of real caption segments.
+            for index, segment in enumerate(segments):
+                texts = []
+                for last in segments[index:]:
+                    texts.append(last.text)
+                    joined = " ".join(texts)
+                    if target in normalize(joined):
+                        if target not in normalize(" ".join(texts[:-1])):
+                            first = index
+                            stop = index + len(texts)
+                            while first + 1 < stop and target in normalize(" ".join(s.text for s in segments[first + 1:stop])):
+                                first += 1
+                            return " ".join(s.text for s in segments[first:stop]), segments[first].start, last.start + last.duration
+                        break
+                    if len(joined) > len(claim_text) + 1000:
+                        break
+        return claim_text, None, None
+
     async def analyze(self, request: AnalyzeRequest) -> AnalyzeResponse:
         start_time = time.perf_counter()
-        published_at = request.uploadDate or datetime.now(timezone.utc).isoformat()
+        published_at = request.uploadDate or ""
         temporal_ctx = self._build_temporal_context(request.uploadDate)
 
         # 1. Obtenção do provedor via Factory (lança MockInProductionError se configurado indevidamente)
-        provider = get_provider(
+        provider = None if request.analysisMode == "evidence_only" else get_provider(
             provider_name=getattr(settings, "LLM_PROVIDER", None),
-            app_env=getattr(settings, "APP_ENV", None),
+            app_env=settings.ENV or settings.ENVIRONMENT,
         )
 
-        analysis_mode = "evidence_first"
+        analysis_mode = request.analysisMode
         limitations: List[str] = []
+        if provider is not None and provider.is_mock is True:
+            limitations.append("Modo demonstração: extração determinística e amostras locais; não é checagem validada de produção.")
         provider_claims: List[ProviderClaim] = []
 
         # 2. Extração de alegações via LLM com timeout resiliente (RF-14, RNF-01, RNF-06)
-        timeout_limit = getattr(settings, "LLM_TIMEOUT_SECONDS", 8.0)
+        timeout_limit = settings.LLM_TIMEOUT_SECONDS
+        llm_elapsed = 0.0
+        llm_start = time.perf_counter()
+        unavailable_message = (
+            "Síntese de linguagem temporariamente indisponível; "
+            "operando em modo Evidence-Only a partir de bases de checagem curadas."
+        )
         try:
-            provider_claims = await asyncio.wait_for(
-                provider.extract_claims(request.transcript, request.videoTitle),
-                timeout=timeout_limit,
-            )
-        except (asyncio.TimeoutError, ProviderUnavailableError, Exception) as exc:
-            logger.warning(f"Degradação para modo Evidence-Only acionada por falha/timeout no LLMProvider: {exc}")
+            if provider is not None:
+                provider_claims = await asyncio.wait_for(
+                    provider.extract_claims(request.transcript, request.videoTitle),
+                    timeout=timeout_limit,
+                )
+                transcript_words = " ".join(request.transcript.casefold().split())
+                grounded = [claim for claim in provider_claims
+                            if claim.text.strip(" .!?").strip() and " ".join(claim.text.casefold().strip(" .!?").split()) in transcript_words]
+                if len(grounded) != len(provider_claims):
+                    limitations.append("Alegações sem trecho correspondente na transcrição foram descartadas.")
+                provider_claims = grounded
+        except Exception as exc:
+            logger.warning("llm_evidence_only: extração indisponível (%s)", type(exc).__name__)
             analysis_mode = "evidence_only"
-            limitations.append(
-                "Síntese e extração por IA temporariamente indisponíveis; "
-                "operando em modo Evidence-Only a partir de bases de checagem curadas."
-            )
+            limitations.append(unavailable_message)
+        finally:
+            llm_elapsed += time.perf_counter() - llm_start
 
         claims: List[Claim] = []
 
@@ -114,6 +158,7 @@ class FactCheckerService:
                 claim_text = p_claim.text
                 evidence_list: List[Evidence] = []
                 uncertainty: UncertaintyState = "insufficient_evidence"
+                claim_temporal_ctx = temporal_ctx.model_copy(deep=True)
 
                 # Prioridade 1: Casamento direto com dataset curado FactChecks.br
                 matched = brazilian_fact_matcher.find_match(claim_text)
@@ -133,6 +178,8 @@ class FactCheckerService:
                         item = fc_results[0]
                         src = item["source"]
                         status_str = item.get("status", "inconclusiva")
+                        # A search hit establishes relevance, not propositional equivalence.
+                        status_str = "inconclusiva"
                         rel = (
                             "supports"
                             if status_str == "apoiada"
@@ -143,31 +190,50 @@ class FactCheckerService:
                             if rel == "supports"
                             else ("contradicted" if rel == "contradicts" else "contextualized")
                         )
+                        publisher_display = src.publisher or src.domain
                         evidence_list.append(
                             Evidence(
                                 sourceId=src.id,
                                 relation=rel,
                                 title=src.title,
                                 url=src.url,
-                                publishedAt=src.publishedAt or published_at,
-                                publisher=src.domain,
+                                publishedAt=src.publishedAt or "",
+                                publisher=publisher_display,
                                 snippet=item.get("evidence_summary"),
-                                provenance={
-                                    "dataset": "google_fact_check",
-                                    "indexedAt": datetime.now(timezone.utc).isoformat(),
-                                },
+                                matchReason=f"Correspondência temática com a checagem apurada por {publisher_display}.",
+                                provenance=EvidenceProvenance(
+                                    dataset="google_fact_check",
+                                    indexedAt=datetime.now(timezone.utc).isoformat(),
+                                ),
                             )
                         )
                     else:
                         # Prioridade 3: Estado explícito de evidência insuficiente (RF-12, ADR-006)
                         evidence_list = []
                         uncertainty = "insufficient_evidence"
+                        ml_diag = classifier_service.classify(claim_text)
+                        if ml_diag.get("heuristic_reasons"):
+                            reasons = "; ".join(ml_diag["heuristic_reasons"])
+                            ml_note = f"Análise linguística (ML): {reasons}"
+                            existing_note = claim_temporal_ctx.note
+                            claim_temporal_ctx = TemporalContext(
+                                claimDate=temporal_ctx.claimDate,
+                                videoPublishedAt=temporal_ctx.videoPublishedAt,
+                                note=f"{existing_note} | {ml_note}" if existing_note else ml_note,
+                            )
+
+                snippet, t_start, t_end = self._extract_snippet_and_timestamps(
+                    request.transcript, claim_text, request.durationSeconds, request.segments
+                )
 
                 claims.append(
                     Claim(
                         id=claim_id,
                         text=claim_text,
-                        temporalContext=temporal_ctx,
+                        transcriptSnippet=snippet,
+                        timestampStart=t_start,
+                        timestampEnd=t_end,
+                        temporalContext=claim_temporal_ctx,
                         evidence=evidence_list,
                         uncertainty=uncertainty,
                         reflectionQuestions=[],
@@ -185,43 +251,47 @@ class FactCheckerService:
                     )
                     for item in claim.evidence
                 ]
+                llm_start = time.perf_counter()
                 try:
                     reflections = await asyncio.wait_for(
                         provider.generate_reflection([p_claim], evidence_refs),
-                        timeout=timeout_limit,
+                        timeout=max(0.0, timeout_limit - llm_elapsed),
                     )
                     claim.reflectionQuestions = self._normalize_reflection_questions(reflections)
                 except Exception as ref_exc:
-                    logger.debug(f"Perguntas reflexivas não geradas: {ref_exc}")
-                    claim.reflectionQuestions = self.FALLBACK_REFLECTION_QUESTIONS.copy()
+                    logger.warning("llm_evidence_only: reflexão indisponível (%s)", type(ref_exc).__name__)
+                    analysis_mode = "evidence_only"
+                    limitations.append(unavailable_message)
+                    # Preserva todas as evidências já recuperadas e interrompe inferências.
+                    break
+                finally:
+                    llm_elapsed += time.perf_counter() - llm_start
 
         # 5. Processamento no modo Evidence-Only (Fallback sem LLM)
         else:
             analysis_mode = "evidence_only"
-            matched = brazilian_fact_matcher.find_match(request.transcript)
-            if not matched:
-                matched = brazilian_fact_matcher.find_match(request.videoTitle)
-
-            if matched and matched.get("evidence"):
-                evidence_list = [matched["evidence"]]
-                rel = matched.get("relation", "contextualizes")
-                uncertainty = (
-                    "supported"
-                    if rel == "supports"
-                    else ("contradicted" if rel == "contradicts" else "contextualized")
+            candidate_claims = extract_candidate_claims(request.transcript, max_claims=3)
+            for index, text in enumerate(candidate_claims):
+                # Retrieve for this proposition; never share whole-video hits across claims.
+                retrieved = await asyncio.to_thread(retrieve_evidence, text)
+                matched = None if retrieved else brazilian_fact_matcher.find_match(text)
+                evidence_list = [evidence for _, evidence in retrieved]
+                if not evidence_list and matched and matched.get("evidence"):
+                    evidence_list = [matched["evidence"]]
+                uncertainty = "insufficient_evidence"
+                if evidence_list:
+                    relation = evidence_list[0].relation
+                    uncertainty = {"supports": "supported", "contradicts": "contradicted"}.get(relation, "contextualized")
+                snippet, t_start, t_end = self._extract_snippet_and_timestamps(
+                    request.transcript, text, request.durationSeconds, request.segments
                 )
-                claims.append(
-                    Claim(
-                        id="clm-01",
-                        text=matched.get("claim", request.videoTitle),
-                        temporalContext=temporal_ctx,
-                        evidence=evidence_list,
-                        uncertainty=uncertainty,
-                        reflectionQuestions=[],
-                    )
-                )
-            else:
-                limitations.append("Não foi possível identificar alegações verificáveis durante a falha de extração.")
+                claims.append(Claim(
+                    id=f"clm-{index + 1:02d}", text=text, transcriptSnippet=snippet,
+                    timestampStart=t_start, timestampEnd=t_end, temporalContext=temporal_ctx,
+                    evidence=evidence_list, uncertainty=uncertainty, reflectionQuestions=[],
+                ))
+            if not claims:
+                limitations.append("Não foi possível identificar alegações verificáveis sem inferência de linguagem.")
 
         for claim in claims:
             if not claim.reflectionQuestions:

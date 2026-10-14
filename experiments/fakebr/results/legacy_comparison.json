@@ -1,0 +1,114 @@
+{
+  "original_model_on_real_test": {
+    "n": 1088,
+    "accuracy": 0.5174632352941176,
+    "macro_f1": 0.4986056285731591,
+    "roc_auc": 0.49960464424740486,
+    "brier": 0.2722236527316064,
+    "log_loss": 0.7441546906414205,
+    "ece_10_bins": 0.11845272879285132,
+    "confusion_matrix": [
+      [
+        176,
+        368
+      ],
+      [
+        157,
+        387
+      ]
+    ],
+    "classes": {
+      "fake": {
+        "precision": 0.5285285285285285,
+        "recall": 0.3235294117647059,
+        "f1-score": 0.4013683010262258,
+        "support": 544.0
+      },
+      "true": {
+        "precision": 0.5125827814569537,
+        "recall": 0.7113970588235294,
+        "f1-score": 0.5958429561200924,
+        "support": 544.0
+      },
+      "accuracy": 0.5174632352941176,
+      "macro avg": {
+        "precision": 0.520555654992741,
+        "recall": 0.5174632352941176,
+        "f1-score": 0.4986056285731591,
+        "support": 1088.0
+      },
+      "weighted avg": {
+        "precision": 0.5205556549927411,
+        "recall": 0.5174632352941176,
+        "f1-score": 0.49860562857315904,
+        "support": 1088.0
+      }
+    },
+    "threshold": 0.6,
+    "accepted_count": 657,
+    "coverage": 0.6038602941176471,
+    "abstention": 0.3961397058823529,
+    "accepted_accuracy": 0.5053272450532724,
+    "accepted_error": 0.4946727549467276
+  },
+  "legacy_retrained_same_partition": {
+    "n": 1088,
+    "accuracy": 0.859375,
+    "macro_f1": 0.8590891891685988,
+    "roc_auc": 0.9444339316608997,
+    "brier": 0.10414483071274476,
+    "log_loss": 0.342811463176054,
+    "ece_10_bins": 0.07447817531261994,
+    "confusion_matrix": [
+      [
+        492,
+        52
+      ],
+      [
+        101,
+        443
+      ]
+    ],
+    "classes": {
+      "fake": {
+        "precision": 0.8296795952782462,
+        "recall": 0.9044117647058824,
+        "f1-score": 0.8654353562005277,
+        "support": 544.0
+      },
+      "true": {
+        "precision": 0.8949494949494949,
+        "recall": 0.8143382352941176,
+        "f1-score": 0.8527430221366699,
+        "support": 544.0
+      },
+      "accuracy": 0.859375,
+      "macro avg": {
+        "precision": 0.8623145451138705,
+        "recall": 0.859375,
+        "f1-score": 0.8590891891685988,
+        "support": 1088.0
+      },
+      "weighted avg": {
+        "precision": 0.8623145451138706,
+        "recall": 0.859375,
+        "f1-score": 0.8590891891685989,
+        "support": 1088.0
+      }
+    },
+    "threshold": 0.6,
+    "accepted_count": 936,
+    "coverage": 0.8602941176470589,
+    "abstention": 0.13970588235294112,
+    "accepted_accuracy": 0.9081196581196581,
+    "accepted_error": 0.09188034188034189
+  },
+  "refit_seconds": 1.3082805000003646,
+  "original_legacy_audit": {
+    "claims": [
+      "Modelo original treinado com corpus de exemplos manuais, fixtures e amostras curadas do repositório. Não é evidência de uso do corpus oficial integral.",
+      "Normalização L2 e variáveis estilísticas em Naive Bayes não constituem calibração probabilística.",
+      "Versão reproduzida estabiliza ordenação do vocabulário em empates; não modifica a aplicação."
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+  <defs>
+    <linearGradient id="evidenciaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E50914" />
+      <stop offset="100%" stop-color="#FF9800" />
+    </linearGradient>
+    <filter id="iconShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#000000" flood-opacity="0.25" />
+    </filter>
+  </defs>
+  <rect x="4" y="4" width="72" height="72" rx="18" fill="url(#evidenciaGrad)" filter="url(#iconShadow)"/>
+  <circle cx="36" cy="36" r="20" stroke="#FFFFFF" stroke-width="4.5" fill="none" opacity="0.95"/>
+  <path d="M50 50 L64 64" stroke="#FFFFFF" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M26 36 L34 44 L48 28" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="56" cy="20" r="4.5" fill="#FFE082" />
+</svg>

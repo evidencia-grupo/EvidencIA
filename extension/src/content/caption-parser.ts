@@ -3,6 +3,7 @@
 export interface ExtractedCaptions {
   videoId: string;
   transcript: string;
+  segments?: CaptionSegment[];
   language: string;
   videoTitle: string;
   channelName: string;
@@ -81,13 +82,11 @@ export function parseCaptionJson(jsonText: string): CaptionSegment[] {
         const raw = event.segs.map((segment) => segment.utf8 ?? "").join("");
         const text = sanitizeTranscriptText(raw.replace(/^\s*>>\s*/, ""));
 
-        if (!text) return null;
+        if (!text || typeof event.tStartMs !== "number" || typeof event.dDurationMs !== "number"
+          || !Number.isFinite(event.tStartMs) || !Number.isFinite(event.dDurationMs)
+          || event.tStartMs < 0 || event.dDurationMs < 0) return null;
 
-        return {
-          text,
-          start: (event.tStartMs ?? 0) / 1000,
-          duration: (event.dDurationMs ?? 0) / 1000,
-        };
+        return { text, start: event.tStartMs / 1000, duration: event.dDurationMs / 1000 };
       })
       .filter((segment): segment is CaptionSegment => segment !== null);
   } catch {
@@ -103,13 +102,14 @@ export function parseCaptionXml(xmlText: string): CaptionSegment[] {
 
   if (document.querySelector("parsererror")) return [];
 
-  return Array.from(document.querySelectorAll("text"))
+  return Array.from(document.querySelectorAll("text, p"))
     .map((node): CaptionSegment | null => {
       const text = sanitizeTranscriptText(node.textContent ?? "");
-      const start = Number.parseFloat(node.getAttribute("start") ?? "");
-      const duration = Number.parseFloat(node.getAttribute("dur") ?? "");
+      const milliseconds = node.tagName === "p";
+      const start = Number.parseFloat(node.getAttribute(milliseconds ? "t" : "start") ?? "") / (milliseconds ? 1000 : 1);
+      const duration = Number.parseFloat(node.getAttribute(milliseconds ? "d" : "dur") ?? "") / (milliseconds ? 1000 : 1);
 
-      if (!text || !Number.isFinite(start) || !Number.isFinite(duration)) return null;
+      if (!text || !Number.isFinite(start) || !Number.isFinite(duration) || start < 0 || duration < 0) return null;
 
       return { text, start, duration };
     })
@@ -126,12 +126,14 @@ export function parseCaptionBody(body: string): string {
     } catch {
       throw new Error("Não foi possível interpretar as legendas. Tente novamente.");
     }
-    const transcript = (data.events ?? [])
-      .flatMap((event) => event.segs ?? [])
-      .map((segment) => segment.utf8 ?? "")
+    if (data.events === undefined) return "";
+    if (!Array.isArray(data.events)) throw new Error("Resposta de legendas inválida.");
+    const transcript = data.events
+      .filter(event => event && Array.isArray(event.segs))
+      .map(event => (event.segs ?? []).filter(segment => segment && typeof segment.utf8 === "string")
+        .map(segment => segment.utf8).join("").replace(/^\s*>>\s*/, ""))
       .join(" ");
-
-    return sanitizeTranscriptText(transcript.replace(/(^|\s)\s*>>\s*/g, "$1"));
+    return sanitizeTranscriptText(transcript);
   }
 
   const document = new DOMParser().parseFromString(body, "text/xml");
@@ -167,6 +169,17 @@ export function getCaptionTracksFromPlayer(): CaptionTrack[] {
   }
 }
 
+/** Resposta do service worker: dado externo à página, validado antes do uso. */
+interface RuntimeMessageResponse {
+  success?: boolean;
+  data?: unknown;
+  error?: string;
+}
+
+function hasTrackList(value: unknown): value is CaptionAvailability {
+  return typeof value === "object" && value !== null && Array.isArray((value as { tracks?: unknown }).tracks);
+}
+
 export async function detectCaptionTracks(videoId: string, signal?: AbortSignal): Promise<CaptionAvailability> {
   signal?.throwIfAborted();
 
@@ -182,7 +195,7 @@ export async function detectCaptionTracks(videoId: string, signal?: AbortSignal)
     signal?.addEventListener("abort", onAbort, { once: true });
   });
 
-  let result: any;
+  let result: RuntimeMessageResponse | undefined;
   try {
     result = await Promise.race([detectionPromise, timeoutPromise]);
   } finally {
@@ -197,7 +210,7 @@ export async function detectCaptionTracks(videoId: string, signal?: AbortSignal)
   }
 
   const payload = result.data;
-  if (!payload || !Array.isArray(payload.tracks)) {
+  if (!hasTrackList(payload)) {
     throw new Error("Resposta de legendas inválida.");
   }
 
@@ -236,7 +249,20 @@ export async function extractCaptionsFromPage(
     throw new Error(`Não foi possível baixar as legendas (HTTP ${response.status}). Tente novamente.`);
   }
 
-  const transcript = parseCaptionBody(await response.text());
+  let transcript = "";
+  let segments: CaptionSegment[] = [];
+  try {
+    const text = await response.text();
+    transcript = parseCaptionBody(text);
+    const timed = text.trimStart().startsWith("{") ? parseCaptionJson(text) : parseCaptionXml(text);
+    if (timed.length && timed.every(s => Number.isFinite(s.start) && s.start >= 0 && Number.isFinite(s.duration) && s.duration >= 0)
+      && sanitizeTranscriptText(timed.map(s => s.text).join(" ")) === transcript) segments = timed;
+  } catch (error) {
+    signal?.throwIfAborted();
+    throw error;
+  }
+  signal?.throwIfAborted();
+
   if (transcript.length < 50) {
     throw new Error("A transcrição recebida está vazia ou é curta demais para análise. Tente novamente.");
   }
@@ -244,6 +270,7 @@ export async function extractCaptionsFromPage(
   return {
     videoId,
     transcript,
+    ...(segments.length ? { segments } : {}),
     language: track.languageCode,
     videoTitle: payload.metadata?.videoTitle ?? document.title,
     channelName: payload.metadata?.channelName ?? document.querySelector("#channel-name")?.textContent?.trim() ?? "Canal YouTube",
