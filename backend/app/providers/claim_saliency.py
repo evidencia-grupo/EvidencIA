@@ -42,7 +42,9 @@ def _normalize(text: str) -> str:
 def score_claim_saliency(text: str) -> float:
     """Dá prioridade a frases factuais e zera saudações, chamadas e conversa fiada."""
     normalized = _normalize(text)
-    if any(pattern.search(normalized) for pattern in CONVERSATIONAL_PATTERNS):
+    is_conversational = any(pattern.search(normalized) for pattern in CONVERSATIONAL_PATTERNS)
+    factual_matches = [pattern.search(normalized) for pattern in FACTUAL_SIGNALS]
+    if is_conversational and not any(factual_matches):
         return 0.0
 
-    return 1.0 + sum(bool(pattern.search(normalized)) for pattern in FACTUAL_SIGNALS)
+    return 1.0 + sum(bool(match) for match in factual_matches)
