@@ -16,6 +16,7 @@ from typing import List
 from app.providers.base import LLMProvider
 from app.providers.reflection_catalog import REFLECTION_QUESTIONS
 from app.providers.types import Claim, Evidence
+from ml.classifier.claim_extractor import segment_transcript
 
 ANALYSIS_MODE = "mock"
 
@@ -28,7 +29,8 @@ class MockLLMProvider(LLMProvider):
 
     async def extract_claims(self, transcript: str, video_title: str) -> List[Claim]:
         """Retorna alegações sintéticas determinísticas baseadas no conteúdo da transcrição."""
-        sentences = re.split(r"(?<=[.!?])\s+", transcript.strip())
+        # Legendas automáticas (ASR) não têm pontuação: segmenta em frases curtas.
+        sentences = segment_transcript(transcript)
         subjective = re.compile(r"^(eu\s+)?(acho|prefiro|adoro|gosto|detesto)|^na minha opinião", re.IGNORECASE)
         factual = [sentence for sentence in sentences if not subjective.search(sentence)]
         return [

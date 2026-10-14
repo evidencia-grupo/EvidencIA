@@ -116,6 +116,36 @@ export function parseCaptionXml(xmlText: string): CaptionSegment[] {
     .filter((segment): segment is CaptionSegment => segment !== null);
 }
 
+/** Limite de segmentos aceito pelo backend por requisição. */
+export const MAX_TIMED_SEGMENTS = 5000;
+
+/**
+ * Ajusta os segmentos temporizados às regras do backend sem descartar a lista inteira:
+ * mantém a ordem temporal, limita cada trecho à duração do vídeo e ignora só os
+ * trechos que não podem ser posicionados no vídeo.
+ */
+export function prepareTimedSegments(segments: CaptionSegment[], durationSeconds?: number): CaptionSegment[] {
+  const limit = typeof durationSeconds === "number" && Number.isFinite(durationSeconds) && durationSeconds >= 0
+    ? durationSeconds + 1
+    : Number.POSITIVE_INFINITY;
+  const prepared: CaptionSegment[] = [];
+  let previousStart = -1;
+
+  for (const segment of segments) {
+    const text = segment.text.trim();
+    if (!text || !Number.isFinite(segment.start) || !Number.isFinite(segment.duration)
+      || segment.start < 0 || segment.duration < 0 || segment.start < previousStart || segment.start > limit) continue;
+    prepared.push({ text, start: segment.start, duration: Math.min(segment.duration, limit - segment.start) });
+    previousStart = segment.start;
+  }
+
+  return prepared.length <= MAX_TIMED_SEGMENTS ? prepared : [];
+}
+
+export function transcriptFromSegments(segments: CaptionSegment[]): string {
+  return segments.map((segment) => segment.text).join(" ").replace(/\s+/g, " ").trim();
+}
+
 export function parseCaptionBody(body: string): string {
   const trimmed = body.trimStart();
 
@@ -253,10 +283,13 @@ export async function extractCaptionsFromPage(
   let segments: CaptionSegment[] = [];
   try {
     const text = await response.text();
-    transcript = parseCaptionBody(text);
-    const timed = text.trimStart().startsWith("{") ? parseCaptionJson(text) : parseCaptionXml(text);
-    if (timed.length && timed.every(s => Number.isFinite(s.start) && s.start >= 0 && Number.isFinite(s.duration) && s.duration >= 0)
-      && sanitizeTranscriptText(timed.map(s => s.text).join(" ")) === transcript) segments = timed;
+    const body = parseCaptionBody(text);
+    segments = prepareTimedSegments(
+      text.trimStart().startsWith("{") ? parseCaptionJson(text) : parseCaptionXml(text),
+      payload.metadata?.durationSeconds,
+    );
+    // A transcrição é montada a partir dos próprios segmentos, então os dois sempre coincidem.
+    transcript = segments.length ? transcriptFromSegments(segments) : body;
   } catch (error) {
     signal?.throwIfAborted();
     throw error;
