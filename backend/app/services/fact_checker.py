@@ -246,7 +246,13 @@ class FactCheckerService:
                 )
 
             # Perguntas e evidências pertencem somente à alegação investigada.
-            for p_claim, claim in zip(provider_claims, claims):
+            reflection_semaphore = asyncio.Semaphore(3)
+            reflection_deadline = (
+                time.perf_counter()
+                + max(0.0, timeout_limit - llm_elapsed)
+            )
+
+            async def generate_claim_reflection(p_claim, claim):
                 evidence_refs = [
                     ProviderEvidenceRef(
                         evidence_id=item.sourceId,
@@ -256,22 +262,60 @@ class FactCheckerService:
                     )
                     for item in claim.evidence
                 ]
-                llm_start = time.perf_counter()
-                try:
-                    reflections = await asyncio.wait_for(
-                        provider.generate_reflection([p_claim], evidence_refs),
-                        timeout=max(0.0, timeout_limit - llm_elapsed),
-                    )
-                    claim.reflectionQuestions = self._normalize_reflection_questions(reflections)
-                except Exception as ref_exc:
-                    logger.warning("llm_evidence_only: reflexão indisponível (%s)", type(ref_exc).__name__)
-                    analysis_mode = "evidence_only"
-                    limitations.append(unavailable_message)
-                    # Preserva todas as evidências já recuperadas e interrompe inferências.
-                    break
-                finally:
-                    llm_elapsed += time.perf_counter() - llm_start
 
+                try:
+                    async with reflection_semaphore:
+                        remaining = max(
+                            0.0,
+                            reflection_deadline - time.perf_counter(),
+                        )
+
+                        reflections = await asyncio.wait_for(
+                            provider.generate_reflection(
+                                [p_claim],
+                                evidence_refs,
+                            ),
+                            timeout=remaining,
+                        )
+
+                        claim.reflectionQuestions = (
+                            self._normalize_reflection_questions(
+                                reflections
+                            )
+                        )
+
+                        return True
+
+                except asyncio.CancelledError:
+                    raise
+
+                except Exception as ref_exc:
+                    logger.warning(
+                        "llm_evidence_only: reflexão indisponível (%s)",
+                        type(ref_exc).__name__,
+                    )
+
+                    claim.reflectionQuestions = (
+                        self.FALLBACK_REFLECTION_QUESTIONS.copy()
+                    )
+
+                    return False
+
+            reflection_results = await asyncio.gather(
+                *(
+                    generate_claim_reflection(p_claim, claim)
+                    for p_claim, claim in zip(
+                        provider_claims,
+                        claims,
+                    )
+                )
+            )
+
+            if not all(reflection_results):
+                analysis_mode = "evidence_only"
+
+                if unavailable_message not in limitations:
+                    limitations.append(unavailable_message)
         # 5. Processamento no modo Evidence-Only (Fallback sem LLM)
         else:
             analysis_mode = "evidence_only"

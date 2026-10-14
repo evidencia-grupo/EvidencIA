@@ -212,7 +212,7 @@ async def test_real_timeout_cancels_inference_and_preserves_evidence(stage, samp
     assert result.claims
     if stage == "reflection":
         assert len(result.claims) == 2
-        provider.generate_reflection.assert_awaited_once()
+        assert provider.generate_reflection.await_count == 2
     assert all(len(claim.reflectionQuestions) == 3 for claim in result.claims)
 
 
