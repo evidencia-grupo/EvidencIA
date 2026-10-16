@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     REMOTE_LLM_BASE_URL: str = ""
     REMOTE_LLM_API_KEY: str = ""
     REMOTE_LLM_MODEL: str = "qwen2.5:7b"
+    # Se o modelo não devolver trechos literais (modelos locais pequenos parafraseiam), usa as
+    # alegações do extrator determinístico e mantém o modelo só nas perguntas de reflexão.
+    DETERMINISTIC_CLAIM_FALLBACK: bool = False
+    # 0 envia a transcrição inteira ao modelo; acima disso, só as frases mais salientes
+    # (trechos literais, na ordem do vídeo) até esse número de palavras. Acelera modelos locais.
+    LLM_CONTEXT_MAX_WORDS: int = Field(0, ge=0)
     # OpenRouter: modelos tentados em ordem quando o principal está limitado ou fora do ar.
     REMOTE_LLM_FALLBACK_MODELS: str = "google/gemma-4-31b-it:free,nvidia/nemotron-3-super-120b-a12b:free"
     REMOTE_LLM_TIMEOUT_SECONDS: float = Field(15.0, gt=0, le=15, allow_inf_nan=False)

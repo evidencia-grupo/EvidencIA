@@ -175,7 +175,7 @@ class FactCheckClient:
         Retorna (resultados, só_tema).
         """
         queries = claim_search_queries(claim_text, video_title, search_query)
-        if not queries or not self.api_key:
+        if not queries:
             return [], False
         results = await asyncio.gather(*(self.search_claims(q, max_results=max_results) for q, _ in queries))
         for (query, topic_only), found in zip(queries, results):
