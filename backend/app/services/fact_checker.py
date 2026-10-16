@@ -148,7 +148,7 @@ class FactCheckerService:
                 if len(provider_claims) != len(grounded):
                     limitations.append("Saudações e ruído conversacional foram descartados antes da busca de evidências.")
         except Exception as exc:
-            logger.warning("llm_evidence_only: extração indisponível (%s)", type(exc).__name__)
+            logger.warning("llm_evidence_only: extração indisponível (%s: %s; causa: %r)", type(exc).__name__, exc, exc.__cause__)
             analysis_mode = "evidence_only"
             limitations.append(unavailable_message)
         finally:

@@ -87,11 +87,15 @@ class RemoteLLMProvider(LLMProvider):
         if "openrouter.ai" in self.base_url:
             headers["HTTP-Referer"] = "https://github.com/evidencia-grupo/EvidencIA"
             headers["X-Title"] = "EvidencIA - Fact-Checking"
+            fallbacks = [m.strip() for m in settings.REMOTE_LLM_FALLBACK_MODELS.split(",") if m.strip() and m.strip() != self.model]
+            if fallbacks:
+                payload = {**payload, "models": [self.model, *fallbacks]}
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(f"{self.base_url}/chat/completions", json=payload, headers=headers)
             if response.status_code != 200:
-                raise ProviderUnavailableError(f"Provedor remoto respondeu HTTP {response.status_code}")
+                # O corpo de erro da API não contém a chave; ajuda a diagnosticar limite de taxa ou modelo.
+                raise ProviderUnavailableError(f"Provedor remoto respondeu HTTP {response.status_code}: {response.text[:200]}")
             return response.json()["choices"][0]["message"]["content"]
         except ProviderUnavailableError:
             raise

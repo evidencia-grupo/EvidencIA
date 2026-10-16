@@ -250,10 +250,9 @@ def extract_candidate_claims(
 
     Com legendas temporizadas, as pausas da fala também delimitam as orações.
     """
-    if segments:
-        sentences = [s.rstrip(".!?") for s in segment_timed_captions(segments) if len(s.split()) >= 5]
-    else:
-        sentences = split_transcript_sentences(transcript)
+    raw_sentences = segment_timed_captions(segments) if segments else segment_transcript(transcript)
+    # Perguntas não afirmam nada; descarta antes de remover a pontuação final.
+    sentences = [s.rstrip(".!?") for s in raw_sentences if not s.rstrip().endswith("?") and len(s.split()) >= 5]
     if not sentences:
         return []
 

@@ -50,12 +50,15 @@ def parse_extracted_claims(parsed: dict) -> list[Claim]:
     if not isinstance(raw_claims, list) or len(raw_claims) > MAX_EXTRACTED_CLAIMS:
         raise ValueError("Lista de alegações inválida")
     claims = []
+    oversized = 0
     for raw in raw_claims:
         if not isinstance(raw, dict) or not isinstance(raw.get("text"), str):
             raise ValueError("Alegação inválida")
         text = raw["text"].strip()
         if not text or len(text) > MAX_CLAIM_CHARACTERS or len(text.split()) > MAX_CLAIM_WORDS:
-            raise ValueError("Alegação vazia ou acima dos limites de extração")
+            # Descarta só esta alegação (nunca a trunca); as demais continuam válidas.
+            oversized += 1
+            continue
         # Deliberately select fields: model-supplied verdicts/sources never enter Claim.
         if score_claim_saliency(text) > 0:
             claims.append(
@@ -66,6 +69,8 @@ def parse_extracted_claims(parsed: dict) -> list[Claim]:
                     confidence=0.90,
                 )
             )
+    if raw_claims and oversized == len(raw_claims):
+        raise ValueError("Alegação vazia ou acima dos limites de extração")
     return claims
 
 

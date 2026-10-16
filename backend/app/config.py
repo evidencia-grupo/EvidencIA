@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     REMOTE_LLM_BASE_URL: str = ""
     REMOTE_LLM_API_KEY: str = ""
     REMOTE_LLM_MODEL: str = "qwen2.5:7b"
+    # OpenRouter: modelos tentados em ordem quando o principal está limitado ou fora do ar.
+    REMOTE_LLM_FALLBACK_MODELS: str = "google/gemma-4-26b-a4b-it:free,nvidia/nemotron-3-super-120b-a12b:free"
     REMOTE_LLM_TIMEOUT_SECONDS: float = Field(15.0, gt=0, le=15, allow_inf_nan=False)
 
     SEARCH_API_KEY: str = "mock_search_key"
