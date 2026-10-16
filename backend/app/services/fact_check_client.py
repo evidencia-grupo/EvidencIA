@@ -1,9 +1,61 @@
+import asyncio
 import logging
 import re
-from typing import Dict, List, Literal, Optional
+import unicodedata
+from typing import Dict, List, Literal, Optional, Tuple
 import httpx
 from pydantic import BaseModel
 from app.config import settings
+from ml.classifier.features import STOPWORDS_PT
+
+# A busca do Google não acha nada com a frase inteira; responde a 2 ou 3 palavras-chave.
+_QUERY_WORD = re.compile(r"[A-Za-zÀ-ÿ]{4,}")
+_GENERIC_WORDS = {
+    "hoje", "muitos", "muitas", "chamado", "chamada", "sempre", "nunca", "coisa", "pessoas", "gente",
+    "agora", "aquele", "aquela", "ainda", "porque", "quando", "tambem", "entao", "depois", "antes",
+    "acabou", "verdade", "realmente", "todo", "toda", "todos", "todas", "voce", "voces", "isso", "esse",
+    "essa", "este", "esta", "seu", "sua", "seus", "suas", "dias", "vezes", "fazer", "falar", "dizer",
+}
+
+
+def _fold(word: str) -> str:
+    return unicodedata.normalize("NFKD", word).encode("ascii", "ignore").decode("ascii").lower()
+
+
+def claim_search_queries(claim_text: str, video_title: str = "", search_query: Optional[str] = None) -> List[Tuple[str, bool]]:
+    """Consultas em ordem de preferência: (texto, só_tema).
+
+    Todas usam palavras da própria alegação. O título só ordena as palavras: as que
+    também estão nele são o tema central do vídeo. "só_tema" marca a última tentativa,
+    com uma palavra apenas, que encontra checagens do tema e não desta alegação.
+    """
+    title_words = {_fold(w) for w in _QUERY_WORD.findall(video_title)}
+    words: List[str] = []
+    seen = set()
+    for word in _QUERY_WORD.findall(claim_text):
+        folded = _fold(word)
+        if folded in STOPWORDS_PT or folded in _GENERIC_WORDS or folded in seen:
+            continue
+        seen.add(folded)
+        words.append(word.lower())
+    words.sort(key=lambda w: (_fold(w) not in title_words, -len(w)))
+
+    queries: List[Tuple[str, bool]] = []
+    for query in (search_query, claim_text):
+        if query and query.strip() and (query.strip(), False) not in queries:
+            queries.append((query.strip(), False))
+    top = words[:3]
+    for i in range(len(top)):
+        for j in range(i + 1, len(top)):
+            queries.append((f"{top[i]} {top[j]}", False))
+    # Tema central: palavra da alegação que também está no título, combinada com o título.
+    topic = [w for w in words if _fold(w) in title_words][:1]
+    if topic:
+        title_terms = [w.lower() for w in _QUERY_WORD.findall(video_title)
+                       if _fold(w) not in STOPWORDS_PT and _fold(w) not in _GENERIC_WORDS and _fold(w) != _fold(topic[0])]
+        queries.extend((f"{topic[0]} {term}", True) for term in title_terms[:2])
+        queries.append((topic[0], True))
+    return queries[:9]
 
 ClaimVerificationStatus = Literal["apoiada", "contraditada", "inconclusiva"]
 
@@ -96,7 +148,7 @@ class FactCheckClient:
         }
 
         try:
-            async with httpx.AsyncClient(timeout=3.0) as client:
+            async with httpx.AsyncClient(timeout=4.0) as client:
                 response = await client.get(self.base_url, params=params)
                 if response.status_code != 200:
                     logger.warning(
@@ -109,6 +161,27 @@ class FactCheckClient:
         except Exception as exc:
             logger.warning("Google Fact Check indisponível (%s)", type(exc).__name__)
             return []
+
+    async def search_for_claim(
+        self,
+        claim_text: str,
+        search_query: Optional[str] = None,
+        video_title: str = "",
+        max_results: int = 2,
+    ) -> Tuple[List[Dict], bool]:
+        """Busca checagens para uma alegação, da consulta mais específica à mais ampla.
+
+        As consultas rodam em paralelo; vale o primeiro resultado na ordem de preferência.
+        Retorna (resultados, só_tema).
+        """
+        queries = claim_search_queries(claim_text, video_title, search_query)
+        if not queries or not self.api_key:
+            return [], False
+        results = await asyncio.gather(*(self.search_claims(q, max_results=max_results) for q, _ in queries))
+        for (query, topic_only), found in zip(queries, results):
+            if found:
+                return found, topic_only
+        return [], False
 
     def parse_claims_response(self, data: Dict, max_results: int = 3) -> List[Dict]:
         """

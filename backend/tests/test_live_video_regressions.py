@@ -57,3 +57,33 @@ async def test_http_error_keeps_status_and_reason_for_diagnosis():
     with patch("app.providers.remote.httpx.AsyncClient", return_value=_client_returning(limited)):
         with pytest.raises(ProviderUnavailableError, match="HTTP 429.*Rate limit"):
             await provider._chat({"model": "m", "messages": []})
+
+
+TITLE = "Cortar Todo o Açúcar é REALMENTE Bom para Saúde? (Desafio de 14 Dias)"
+GLYCOGEN = "Seu estoque de glicogênio (aquele açúcar de reserva armazenado no fígado e músculos) zerou"
+
+
+def test_search_queries_go_from_full_claim_to_keywords_to_video_topic():
+    from app.services.fact_check_client import claim_search_queries
+
+    queries = claim_search_queries(GLYCOGEN, TITLE, search_query="glicogênio zerou")
+    assert queries[0] == ("glicogênio zerou", False)
+    assert queries[1] == (GLYCOGEN, False)
+    assert ("açúcar glicogênio", False) in queries
+    assert queries[-3:] == [("açúcar cortar", True), ("açúcar saúde", True), ("açúcar", True)]
+    # Palavras genéricas e de ligação nunca viram consulta.
+    assert not any(word in query.split() for query, _ in queries[2:] for word in ("aquele", "seu", "realmente"))
+
+
+@pytest.mark.asyncio
+async def test_first_query_with_results_wins_in_preference_order():
+    from app.services.fact_check_client import FactCheckClient
+
+    client = FactCheckClient()
+    client.api_key = "k"
+    hits = {"açúcar cortar": [{"source": "topic"}], "açúcar glicogênio": [{"source": "pair"}]}
+    with patch.object(client, "search_claims", new=AsyncMock(side_effect=lambda q, max_results: hits.get(q, []))):
+        assert await client.search_for_claim(GLYCOGEN, None, TITLE) == ([{"source": "pair"}], False)
+    hits.pop("açúcar glicogênio")
+    with patch.object(client, "search_claims", new=AsyncMock(side_effect=lambda q, max_results: hits.get(q, []))):
+        assert await client.search_for_claim(GLYCOGEN, None, TITLE) == ([{"source": "topic"}], True)

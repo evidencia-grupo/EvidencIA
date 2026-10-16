@@ -161,7 +161,8 @@ class FactCheckerService:
             # Busca externa em paralelo: consultas sequenciais somavam até 3 s por alegação.
             matches = [brazilian_fact_matcher.find_match(p.text) for p in provider_claims]
             lookups = await asyncio.gather(*(
-                fact_check_client.search_claims(p.text) if not (m and m.get("evidence")) else asyncio.sleep(0, result=[])
+                fact_check_client.search_for_claim(p.text, p.search_query, request.videoTitle)
+                if not (m and m.get("evidence")) else asyncio.sleep(0, result=([], False))
                 for p, m in zip(provider_claims, matches)
             ))
             for idx, p_claim in enumerate(provider_claims):
@@ -184,40 +185,37 @@ class FactCheckerService:
                         uncertainty = "contextualized"
                 else:
                     # Prioridade 2: Consulta à API externa de Fact Check
-                    fc_results = lookups[idx]
-                    if fc_results and fc_results[0].get("source"):
-                        item = fc_results[0]
-                        src = item["source"]
-                        status_str = item.get("status", "inconclusiva")
-                        # A search hit establishes relevance, not propositional equivalence.
-                        status_str = "inconclusiva"
-                        rel = (
-                            "supports"
-                            if status_str == "apoiada"
-                            else ("contradicts" if status_str == "contraditada" else "contextualizes")
-                        )
-                        uncertainty = (
-                            "supported"
-                            if rel == "supports"
-                            else ("contradicted" if rel == "contradicts" else "contextualized")
-                        )
-                        publisher_display = src.publisher or src.domain
-                        evidence_list.append(
-                            Evidence(
-                                sourceId=src.id,
-                                relation=rel,
-                                title=src.title,
-                                url=src.url,
-                                publishedAt=src.publishedAt or "",
-                                publisher=publisher_display,
-                                snippet=item.get("evidence_summary"),
-                                matchReason=f"Correspondência temática com a checagem apurada por {publisher_display}.",
-                                provenance=EvidenceProvenance(
-                                    dataset="google_fact_check",
-                                    indexedAt=datetime.now(timezone.utc).isoformat(),
-                                ),
+                    fc_results, topic_only = lookups[idx]
+                    fc_results = [item for item in fc_results if item.get("source")]
+                    if fc_results:
+                        # Um resultado de busca prova relevância, não equivalência da proposição:
+                        # a checagem só contextualiza. Se veio só do tema do vídeo, a alegação
+                        # continua sem evidência própria.
+                        uncertainty = "insufficient_evidence" if topic_only else "contextualized"
+                        for item in fc_results:
+                            src = item["source"]
+                            publisher_display = src.publisher or src.domain
+                            match_reason = (
+                                f"Checagem de {publisher_display} sobre o tema central do vídeo; não verifica esta alegação específica."
+                                if topic_only
+                                else f"Correspondência temática com a checagem apurada por {publisher_display}."
                             )
-                        )
+                            evidence_list.append(
+                                Evidence(
+                                    sourceId=f"{src.id}-{claim_id}",
+                                    relation="contextualizes",
+                                    title=src.title,
+                                    url=src.url,
+                                    publishedAt=src.publishedAt or "",
+                                    publisher=publisher_display,
+                                    snippet=item.get("evidence_summary"),
+                                    matchReason=match_reason,
+                                    provenance=EvidenceProvenance(
+                                        dataset="google_fact_check",
+                                        indexedAt=datetime.now(timezone.utc).isoformat(),
+                                    ),
+                                )
+                            )
                     else:
                         # Prioridade 3: Estado explícito de evidência insuficiente (RF-12, ADR-006)
                         evidence_list = []
