@@ -121,7 +121,7 @@ class FactCheckerService:
         """Converte checagens do Google em evidências que só contextualizam a alegação.
 
         Um resultado de busca prova relevância, não equivalência da proposição. Se veio só
-        do tema do vídeo, a alegação continua sem evidência própria.
+        do tema do vídeo, a proveniência marca isso e o painel exibe a ressalva.
         """
         evidence_list: List[Evidence] = []
         for item in fc_results:
@@ -145,14 +145,15 @@ class FactCheckerService:
                     snippet=item.get("evidence_summary"),
                     matchReason=match_reason,
                     provenance=EvidenceProvenance(
-                        dataset="google_fact_check",
+                        # Achada só pelo tema do vídeo: o painel mostra a ressalva.
+                        dataset="google_fact_check_tema" if topic_only else "google_fact_check",
                         indexedAt=datetime.now(timezone.utc).isoformat(),
                     ),
                 )
             )
         if not evidence_list:
             return [], "insufficient_evidence"
-        return evidence_list, "insufficient_evidence" if topic_only else "contextualized"
+        return evidence_list, "contextualized"
 
     @staticmethod
     def _extract_snippet_and_timestamps(transcript, claim_text, duration_seconds=None, segments=None):

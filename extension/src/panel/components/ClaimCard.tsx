@@ -29,11 +29,11 @@ const UNCERTAINTY_BADGES: Record<
     iconPath: "M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm3 13-6-6m0 6 6-6",
   },
   contextualized: {
-    label: "Contextualizada (Com ressalvas)",
+    label: "Contextualizada",
     className: "uncertainty-contextualized",
-    bg: "rgba(33, 150, 243, 0.2)",
-    color: "#90CAF9",
-    border: "1px solid #2196F3",
+    bg: "rgba(0, 150, 136, 0.2)",
+    color: "#80CBC4",
+    border: "1px solid #009688",
     iconPath: "M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14v-4m0-4h.01",
   },
   conflicting: {
@@ -61,7 +61,21 @@ function formatSeconds(seconds: number): string {
 }
 
 export function ClaimCard({ claim, expanded = false, onSelect }: ClaimCardProps) {
-  const badge = UNCERTAINTY_BADGES[claim.uncertainty] || UNCERTAINTY_BADGES.insufficient_evidence;
+  const base = UNCERTAINTY_BADGES[claim.uncertainty] || UNCERTAINTY_BADGES.insufficient_evidence;
+  // Checagens achadas só pelo tema do vídeo não verificam esta frase: o selo mostra a ressalva.
+  const evidence = claim.evidence ?? [];
+  const topicOnly = claim.uncertainty === "contextualized" && evidence.length > 0
+    && evidence.every((ev) => ev.provenance?.dataset === "google_fact_check_tema");
+  const badge = topicOnly
+    ? {
+        ...base,
+        label: "Contextualizada (Com ressalvas)",
+        className: "uncertainty-contextualized-caveat",
+        bg: "rgba(33, 150, 243, 0.2)",
+        color: "#90CAF9",
+        border: "1px solid #2196F3",
+      }
+    : base;
   const evidenceCount = claim.evidence ? claim.evidence.length : 0;
 
   return (

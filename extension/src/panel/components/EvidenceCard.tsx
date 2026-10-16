@@ -34,6 +34,7 @@ const DATASET_NAMES: Record<string, string> = {
   factchecksbr: "FactChecks.br",
   "factchecks-br": "FactChecks.br",
   google_fact_check: "Google Fact Check",
+  google_fact_check_tema: "Google Fact Check (tema do vídeo)",
   demonstracao_local: "Demonstração local (não verificada)",
 };
 

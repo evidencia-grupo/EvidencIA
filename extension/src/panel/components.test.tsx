@@ -264,6 +264,26 @@ describe("ClaimCard Component", () => {
     reflectionQuestions: ["Existe estudo científico com humanos para essa alegação?"],
   };
 
+  it.each([
+    ["google_fact_check", "contextualized", "Contextualizada", "uncertainty-contextualized"],
+    ["google_fact_check_tema", "contextualized", "Contextualizada (Com ressalvas)", "uncertainty-contextualized-caveat"],
+  ] as const)("selo de %s: %s vira '%s'", (dataset, uncertainty, label, className) => {
+    const container = document.createElement("div");
+    const ev: Evidence = {
+      sourceId: "ev-gfc", relation: "contextualizes", title: "Checagem", url: "https://www.aosfatos.org/x",
+      publishedAt: "", publisher: "Aos Fatos", provenance: { dataset, indexedAt: "2026-01-01T00:00:00Z" },
+    };
+    render(<ClaimCard claim={{ ...baseClaim, uncertainty, evidence: [ev] }} />, container);
+    const badgeText = container.querySelector(`.${className}`)?.textContent ?? "";
+    expect(badgeText.trim()).toBe(label);
+  });
+
+  it("sem evidência mostra o selo de evidência insuficiente", () => {
+    const container = document.createElement("div");
+    render(<ClaimCard claim={{ ...baseClaim, uncertainty: "insufficient_evidence", evidence: [] }} />, container);
+    expect(container.textContent).toContain("Sem evidência suficiente (Não checado)");
+  });
+
   it("exibe trecho da transcrição e botão de salto temporal quando definidos", () => {
     const container = document.createElement("div");
     render(<ClaimCard claim={baseClaim} />, container);
