@@ -23,7 +23,7 @@ services:
       - key: REMOTE_LLM_BASE_URL
         value: https://openrouter.ai/api/v1
       - key: REMOTE_LLM_MODEL
-        value: google/gemma-4-31b-it:free
+        value: google/gemma-4-26b-a4b-it:free
       - key: REMOTE_LLM_API_KEY
         sync: false
       - key: GOOGLE_FACT_CHECK_API_KEY
