@@ -85,13 +85,20 @@ class FactCheckerService:
         return cls.FALLBACK_REFLECTION_QUESTIONS.copy()
 
     @staticmethod
+    def _renumber(claims: List[Claim]) -> List[Claim]:
+        """Reatribui ids sequenciais depois de filtrar alegações."""
+        for index, claim in enumerate(claims):
+            claim.id = f"clm-{index + 1:02d}"
+        return claims
+
+    @staticmethod
     def _deterministic_claims(request: AnalyzeRequest, limitations: List[str]) -> List[ProviderClaim]:
         """Alegações literais do extrator determinístico, usadas quando o modelo não as fornece."""
         claims = [
             ProviderClaim(text=text)
             for text in extract_candidate_claims(
                 request.transcript,
-                max_claims=3,
+                max_claims=settings.MAX_CANDIDATE_CLAIMS,
                 segments=[(segment.text, segment.start, segment.duration) for segment in request.segments],
             )
         ]
@@ -224,10 +231,13 @@ class FactCheckerService:
                 provider_claims = [claim for claim in grounded if not is_conversational_filler(claim.text)]
                 if len(provider_claims) != len(grounded):
                     limitations.append("Saudações e ruído conversacional foram descartados antes da busca de evidências.")
-                if not provider_claims and settings.DETERMINISTIC_CLAIM_FALLBACK:
-                    # Modelos pequenos costumam parafrasear; as alegações vêm então do extrator
-                    # determinístico (trechos literais), e o modelo segue só nas perguntas.
-                    provider_claims = self._deterministic_claims(request, limitations)
+                if settings.DETERMINISTIC_CLAIM_FALLBACK and len(provider_claims) < settings.MAX_CANDIDATE_CLAIMS:
+                    # Modelos pequenos costumam parafrasear ou trazer poucas alegações; completa com
+                    # trechos literais do extrator determinístico, e o modelo segue nas perguntas.
+                    known = {" ".join(claim.text.casefold().split()) for claim in provider_claims}
+                    extra = [claim for claim in self._deterministic_claims(request, limitations)
+                             if " ".join(claim.text.casefold().split()) not in known]
+                    provider_claims = (provider_claims + extra)[:settings.MAX_CANDIDATE_CLAIMS]
         except Exception as exc:
             logger.warning("llm_evidence_only: extração indisponível (%s: %s; causa: %r)", type(exc).__name__, exc, exc.__cause__)
             # Resposta inválida (não timeout) ainda deixa tempo para o modelo formular as perguntas.
@@ -307,6 +317,11 @@ class FactCheckerService:
                     )
                 )
 
+            if settings.ONLY_CLAIMS_WITH_EVIDENCE:
+                kept = [(p, c) for p, c in zip(provider_claims, claims) if c.evidence]
+                provider_claims = [p for p, _ in kept]
+                claims = self._renumber([c for _, c in kept])
+
             # Perguntas e evidências pertencem somente à alegação investigada.
             reflection_semaphore = asyncio.Semaphore(3)
             reflection_deadline = (
@@ -383,7 +398,7 @@ class FactCheckerService:
             analysis_mode = "evidence_only"
             candidate_claims = extract_candidate_claims(
                 request.transcript,
-                max_claims=3,
+                max_claims=settings.MAX_CANDIDATE_CLAIMS,
                 segments=[(segment.text, segment.start, segment.duration) for segment in request.segments],
             )
             # Checagens do Google também valem sem IA; as buscas rodam em paralelo.
@@ -411,6 +426,8 @@ class FactCheckerService:
                     timestampStart=t_start, timestampEnd=t_end, temporalContext=temporal_ctx,
                     evidence=evidence_list, uncertainty=uncertainty, reflectionQuestions=[],
                 ))
+            if settings.ONLY_CLAIMS_WITH_EVIDENCE:
+                claims = self._renumber([claim for claim in claims if claim.evidence])
             if not claims:
                 limitations.append("Não foi possível identificar alegações verificáveis sem inferência de linguagem.")
 

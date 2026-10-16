@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     # 0 envia a transcrição inteira ao modelo; acima disso, só as frases mais salientes
     # (trechos literais, na ordem do vídeo) até esse número de palavras. Acelera modelos locais.
     LLM_CONTEXT_MAX_WORDS: int = Field(0, ge=0)
+    # Quantas alegações o extrator determinístico propõe para a busca de evidências.
+    MAX_CANDIDATE_CLAIMS: int = Field(3, ge=1, le=20)
+    # Exibe só alegações com alguma checagem encontrada (por padrão, todas aparecem).
+    ONLY_CLAIMS_WITH_EVIDENCE: bool = False
     # OpenRouter: modelos tentados em ordem quando o principal está limitado ou fora do ar.
     REMOTE_LLM_FALLBACK_MODELS: str = "google/gemma-4-31b-it:free,nvidia/nemotron-3-super-120b-a12b:free"
     REMOTE_LLM_TIMEOUT_SECONDS: float = Field(15.0, gt=0, le=15, allow_inf_nan=False)

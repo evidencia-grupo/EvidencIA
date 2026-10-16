@@ -177,11 +177,20 @@ class FactCheckClient:
         queries = claim_search_queries(claim_text, video_title, search_query)
         if not queries:
             return [], False
-        results = await asyncio.gather(*(self.search_claims(q, max_results=max_results) for q, _ in queries))
+        results = await asyncio.gather(*(self._limited_search(q, max_results) for q, _ in queries))
         for (query, topic_only), found in zip(queries, results):
             if found:
                 return found, topic_only
         return [], False
+
+    async def _limited_search(self, query: str, max_results: int) -> List[Dict]:
+        """Limita as consultas simultâneas ao Google (muitas alegações × várias consultas)."""
+        loop = asyncio.get_running_loop()
+        if getattr(self, "_search_loop", None) is not loop:
+            self._search_loop = loop
+            self._search_slots = asyncio.Semaphore(8)
+        async with self._search_slots:
+            return await self.search_claims(query, max_results=max_results)
 
     def parse_claims_response(self, data: Dict, max_results: int = 3) -> List[Dict]:
         """
