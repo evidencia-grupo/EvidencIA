@@ -388,11 +388,16 @@ class FactCheckerService:
                 )
             )
 
-            if not all(reflection_results):
+            if reflection_results and not any(reflection_results):
                 analysis_mode = "evidence_only"
 
                 if unavailable_message not in limitations:
                     limitations.append(unavailable_message)
+            elif not all(reflection_results):
+                # As alegações vieram do modelo; só parte das perguntas usou o catálogo (ex.: Ollama serializa chamadas).
+                limitations.append(
+                    "Algumas perguntas de reflexão vieram do catálogo padrão porque o modelo excedeu o tempo."
+                )
         # 5. Processamento no modo Evidence-Only (Fallback sem LLM)
         else:
             analysis_mode = "evidence_only"

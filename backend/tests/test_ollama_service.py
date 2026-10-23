@@ -84,3 +84,15 @@ async def test_ollama_provider_reflection_lifecycle():
         mock_post.return_value = _chat_response("", status_code=500)
         with pytest.raises(ProviderUnavailableError, match="HTTP 500"):
             await provider.generate_reflection([claim], [])
+
+
+@pytest.mark.asyncio
+async def test_ollama_provider_disables_reasoning_mode():
+    """Modelos com raciocínio (qwen3.5) excedem o orçamento de 15 s se pensarem antes do JSON."""
+    claim = Claim(id="clm-01", text="Fato", search_query="fato", confidence=0.9)
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+        mock_post.return_value = _chat_response(json.dumps({"claims": []}))
+        await OllamaProvider().extract_claims("Transcrição", "Título")
+        mock_post.return_value = _chat_response(json.dumps({"questions": ["Um?", "Dois?", "Três?"]}))
+        await OllamaProvider().generate_reflection([claim], [])
+    assert [call.kwargs["json"]["think"] for call in mock_post.call_args_list] == [False, False]

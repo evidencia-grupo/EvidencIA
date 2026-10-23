@@ -54,6 +54,8 @@ class OllamaProvider(LLMProvider):
             "messages": extraction_messages(transcript, video_title),
             "format": "json",
             "stream": False,
+            # Modelos com raciocínio (ex.: qwen3.5) pensariam antes do JSON e estourariam o prazo.
+            "think": False,
             "options": {"temperature": 0.1},
         }
 
@@ -79,6 +81,8 @@ class OllamaProvider(LLMProvider):
             "messages": reflection_messages(claims, evidence),
             "format": "json",
             "stream": False,
+            # Modelos com raciocínio (ex.: qwen3.5) pensariam antes do JSON e estourariam o prazo.
+            "think": False,
             "options": {"temperature": 0.1},
         }
         try:

@@ -177,3 +177,30 @@ async def test_concurrent_reflections_keep_claim_order_and_cut_latency():
     # Sequencial levaria 4,5 × delay; com limite 3, bastam duas rodadas (2 × delay).
     assert elapsed < delay * 3
     assert result.analysisMode == "evidence_first"
+
+
+@pytest.mark.asyncio
+async def test_partial_reflection_timeout_keeps_llm_analysis_and_says_so():
+    """Ollama local atende uma chamada por vez: a última reflexão pode estourar o prazo.
+
+    As alegações vieram do modelo; só uma pergunta usou o catálogo. Isso não é "síntese indisponível".
+    """
+    provider = make_provider()
+
+    async def reflect(claims, evidence):
+        if "inflação" in claims[0].text.lower():
+            raise asyncio.TimeoutError()
+        return VALID_QUESTIONS.copy()
+
+    provider.generate_reflection = AsyncMock(side_effect=reflect)
+    with (
+        patch("app.services.fact_checker.get_provider", return_value=provider),
+        patch("app.services.fact_checker.brazilian_fact_matcher.find_match", return_value=None),
+        patch("app.services.fact_checker.fact_check_client.search_claims", new_callable=AsyncMock, return_value=[]),
+    ):
+        result = await FactCheckerService().analyze(make_request())
+
+    assert result.analysisMode == "evidence_first"
+    assert not any("indisponível" in message for message in result.limitations)
+    assert any("catálogo padrão" in message for message in result.limitations)
+    assert result.claims[2].reflectionQuestions == FactCheckerService.FALLBACK_REFLECTION_QUESTIONS
