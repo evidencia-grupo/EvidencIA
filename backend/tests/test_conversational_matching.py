@@ -109,3 +109,13 @@ async def test_greeting_never_reaches_any_evidence_lookup(mode):
     lexical.assert_not_called()
     retrieval.assert_not_called()
     external.assert_not_called()
+
+
+@pytest.mark.parametrize("text", [
+    "A vacina contra a covid causa impotência sexual em homens, segundo uma postagem nas redes sociais.",
+    "Vacina contra a gripe causa infertilidade em mulheres jovens.",
+])
+def test_generic_relation_words_do_not_link_different_propositions(matcher, text):
+    """Tema comum + "contra"/"causa" não liga a alegação ao boato da pólio (DEMO-004)."""
+    match = matcher.find_match(text)
+    assert match is None or "polio" not in match["claim"].casefold()

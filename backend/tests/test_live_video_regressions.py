@@ -81,9 +81,26 @@ async def test_first_query_with_results_wins_in_preference_order():
 
     client = FactCheckClient()
     client.api_key = "k"
-    hits = {"açúcar cortar": [{"source": "topic"}], "açúcar glicogênio": [{"source": "pair"}]}
+    pair = {"source": "pair", "claim_text": "Estoque de glicogênio no fígado e músculos zera ao cortar açúcar"}
+    hits = {"açúcar cortar": [{"source": "topic"}], "açúcar glicogênio": [pair]}
     with patch.object(client, "search_claims", new=AsyncMock(side_effect=lambda q, max_results: hits.get(q, []))):
-        assert await client.search_for_claim(GLYCOGEN, None, TITLE) == ([{"source": "pair"}], False)
+        assert await client.search_for_claim(GLYCOGEN, None, TITLE) == ([pair], False)
     hits.pop("açúcar glicogênio")
     with patch.object(client, "search_claims", new=AsyncMock(side_effect=lambda q, max_results: hits.get(q, []))):
         assert await client.search_for_claim(GLYCOGEN, None, TITLE) == ([{"source": "topic"}], True)
+
+
+@pytest.mark.asyncio
+async def test_claim_query_result_must_share_the_claim_concepts():
+    """DEMO-004: "vacinas preso" devolvia checagem sobre indenizações por vacina."""
+    from app.services.fact_check_client import FactCheckClient
+
+    client = FactCheckClient()
+    client.api_key = "k"
+    claim = "Bill Gates foi preso por causa das vacinas contra a covid."
+    unrelated = {"claim_text": "Número de indenizações por vacinas contra covid é baixo", "source": MagicMock(title="Estadão: indenizações")}
+    related = {"claim_text": "Bill Gates foi preso por crimes ligados às vacinas", "source": MagicMock(title="Lupa: Bill Gates")}
+    with patch.object(client, "search_claims", new=AsyncMock(return_value=[unrelated])):
+        assert await client.search_for_claim(claim) == ([], False)
+    with patch.object(client, "search_claims", new=AsyncMock(return_value=[unrelated, related])):
+        assert await client.search_for_claim(claim) == ([related], False)

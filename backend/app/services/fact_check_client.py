@@ -6,6 +6,7 @@ from typing import Dict, List, Literal, Optional, Tuple
 import httpx
 from pydantic import BaseModel
 from app.config import settings
+from app.services.brazilian_fact_matcher import GENERIC_RELATION_TERMS
 from ml.classifier.features import STOPWORDS_PT
 
 # A busca do Google não acha nada com a frase inteira; responde a 2 ou 3 palavras-chave.
@@ -20,6 +21,17 @@ _GENERIC_WORDS = {
 
 def _fold(word: str) -> str:
     return unicodedata.normalize("NFKD", word).encode("ascii", "ignore").decode("ascii").lower()
+
+
+def _concepts(text: str) -> set:
+    """Palavras de conteúdo do texto, com radical curto para unir plural e singular."""
+    return {_fold(w)[:5] for w in _QUERY_WORD.findall(text)
+            if _fold(w) not in STOPWORDS_PT and _fold(w) not in _GENERIC_WORDS and _fold(w) not in GENERIC_RELATION_TERMS}
+
+
+def _reviewed_text(item: Dict) -> str:
+    source = item.get("source")
+    return f"{item.get('claim_text', '')} {getattr(source, 'title', '')}"
 
 
 def claim_search_queries(claim_text: str, video_title: str = "", search_query: Optional[str] = None) -> List[Tuple[str, bool]]:
@@ -178,7 +190,12 @@ class FactCheckClient:
         if not queries:
             return [], False
         results = await asyncio.gather(*(self._limited_search(q, max_results) for q, _ in queries))
+        claim_concepts = _concepts(claim_text)
         for (query, topic_only), found in zip(queries, results):
+            if not topic_only:
+                # Consultas de duas palavras acham checagens de outras proposições do mesmo tema.
+                needed = max(2, (len(claim_concepts) + 1) // 2)
+                found = [item for item in found if len(claim_concepts & _concepts(_reviewed_text(item))) >= needed]
             if found:
                 return found, topic_only
         return [], False

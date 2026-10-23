@@ -280,3 +280,23 @@ def test_short_factual_claim_after_greeting_is_kept():
     from app.providers.claim_saliency import score_claim_saliency as provider_saliency
 
     assert provider_saliency("Boa noite, a Anvisa aprovou a vacina em 2023.") > 1.0
+
+
+# DEMO-004: frases reais (OYrx2Du7nJY, GdrNq1NXKYI) que o extrator determinístico aceitava.
+@pytest.mark.parametrize("sentence", [
+    "Então, a partir de hoje, aqui no Bora Brasil, exibiremos semanalmente, toda semana, uma checagem exclusiva feita pela Lupa",
+    "Tudo que for válido na vida real tem que ser na vida digital",
+    "A saúde tem que ter conhecimento científico em todas as decisões",
+    "Ou seja, um absurdo do absurdo negar a vacina para as crianças do país",
+    "Eu acredito que a vacina é a melhor coisa que aconteceu para o Brasil",
+])
+def test_opinions_and_program_announcements_are_not_claims(sentence):
+    from ml.classifier.claim_extractor import is_conversational_filler
+    # O mesmo filtro descarta a frase quando ela vem do LLM.
+    assert is_conversational_filler(sentence)
+    assert not extract_candidate_claims(sentence + ".")
+
+
+def test_factual_sentence_survives_opinion_filter():
+    fact = "E temos laboratórios importantes como a Fiocruz e o Butantan produzindo vacinas no Brasil"
+    assert extract_candidate_claims(fact + ".") == [fact]

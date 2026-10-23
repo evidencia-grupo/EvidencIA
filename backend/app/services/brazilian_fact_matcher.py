@@ -15,6 +15,8 @@ NUMBER_WORDS = {
     "dois": "2", "duas": "2", "tres": "3", "quatro": "4", "cinco": "5", "seis": "6",
     "sete": "7", "oito": "8", "nove": "9", "dez": "10", "vinte": "20", "trinta": "30", "cem": "100",
 }
+# Relações genéricas ("causa", "contra") aparecem em quase todo boato e não identificam a proposição.
+GENERIC_RELATION_TERMS = {"contra", "causa", "causam", "causar", "provoca", "provocam", "segundo"}
 # Penalidade para candidatos que tratam do mesmo tema com números diferentes.
 NUMBER_MISMATCH_PENALTY = 0.15
 
@@ -94,12 +96,12 @@ class BrazilianFactMatcher:
             union = tokens_text.union(tokens_claim)
             # Require several distinct content words before scoring. A high
             # overlap ratio for a one-word query is not propositional relevance.
-            if len(intersection) < 3:
+            if len(intersection - GENERIC_RELATION_TERMS) < 3:
                 continue
 
             jaccard = len(intersection) / len(union) if union else 0.0
             # Topic names alone (e.g. vacina, dengue, Anvisa) are not a claim.
-            if not intersection.difference(domain_keywords):
+            if not intersection.difference(domain_keywords | GENERIC_RELATION_TERMS):
                 continue
 
             overlap = len(intersection) / min(len(tokens_text), len(tokens_claim)) if tokens_text and tokens_claim else 0.0

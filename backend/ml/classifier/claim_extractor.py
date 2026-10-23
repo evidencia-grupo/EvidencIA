@@ -46,6 +46,14 @@ CONVERSATIONAL_PATTERNS = [
     r"^(?:oi|e ai|fala) (?:pessoal|gente|galera)\b",
     r"^hoje vamos falar\b",
     r"clique no link",
+    # Anúncios da própria programação.
+    r"\ba partir de hoje\b.{0,40}\baqui (?:no|na)\b",
+    r"\b(?:exibiremos|vamos exibir|vamos apresentar)\b",
+    # Opiniões, juízos de valor e obrigações normativas não são fatos verificáveis.
+    r"^(?:eu )?(?:acho|acredito|prefiro|adoro|gosto|detesto)\b",
+    r"\b(?:eu acho|eu acredito|na minha opiniao)\b",
+    r"\bum absurdo\b",
+    r"\btem que (?:ser|ter)\b",
 ]
 
 # Verbos de asserção factual e atribuição frequentes em alegações jornalísticas e desinformativas

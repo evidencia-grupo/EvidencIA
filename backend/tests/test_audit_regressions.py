@@ -47,7 +47,7 @@ async def test_free_provider_text_cannot_introduce_references(sample_request):
 async def test_external_review_does_not_prove_stance_or_publication_date(sample_request):
     source = FactCheckingSource(id="external", title="Outra proposição", url="https://example.test/review", domain="example.test")
     provider = MagicMock(extract_claims=AsyncMock(return_value=[ProviderClaim(text=sample_request.transcript)]), generate_reflection=AsyncMock(return_value=REFLECTION_QUESTIONS[:3]))
-    with patch("app.services.fact_checker.get_provider", return_value=provider), patch("app.services.fact_checker.brazilian_fact_matcher.find_match", return_value=None), patch("app.services.fact_checker.fact_check_client.search_claims", new=AsyncMock(return_value=[{"source": source, "claim_text": "Texto sobre outro tema", "status": "contraditada"}])):
+    with patch("app.services.fact_checker.get_provider", return_value=provider), patch("app.services.fact_checker.brazilian_fact_matcher.find_match", return_value=None), patch("app.services.fact_checker.fact_check_client.search_claims", new=AsyncMock(return_value=[{"source": source, "claim_text": sample_request.transcript, "status": "contraditada"}])):
         result = await FactCheckerService().analyze(sample_request)
     assert result.claims[0].uncertainty == "contextualized"
     assert result.claims[0].evidence[0].publishedAt == ""
