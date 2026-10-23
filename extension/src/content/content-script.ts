@@ -275,6 +275,11 @@ function injectTriggerBadge() {
 
 // O YouTube é uma SPA — escuta evento nativo de navegação
 window.addEventListener("yt-navigate-finish", () => {
+  // O YouTube também dispara o evento na carga inicial, com o mesmo vídeo: não é troca de vídeo.
+  if (window.location.pathname === "/watch" && currentVideoId !== null && getVideoIdFromUrl() === currentVideoId) {
+    injectTriggerBadge();
+    return;
+  }
   generation++;
   activeController?.abort();
   clearTimeout(injectionTimer);

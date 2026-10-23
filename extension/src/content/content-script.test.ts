@@ -121,6 +121,19 @@ it("navegação invalida análise antiga e remove o botão fora do watch", async
   navigate("/"); expect(document.querySelector("#evidencia-badge-host")).toBeNull();
   navigate("/watch"); expect(document.querySelector("#evidencia-badge-host")).toBeNull();
 });
+it("yt-navigate-finish da carga inicial (mesmo vídeo) não cancela a análise em andamento", async () => {
+  await import("./content-script");
+  panelMessage("PANEL_READY");
+  const post = vi.spyOn(frame().contentWindow!, "postMessage");
+  let resolve!: (value: unknown) => void;
+  sendMessage.mockReturnValueOnce(new Promise(r => { resolve = r; }));
+  button().click(); await flush();
+  navigate("/watch?v=video");
+  expect(frame().style.display).toBe("block");
+  resolve({ success: true, data: { claims: [] } }); await flush();
+  expect(post).toHaveBeenCalledWith({ type: "ANALYSIS_SUCCESS", data: { claims: [] } }, "https://extension.test");
+  expect(button().textContent).toContain("Checagem concluída");
+});
 it("aguarda metadados, recria iframe removido e suporta chegada pela home", async () => {
   history.replaceState({}, "", "/"); document.body.innerHTML = "";
   await import("./content-script");
